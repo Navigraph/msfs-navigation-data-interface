@@ -1,3 +1,4 @@
+import { DataStore } from "@microsoft/msfs-sdk"
 import { initializeApp, Scope, NavigraphApp } from "@navigraph/app";
 import { getAuth } from "@navigraph/auth";
 import { getChartsAPI } from "@navigraph/charts";
@@ -10,5 +11,24 @@ const config: NavigraphApp = {
 
 initializeApp(config);
 
-export const auth = getAuth();
-export const charts = getChartsAPI();
+// Wait 1s before accessing datastorage
+// This is a potential workaround for the issue where datastorage does not deliver credentials on startup.
+const dataStoreInit = new Promise(resolve => setTimeout(resolve, 1000))
+
+const isNavigraphClient = config.clientId.includes("navigraph")
+const clientPrefix = isNavigraphClient ? "NG" : config.clientId.toUpperCase().replace("-", "_") + "_NG"
+
+export const AUTH_STORAGE_KEYS = {
+  accessToken: `${clientPrefix}_ACCESS_TOKEN`,
+  refreshToken: `${clientPrefix}_REFRESH_TOKEN`,
+} as const
+
+export const auth = getAuth({
+  storage: {
+    getItem: key => dataStoreInit.then(() => DataStore.get(key)?.toString() ?? null),
+    setItem: (key, value) => DataStore.set(key, value),
+  },
+  keys: AUTH_STORAGE_KEYS,
+})
+
+export const charts = getChartsAPI()

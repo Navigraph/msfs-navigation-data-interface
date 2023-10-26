@@ -3,3 +3,5 @@ node_modules
 _PackageInt
 .rollup.cache
 tsconfig.tsbuildinfo
+.vs
+Sources/Code/WASM/NavdataUpdater/MSFS/Debug

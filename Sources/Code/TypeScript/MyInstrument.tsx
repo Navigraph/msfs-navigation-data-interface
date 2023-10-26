@@ -1,23 +1,30 @@
 /// <reference types="@microsoft/msfs-types/Pages/VCockpit/Core/VCockpit" />
 
-import { FSComponent } from '@microsoft/msfs-sdk';
-import { MyComponent } from './MyComponent';
+import { EventBus, FSComponent } from '@microsoft/msfs-sdk';
 import { NavigraphLogin } from './Components/NavigraphLogin';
+import { AuthService } from './Services/AuthService';
 
 class MyInstrument extends BaseInstrument {
-    get templateID(): string {
-        return 'MyInstrument';
+    private readonly bus: EventBus;
+
+    constructor() {
+        super();
+
+        this.bus = new EventBus;
     }
 
-    get isInteractive(): boolean {
-        return true;
+    get templateID(): string {
+        return 'MyInstrument';
     }
 
     public connectedCallback(): void {
         super.connectedCallback();
 
-        FSComponent.render(<NavigraphLogin />, document.getElementById('InstrumentContent'));
+        AuthService.init(this.bus);
+
+        FSComponent.render(<NavigraphLogin bus={this.bus} />, document.getElementById('InstrumentContent'));
     }
+
 }
 
 registerInstrument('my-instrument', MyInstrument);
