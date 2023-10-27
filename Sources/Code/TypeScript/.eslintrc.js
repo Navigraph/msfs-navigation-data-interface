@@ -25,7 +25,6 @@ module.exports = {
     "@typescript-eslint/explicit-module-boundary-types": "off",
     "@typescript-eslint/no-empty-function": ["error", { allow: ["arrowFunctions"] }],
     "@typescript-eslint/no-explicit-any": "error",
-    "@typescript-eslint/no-unsafe-return": "off",
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
       "warn",

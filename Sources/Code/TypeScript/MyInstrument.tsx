@@ -26,7 +26,6 @@ class MyInstrument extends BaseInstrument {
     super.connectedCallback()
 
     AuthService.init(this.bus)
-
     FSComponent.render(<NavigraphLogin bus={this.bus} />, document.getElementById("InstrumentContent"))
   }
 }
