@@ -1,19 +1,18 @@
 import { FSComponent, DisplayComponent, VNode, Subject, ComputedSubject, MappedSubject, Subscription, ComponentProps, EventBus } from '@microsoft/msfs-sdk';
 import { CancelToken, DeviceFlowParams, User } from "navigraph/auth"
 import { AuthService } from '../Services/AuthService';
+import './NavigraphLogin.css'
 
 interface NavigraphLoginProps extends ComponentProps {
     bus: EventBus;
 }
 
 export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
+    private readonly textRef = FSComponent.createRef<HTMLDivElement>();
+    private readonly buttonRef = FSComponent.createRef<HTMLButtonElement>();
+    private readonly qrCodeRef = FSComponent.createRef<HTMLImageElement>();
     
-    private authParams = Subject.create<DeviceFlowParams | null>(null)
     private cancelSource = CancelToken.source()
-
-    private verificationUrl = Subject.create<string>("");
-  
-    private authParamsSub?: Subscription
 
     private commBusListener: ViewListener.ViewListener;
 
@@ -31,39 +30,48 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
     public render(): VNode {
         return (
-            <div>
-                <div>{this.verificationUrl}</div>
-                <img
-                    src={MappedSubject.create(([verificationUrl]) => `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${verificationUrl}`, this.verificationUrl)}
-                />
+            <div class="auth-container">
+                <div ref={this.textRef} />
+                <div ref={this.buttonRef} onClick={this.handleClick} class="login-button" />
+                <img ref={this.qrCodeRef} class="qr-code" />
             </div>
         );
+    }
+
+    public onBeforeRender(): void {
+        super.onBeforeRender();
     }
 
     public onAfterRender(node: VNode): void {
         super.onAfterRender(node);
 
-        if (AuthService.getUser()) {
-            console.log("already logged in!");
-            console.log(AuthService.getUser());
-        }
+        this.buttonRef.instance.addEventListener('click', () => this.handleClick());
 
-        this.authParamsSub = this.authParams.sub(p => {
-            if (p) {
-                this.verificationUrl.set(p.verification_uri_complete);
-                console.log(p.verification_uri_complete)
+        AuthService.user.sub(user => {
+            if (user) {
+                this.qrCodeRef.instance.src = '';
+                this.qrCodeRef.instance.style.display = "none";
+                this.buttonRef.instance.textContent = "Log out";
+                this.textRef.instance.textContent = `Welcome, ${user.preferred_username}`;
+            } else {
+                this.buttonRef.instance.textContent = "Sign in";
+                this.textRef.instance.textContent = "Not signed in";
             }
-        });
-
-        this.startDeviceFlow().then(() => {
-            console.log("authenticated, trying to communicate with WASM");
-            var jsonString = "{}";
-            this.commBusListener.call("COMM_BUS_WASM_CALLBACK", "DownloadNavdata", jsonString);
-        });
+        })
     }
 
-    private startDeviceFlow() {
-        this.cancelSource = CancelToken.source() // Reset any previous cancellations
-        return AuthService.signIn(p => this.authParams.set(p), this.cancelSource.token)
-      }
+    private handleClick() {
+        if (AuthService.getUser()) {
+            AuthService.signOut();
+        } else {
+            this.cancelSource = CancelToken.source() // Reset any previous cancellations
+            AuthService.signIn(p => {
+                if (p) {
+                    this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${p.verification_uri_complete}`;
+                    this.qrCodeRef.instance.style.display = 'block'
+                    console.log(p.user_code);
+                }
+            }, this.cancelSource.token)
+        }
+    }
 }

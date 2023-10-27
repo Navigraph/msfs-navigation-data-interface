@@ -3,6 +3,7 @@
 import { EventBus, FSComponent } from '@microsoft/msfs-sdk';
 import { NavigraphLogin } from './Components/NavigraphLogin';
 import { AuthService } from './Services/AuthService';
+import './MyInstrument.css'
 
 class MyInstrument extends BaseInstrument {
     private readonly bus: EventBus;
@@ -15,6 +16,10 @@ class MyInstrument extends BaseInstrument {
 
     get templateID(): string {
         return 'MyInstrument';
+    }
+
+    get isInteractive(): boolean {
+        return true;
     }
 
     public connectedCallback(): void {

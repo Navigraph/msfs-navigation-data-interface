@@ -5,3 +5,4 @@ _PackageInt
 tsconfig.tsbuildinfo
 .vs
 Sources/Code/WASM/NavdataUpdater/MSFS/Debug
+PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/DataUpdaterSample

@@ -3,10 +3,17 @@ import resolve from '@rollup/plugin-node-resolve';
 import copy from 'rollup-plugin-copy';
 import css from 'rollup-plugin-import-css';
 
+let DEBUG = true;
+
+let outputDest = '../../../PackageSources';
+if (DEBUG) {
+    outputDest = '../../../Packages/navigraph-aircraft-updater-sample'
+}
+
 export default {
     input: 'MyInstrument.tsx',
     output: {
-        dir: '../../../PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/DataUpdaterSample',
+        dir: `${outputDest}/html_ui/Pages/VCockpit/Instruments/Navigraph/DataUpdaterSample`,
         format: 'es'
     },
     plugins: [
@@ -17,7 +24,7 @@ export default {
             targets: [
                 {
                     src: 'MyInstrument.html',
-                    dest: '../../../PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/DataUpdaterSample',
+                    dest: `${outputDest}/html_ui/Pages/VCockpit/Instruments/Navigraph/DataUpdaterSample`,
                 }
             ]
         })
