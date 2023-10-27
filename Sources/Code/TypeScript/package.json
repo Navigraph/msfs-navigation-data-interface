@@ -6,7 +6,8 @@
   "scripts": {
     "build": "npx rollup -c",
     "dev": "npx rollup -cw",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "lint": "eslint --ext ts,tsx ."
   },
   "keywords": [],
   "author": "",
@@ -17,6 +18,11 @@
     "@microsoft/msfs-types": "^1.14.6",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.5",
+    "@typescript-eslint/eslint-plugin": "^6.9.0",
+    "@typescript-eslint/parser": "^6.9.0",
+    "eslint": "^8.52.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
     "prettier": "^3.0.3",
     "rollup": "^2.79.1",
     "rollup-plugin-copy": "^3.5.0",
