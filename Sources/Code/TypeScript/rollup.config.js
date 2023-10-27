@@ -1,6 +1,6 @@
 import resolve from "@rollup/plugin-node-resolve"
-import typescript from "@rollup/plugin-typescript"
 import copy from "rollup-plugin-copy"
+import esbuild from "rollup-plugin-esbuild"
 import css from "rollup-plugin-import-css"
 
 let DEBUG = true
@@ -19,7 +19,7 @@ export default {
   plugins: [
     css({ output: "MyInstrument.css" }),
     resolve(),
-    typescript(),
+    esbuild({ target: "es2017" }),
     copy({
       targets: [
         {
