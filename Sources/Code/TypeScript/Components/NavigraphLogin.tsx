@@ -1,77 +1,87 @@
-import { FSComponent, DisplayComponent, VNode, Subject, ComputedSubject, MappedSubject, Subscription, ComponentProps, EventBus } from '@microsoft/msfs-sdk';
+import {
+  ComponentProps,
+  ComputedSubject,
+  DisplayComponent,
+  EventBus,
+  FSComponent,
+  MappedSubject,
+  Subject,
+  Subscription,
+  VNode,
+} from "@microsoft/msfs-sdk"
 import { CancelToken, DeviceFlowParams, User } from "navigraph/auth"
-import { AuthService } from '../Services/AuthService';
-import './NavigraphLogin.css'
+import { AuthService } from "../Services/AuthService"
+import "./NavigraphLogin.css"
 
 interface NavigraphLoginProps extends ComponentProps {
-    bus: EventBus;
+  bus: EventBus
 }
 
 export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
-    private readonly textRef = FSComponent.createRef<HTMLDivElement>();
-    private readonly buttonRef = FSComponent.createRef<HTMLButtonElement>();
-    private readonly qrCodeRef = FSComponent.createRef<HTMLImageElement>();
-    
-    private cancelSource = CancelToken.source()
+  private readonly textRef = FSComponent.createRef<HTMLDivElement>()
+  private readonly buttonRef = FSComponent.createRef<HTMLButtonElement>()
+  private readonly qrCodeRef = FSComponent.createRef<HTMLImageElement>()
 
-    private commBusListener: ViewListener.ViewListener;
+  private cancelSource = CancelToken.source()
 
-    constructor(props: NavigraphLoginProps) {
-        super(props);
+  private commBusListener: ViewListener.ViewListener
 
-        this.commBusListener = RegisterViewListener('JS_LISTENER_COMM_BUS', () => {
-            console.log("JS_LISTENER_COMM_BUS registered");
-        });
+  constructor(props: NavigraphLoginProps) {
+    super(props)
 
-        this.commBusListener.on("NavdataUpdaterReceived", () => {
-            console.log("WASM received request");
-        })
-    }
+    this.commBusListener = RegisterViewListener("JS_LISTENER_COMM_BUS", () => {
+      console.log("JS_LISTENER_COMM_BUS registered")
+    })
 
-    public render(): VNode {
-        return (
-            <div class="auth-container">
-                <div ref={this.textRef} />
-                <div ref={this.buttonRef} onClick={this.handleClick} class="login-button" />
-                <img ref={this.qrCodeRef} class="qr-code" />
-            </div>
-        );
-    }
+    this.commBusListener.on("NavdataUpdaterReceived", () => {
+      console.log("WASM received request")
+    })
+  }
 
-    public onBeforeRender(): void {
-        super.onBeforeRender();
-    }
+  public render(): VNode {
+    return (
+      <div class="auth-container">
+        <div ref={this.textRef} />
+        <div ref={this.buttonRef} onClick={this.handleClick} class="login-button" />
+        <img ref={this.qrCodeRef} class="qr-code" />
+      </div>
+    )
+  }
 
-    public onAfterRender(node: VNode): void {
-        super.onAfterRender(node);
+  public onBeforeRender(): void {
+    super.onBeforeRender()
+  }
 
-        this.buttonRef.instance.addEventListener('click', () => this.handleClick());
+  public onAfterRender(node: VNode): void {
+    super.onAfterRender(node)
 
-        AuthService.user.sub(user => {
-            if (user) {
-                this.qrCodeRef.instance.src = '';
-                this.qrCodeRef.instance.style.display = "none";
-                this.buttonRef.instance.textContent = "Log out";
-                this.textRef.instance.textContent = `Welcome, ${user.preferred_username}`;
-            } else {
-                this.buttonRef.instance.textContent = "Sign in";
-                this.textRef.instance.textContent = "Not signed in";
-            }
-        })
-    }
+    this.buttonRef.instance.addEventListener("click", () => this.handleClick())
 
-    private handleClick() {
-        if (AuthService.getUser()) {
-            AuthService.signOut();
-        } else {
-            this.cancelSource = CancelToken.source() // Reset any previous cancellations
-            AuthService.signIn(p => {
-                if (p) {
-                    this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${p.verification_uri_complete}`;
-                    this.qrCodeRef.instance.style.display = 'block'
-                    console.log(p.user_code);
-                }
-            }, this.cancelSource.token)
+    AuthService.user.sub(user => {
+      if (user) {
+        this.qrCodeRef.instance.src = ""
+        this.qrCodeRef.instance.style.display = "none"
+        this.buttonRef.instance.textContent = "Log out"
+        this.textRef.instance.textContent = `Welcome, ${user.preferred_username}`
+      } else {
+        this.buttonRef.instance.textContent = "Sign in"
+        this.textRef.instance.textContent = "Not signed in"
+      }
+    })
+  }
+
+  private handleClick() {
+    if (AuthService.getUser()) {
+      AuthService.signOut()
+    } else {
+      this.cancelSource = CancelToken.source() // Reset any previous cancellations
+      AuthService.signIn(p => {
+        if (p) {
+          this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${p.verification_uri_complete}`
+          this.qrCodeRef.instance.style.display = "block"
+          console.log(p.user_code)
         }
+      }, this.cancelSource.token)
     }
+  }
 }

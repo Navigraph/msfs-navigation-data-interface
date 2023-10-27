@@ -1,27 +1,27 @@
 .auth-container {
-    font-size: x-large;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
+  font-size: x-large;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
 }
 
 .login-button {
-    width: 200px;
-    height: 100px;
-    font-size: x-large;
-    margin-top: 5px;
-    background: white;
-    color: black;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  width: 200px;
+  height: 100px;
+  font-size: x-large;
+  margin-top: 5px;
+  background: white;
+  color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .qr-code {
-    width: 300px;
-    height: 300px;
-    display: none;
+  width: 300px;
+  height: 300px;
+  display: none;
 }

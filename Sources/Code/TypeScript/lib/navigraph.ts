@@ -1,15 +1,15 @@
 import { DataStore } from "@microsoft/msfs-sdk"
-import { initializeApp, Scope, NavigraphApp } from "@navigraph/app";
-import { getAuth } from "@navigraph/auth";
-import { getChartsAPI } from "@navigraph/charts";
+import { initializeApp, NavigraphApp, Scope } from "@navigraph/app"
+import { getAuth } from "@navigraph/auth"
+import { getChartsAPI } from "@navigraph/charts"
 
 const config: NavigraphApp = {
-    clientId: "YOUR_CLIENT_ID",
-    clientSecret: "YOUR_CLIENT_SECRET",
-    scopes: [Scope.CHARTS, Scope.TILES, Scope.FMSDATA],
+  clientId: "YOUR_CLIENT_ID",
+  clientSecret: "YOUR_CLIENT_SECRET",
+  scopes: [Scope.CHARTS, Scope.TILES, Scope.FMSDATA],
 };
 
-initializeApp(config);
+initializeApp(config)
 
 // Wait 1s before accessing datastorage
 // This is a potential workaround for the issue where datastorage does not deliver credentials on startup.
