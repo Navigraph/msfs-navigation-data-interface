@@ -1,5 +1,6 @@
-import { ComponentProps, DisplayComponent, EventBus, FSComponent, VNode } from "@microsoft/msfs-sdk"
+import { ComponentProps, DataStore, DisplayComponent, EventBus, FSComponent, VNode } from "@microsoft/msfs-sdk"
 import { CancelToken } from "navigraph/auth"
+import { AUTH_STORAGE_KEYS } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
 import "./NavigraphLogin.css"
 
@@ -57,7 +58,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
         this.buttonRef.instance.textContent = "Sign in"
         this.textRef.instance.textContent = "Not signed in"
       }
-    })
+    }, true)
   }
 
   private handleClick() {
@@ -69,7 +70,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
         if (p) {
           this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${p.verification_uri_complete}`
           this.qrCodeRef.instance.style.display = "block"
-          console.info(p.user_code)
+          console.info(p.verification_uri_complete)
         }
       }, this.cancelSource.token).catch(e => console.error("Failed to sign in!", e))
     }
