@@ -1,0 +1,1 @@
+run `rustup toolchain install 1.65`, `rustup target add wasm32-wasi`

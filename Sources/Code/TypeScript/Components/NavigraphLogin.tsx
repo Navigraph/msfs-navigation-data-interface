@@ -62,6 +62,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   }
 
   private handleClick() {
+    this.commBusListener.call("COMM_BUS_WASM_CALLBACK", "DownloadNavdata", "{}")
     if (AuthService.getUser()) {
       void AuthService.signOut()
     } else {
