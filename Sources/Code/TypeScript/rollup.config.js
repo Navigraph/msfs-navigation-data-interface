@@ -3,7 +3,7 @@ import copy from "rollup-plugin-copy"
 import esbuild from "rollup-plugin-esbuild"
 import css from "rollup-plugin-import-css"
 
-let DEBUG = true
+let DEBUG = false
 
 let outputDest = "../../../PackageSources"
 if (DEBUG) {

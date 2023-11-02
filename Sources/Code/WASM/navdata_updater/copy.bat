@@ -1,0 +1,1 @@
+copy "target\wasm32-wasi\release\navdata_updater.wasm" "..\..\..\..\PackageSources\SimObjects\Airplanes\Navigraph_Navdata_Updater_Aircraft\panel\navdata_updater.wasm"
