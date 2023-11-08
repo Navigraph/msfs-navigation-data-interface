@@ -17,8 +17,8 @@ strip = true
 msfs = { git = "https://github.com/pepperoni505/msfs-rs.git", branch = "main" }
 serde = "1.0.190"
 serde_json = "1.0.108"
+rusqlite = { git = "https://github.com/rusqlite/rusqlite", rev = "d7ac6a1", features = ["bundled", "wasm32-wasi-vfs"] }
+zip = { version = "0.6.4", default-features = false, features = ["deflate"] }
 
-[dependencies.zip]
-default-features = false
-features = ["deflate"]
-version = "0.6.4"
+[patch.crates-io]
+libsqlite3-sys = { git = "https://github.com/pepperoni505/rusqlite", branch = "master" }
