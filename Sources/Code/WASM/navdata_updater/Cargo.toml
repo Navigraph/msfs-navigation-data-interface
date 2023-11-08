@@ -21,4 +21,4 @@ rusqlite = { git = "https://github.com/rusqlite/rusqlite", rev = "d7ac6a1", feat
 zip = { version = "0.6.4", default-features = false, features = ["deflate"] }
 
 [patch.crates-io]
-libsqlite3-sys = { git = "https://github.com/pepperoni505/rusqlite", branch = "master" }
+libsqlite3-sys = { git = "https://github.com/navigraph/rusqlite", branch = "master" }
