@@ -29,6 +29,13 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       console.info("WASM downloaded navdata")
       this.navdataTextRef.instance.textContent = "Navdata downloaded!"
     })
+
+    this.commBusListener.on("UnzippedFilesRemaining", (jsonArgs: string) => {
+      const args = JSON.parse(jsonArgs)
+      console.info("WASM unzipping files", args)
+      const percent = Math.round((args.unzipped / args.total) * 100)
+      this.navdataTextRef.instance.textContent = `Unzipping files... ${percent}% complete`
+    })
   }
 
   public render(): VNode {
