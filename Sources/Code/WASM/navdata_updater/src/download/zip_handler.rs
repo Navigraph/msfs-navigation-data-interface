@@ -26,9 +26,8 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
             return false;
         }
         let unwrapped_zip_archive = self.zip_archive.as_mut().unwrap();
-        let total_files = unwrapped_zip_archive.len();
         for _ in 0..batch_size {
-            if self.current_file_index >= total_files {
+            if self.current_file_index >= self.zip_file_count {
                 // lets clear our zip
                 self.zip_archive = None;
                 return false; // no more files to unzip
@@ -50,6 +49,10 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
                     if !p.exists() {
                         fs::create_dir_all(p).unwrap();
                     }
+                }
+                // If file already exists, delete it so we can overwrite it
+                if outpath.exists() {
+                    fs::remove_file(&outpath).unwrap();
                 }
                 let mut outfile = fs::File::create(outpath).unwrap();
                 io::copy(&mut file, &mut outfile).unwrap();

@@ -1,8 +1,9 @@
-import { ComponentProps, DisplayComponent, EventBus, FSComponent, VNode } from "@microsoft/msfs-sdk"
-import { getDefaultAppDomain } from "@navigraph/app"
-import { CancelToken, navigraphRequest } from "navigraph/auth"
-import { AuthService } from "../Services/AuthService"
-import "./NavigraphLogin.css"
+import { ComponentProps, DisplayComponent, EventBus, FSComponent, VNode } from "@microsoft/msfs-sdk";
+import { getDefaultAppDomain } from "@navigraph/app";
+import { CancelToken, navigraphRequest } from "navigraph/auth";
+import { AuthService } from "../Services/AuthService";
+import "./NavigraphLogin.css";
+
 
 interface NavigraphLoginProps extends ComponentProps {
   bus: EventBus
@@ -25,12 +26,12 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       console.info("JS_LISTENER_COMM_BUS registered")
     })
 
-    this.commBusListener.on("NavdataDownloaded", () => {
+    this.commBusListener.on("NAVIGRAPH_NavdataDownloaded", () => {
       console.info("WASM downloaded navdata")
       this.navdataTextRef.instance.textContent = "Navdata downloaded!"
     })
 
-    this.commBusListener.on("UnzippedFilesRemaining", (jsonArgs: string) => {
+    this.commBusListener.on("NAVIGRAPH_UnzippedFilesRemaining", (jsonArgs: string) => {
       const args = JSON.parse(jsonArgs)
       console.info("WASM unzipping files", args)
       const percent = Math.round((args.unzipped / args.total) * 100)
@@ -97,7 +98,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       .catch(e => console.error(e))
     const signedUrl = result.data[0].files[0].signed_url
     console.log("signed url", signedUrl)
-    await this.commBusListener.call("COMM_BUS_WASM_CALLBACK", "DownloadNavdata", JSON.stringify({
+    await this.commBusListener.call("COMM_BUS_WASM_CALLBACK", "NAVIGRAPH_DownloadNavdata", JSON.stringify({
       url: signedUrl
     }))
   }

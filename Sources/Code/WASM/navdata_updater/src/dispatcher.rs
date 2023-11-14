@@ -1,8 +1,7 @@
 use std::collections::HashMap;
-use std::mem;
 use std::rc::Rc;
 
-use crate::download::downloader::NavdataDownloader;
+use crate::download::downloader::{DownloadStatus, NavdataDownloader};
 use msfs::{commbus::*, MSFSEvent};
 
 pub struct Dispatcher<'a> {
@@ -23,11 +22,12 @@ impl<'a> Dispatcher<'a> {
             MSFSEvent::PostInitialize => {
                 self.handle_initialized();
             }
-            MSFSEvent::PostUpdate => {
+            MSFSEvent::PreUpdate => {
                 self.handle_update();
             }
             MSFSEvent::PreKill => {
-                // handle pre kill TODO wait for the unregister functions to be ported
+                // Drop commbus so that we in turn unregister the events. TODO wait for the unregister functions to be ported into the msfs-rs library
+                self.commbus = None;
             }
 
             _ => {}
@@ -35,9 +35,9 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn handle_initialized(&mut self) {
-        println!("[WASM] Initialized");
+        CommBus::call("NAVIGRAPH_Initialized", "", CommBusBroadcastFlags::All);
         let captured_downloader = self.downloader.clone();
-        self.commbus = CommBus::register("DownloadNavdata", move |args| {
+        self.commbus = CommBus::register("NAVIGRAPH_DownloadNavdata", move |args| {
             captured_downloader.download(args)
         });
     }
@@ -46,32 +46,43 @@ impl<'a> Dispatcher<'a> {
         // update unzip
         // todo: maybe another way to check instead of cloning? i mean we drop the value anyway but not sure on performance
         let captured_downloader = self.downloader.clone();
-        if captured_downloader.get_files_to_unzip() > 0 {
-            let total_files = captured_downloader.get_total_files();
-            let files_unzipped = captured_downloader.get_files_unzipped();
+        let status = captured_downloader.update_and_get_status();
+        if captured_downloader.update_and_get_status() == DownloadStatus::Extracting {
+            let statistics = captured_downloader.get_download_statistics().unwrap(); // will always be Some because we are extracting
             let mut map = HashMap::new();
-            map.insert("total", total_files);
-            map.insert("unzipped", files_unzipped);
+            map.insert("total", statistics.total_files);
+            map.insert("unzipped", statistics.files_unzipped);
             let data = serde_json::to_string(&map).unwrap();
-            // this is temporary until msfs-rs handles this unsafe stuff (soon TM)
-            let i8_slice: &[i8] = unsafe { mem::transmute(data.as_bytes()) };
-            println!(
-                "[WASM] total: {}, unzipped: {}",
-                total_files, files_unzipped
+            CommBus::call(
+                "NAVIGRAPH_UnzippedFilesRemaining",
+                &data,
+                CommBusBroadcastFlags::All,
             );
-            // only send the call if unzipped is divisible by 100 (kinda hacky but otherwise we flood the commbus (not good!))
-            if files_unzipped % 100 == 0 {
-                CommBus::call(
-                    "UnzippedFilesRemaining",
-                    i8_slice,
-                    CommBusBroadcastFlags::JS,
-                );
-            }
             let has_more_files = captured_downloader.unzip_batch(10);
             if !has_more_files {
                 println!("[WASM] finished unzip");
-                CommBus::call("NavdataDownloaded", &[], CommBusBroadcastFlags::JS);
+                CommBus::call(
+                    "NAVIGRAPH_NavdataDownloaded",
+                    "",
+                    CommBusBroadcastFlags::All,
+                );
+                captured_downloader.clear_zip_handler();
             }
+        } else if let DownloadStatus::Failed(_) = status {
+            let error_message = match status {
+                DownloadStatus::Failed(message) => message,
+                _ => "Unknown error".to_owned(),
+            };
+            let mut map = HashMap::new();
+            map.insert("error", &error_message);
+            let data = serde_json::to_string(&map).unwrap();
+            CommBus::call(
+                "NAVIGRAPH_DownloadFailed",
+                &data,
+                CommBusBroadcastFlags::All,
+            );
+            // clear the zip handler
+            captured_downloader.clear_zip_handler();
         }
     }
 }
