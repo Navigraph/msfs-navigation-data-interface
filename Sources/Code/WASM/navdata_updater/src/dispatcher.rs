@@ -26,7 +26,7 @@ impl<'a> Dispatcher<'a> {
                 self.handle_update();
             }
             MSFSEvent::PreKill => {
-                // Drop commbus so that we in turn unregister the events. TODO wait for the unregister functions to be ported into the msfs-rs library
+                // TODO: replace this!
                 CommBus::unregister_all();
             }
 
