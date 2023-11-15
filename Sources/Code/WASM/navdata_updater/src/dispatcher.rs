@@ -5,14 +5,14 @@ use crate::download::downloader::{DownloadStatus, NavdataDownloader};
 use msfs::{commbus::*, MSFSEvent};
 
 pub struct Dispatcher<'a> {
-    commbus: Option<CommBus<'a>>,
+    commbus: CommBus<'a>,
     downloader: Rc<NavdataDownloader>,
 }
 
 impl<'a> Dispatcher<'a> {
     pub fn new() -> Self {
         Dispatcher {
-            commbus: None,
+            commbus: CommBus::new(),
             downloader: Rc::new(NavdataDownloader::new()),
         }
     }
@@ -27,7 +27,7 @@ impl<'a> Dispatcher<'a> {
             }
             MSFSEvent::PreKill => {
                 // Drop commbus so that we in turn unregister the events. TODO wait for the unregister functions to be ported into the msfs-rs library
-                self.commbus = None;
+                CommBus::unregister_all();
             }
 
             _ => {}
@@ -37,9 +37,9 @@ impl<'a> Dispatcher<'a> {
     fn handle_initialized(&mut self) {
         CommBus::call("NAVIGRAPH_Initialized", "", CommBusBroadcastFlags::All);
         let captured_downloader = self.downloader.clone();
-        self.commbus = CommBus::register("NAVIGRAPH_DownloadNavdata", move |args| {
+        self.commbus.register("NAVIGRAPH_DownloadNavdata", move |args| {
             captured_downloader.download(args)
-        });
+        }).expect("Failed to register NAVIGRAPH_DownloadNavdata");
     }
 
     fn handle_update(&mut self) {
