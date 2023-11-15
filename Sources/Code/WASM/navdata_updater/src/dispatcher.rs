@@ -36,10 +36,23 @@ impl<'a> Dispatcher<'a> {
 
     fn handle_initialized(&mut self) {
         CommBus::call("NAVIGRAPH_Initialized", "", CommBusBroadcastFlags::All);
-        let captured_downloader = self.downloader.clone();
-        self.commbus.register("NAVIGRAPH_DownloadNavdata", move |args| {
-            captured_downloader.download(args)
-        }).expect("Failed to register NAVIGRAPH_DownloadNavdata");
+        {
+            let captured_downloader = self.downloader.clone();
+            self.commbus
+                .register("NAVIGRAPH_DownloadNavdata", move |args| {
+                    captured_downloader.download(args)
+                })
+                .expect("Failed to register NAVIGRAPH_DownloadNavdata");
+        }
+        // Left out for now as the sim doesn't seem to like deleting files (?)
+        // {
+        //     let captured_downloader = self.downloader.clone();
+        //     self.commbus
+        //         .register("NAVIGRAPH_DeleteAllFiles", move |_| {
+        //             captured_downloader.delete_all_files()
+        //         })
+        //         .expect("Failed to register NAVIGRAPH_DeleteAllFiles");
+        // }
     }
 
     fn handle_update(&mut self) {

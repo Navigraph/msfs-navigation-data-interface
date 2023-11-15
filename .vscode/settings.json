@@ -1,3 +1,7 @@
 {
-  "eslint.workingDirectories": ["Sources/Code/TypeScript"]
+  "eslint.workingDirectories": ["Sources/Code/TypeScript"],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+
+  }
 }

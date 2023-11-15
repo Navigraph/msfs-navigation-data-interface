@@ -1,9 +1,9 @@
-import { ComponentProps, DisplayComponent, EventBus, FSComponent, VNode } from "@microsoft/msfs-sdk";
-import { getDefaultAppDomain } from "@navigraph/app";
-import { CancelToken, navigraphRequest } from "navigraph/auth";
-import { AuthService } from "../Services/AuthService";
-import "./NavigraphLogin.css";
-
+import { ComponentProps, DisplayComponent, EventBus, FSComponent, VNode } from "@microsoft/msfs-sdk"
+import { CancelToken, navigraphRequest } from "navigraph/auth"
+import { packages } from "../Lib/navigraph"
+import { AuthService } from "../Services/AuthService"
+import "./NavigraphLogin.css"
+import { Dropdown } from "./Dropdown"
 
 interface NavigraphLoginProps extends ComponentProps {
   bus: EventBus
@@ -12,8 +12,10 @@ interface NavigraphLoginProps extends ComponentProps {
 export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   private readonly textRef = FSComponent.createRef<HTMLDivElement>()
   private readonly navdataTextRef = FSComponent.createRef<HTMLDivElement>()
-  private readonly buttonRef = FSComponent.createRef<HTMLButtonElement>()
+  private readonly loginButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly qrCodeRef = FSComponent.createRef<HTMLImageElement>()
+  private readonly dropdownRef = FSComponent.createRef<Dropdown>()
+  private readonly downloadButtonRef = FSComponent.createRef<HTMLButtonElement>()
 
   private cancelSource = CancelToken.source()
 
@@ -42,10 +44,20 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   public render(): VNode {
     return (
       <div class="auth-container">
-        <div ref={this.textRef} />
-        <div ref={this.buttonRef} onClick={this.handleClick.bind(this)} class="login-button" />
-        <div ref={this.navdataTextRef} />
-        <img ref={this.qrCodeRef} class="qr-code" />
+        <div class="horizontal">
+          <div class="vertical">
+            <div ref={this.textRef} />
+            <div ref={this.loginButtonRef} class="button" />
+            <div ref={this.navdataTextRef} />
+            <img ref={this.qrCodeRef} class="qr-code" />
+          </div>
+          <div class="vertical">
+            <Dropdown ref={this.dropdownRef} />
+            <div ref={this.downloadButtonRef} class="button">
+              Download
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -57,18 +69,19 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   public onAfterRender(node: VNode): void {
     super.onAfterRender(node)
 
-    this.buttonRef.instance.addEventListener("click", () => this.handleClick().catch(e => console.error(e)))
+    this.loginButtonRef.instance.addEventListener("click", () => this.handleClick().catch(e => console.error(e)))
+    this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
 
     AuthService.user.sub(user => {
       if (user) {
         this.qrCodeRef.instance.src = ""
         this.qrCodeRef.instance.style.display = "none"
-        this.buttonRef.instance.textContent = "Log out"
+        this.loginButtonRef.instance.textContent = "Log out"
         this.textRef.instance.textContent = `Welcome, ${user.preferred_username}`
 
-        this.handleLogin().catch(e => console.error(e))
+        this.handleLogin()
       } else {
-        this.buttonRef.instance.textContent = "Sign in"
+        this.loginButtonRef.instance.textContent = "Sign in"
         this.textRef.instance.textContent = "Not signed in"
       }
     }, true)
@@ -81,7 +94,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       this.cancelSource = CancelToken.source() // Reset any previous cancellations
       AuthService.signIn(p => {
         if (p) {
-          this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${p.verification_uri_complete}`
+          this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${p.verification_uri_complete}`
           this.qrCodeRef.instance.style.display = "block"
           console.info(p.verification_uri_complete)
         }
@@ -89,17 +102,34 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
     }
   }
 
-  private async handleLogin() {
-    console.log("successful login, downloading navdata")
-    this.navdataTextRef.instance.textContent = "Downloading navdata..."
-    // leaving this here for now (messy) until the PR from the sdk is merged
-    const result = await navigraphRequest
-      .get(`https://fmsdata.api.${getDefaultAppDomain()}/v3/packages?format=avionics_v1`)
+  private handleLogin() {
+    // Let's display all of our packages
+    packages
+      .listPackages()
+      .then(pkgs => {
+        for (const pkg of pkgs) {
+          this.dropdownRef.instance.addDropdownItem(pkg.format, pkg.format)
+        }
+      })
       .catch(e => console.error(e))
-    const signedUrl = result.data[0].files[0].signed_url
-    console.log("signed url", signedUrl)
-    await this.commBusListener.call("COMM_BUS_WASM_CALLBACK", "NAVIGRAPH_DownloadNavdata", JSON.stringify({
-      url: signedUrl
-    }))
+  }
+
+  private handleDownloadClick() {
+    packages
+      .getPackage(this.dropdownRef.instance.getNavdataFormat() as string)
+      .then(pkg => {
+        const url = pkg.file.url
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        this.commBusListener.call(
+          "COMM_BUS_WASM_CALLBACK",
+          "NAVIGRAPH_DownloadNavdata",
+          JSON.stringify({
+            url,
+            folder: pkg.format,
+          }),
+        )
+        this.navdataTextRef.instance.textContent = "Downloading navdata..."
+      })
+      .catch(e => console.error(e))
   }
 }

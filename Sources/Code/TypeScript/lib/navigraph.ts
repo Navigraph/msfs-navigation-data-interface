@@ -1,6 +1,7 @@
 import { DataStore } from "@microsoft/msfs-sdk"
 import { initializeApp, NavigraphApp, Scope } from "@navigraph/app"
 import { getAuth } from "@navigraph/auth"
+import { getPackagesAPI } from "@navigraph/packages"
 import { getChartsAPI } from "@navigraph/charts"
 
 const config: NavigraphApp = {
@@ -32,3 +33,5 @@ export const auth = getAuth({
 })
 
 export const charts = getChartsAPI()
+
+export const packages = getPackagesAPI()

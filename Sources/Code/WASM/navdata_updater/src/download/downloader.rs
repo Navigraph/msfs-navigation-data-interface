@@ -38,6 +38,12 @@ impl NavdataDownloader {
     }
 
     pub fn download(self: &Rc<Self>, args: &[u8]) {
+        // Silently fail if we are already downloading
+        if self.update_and_get_status() != DownloadStatus::NoDownload {
+            println!("[WASM] Already downloading");
+            return;
+        }
+
         // Set our status to downloading (needs to be done in its own scope so that the borrow_mut is dropped)
         {
             let mut status = self.status.borrow_mut();
@@ -56,17 +62,20 @@ impl NavdataDownloader {
         let json = json_result.unwrap();
         let url = json["url"].as_str().unwrap_or_default();
 
+        // check if json has "folder"
+        let folder = json["folder"].as_str().unwrap_or_default().to_owned();
+
         let captured_self = self.clone();
         NetworkRequestBuilder::new(url)
             .unwrap()
             .with_callback(move |request, status_code| {
-                captured_self.request_finished_callback(request, status_code)
+                captured_self.request_finished_callback(request, status_code, folder)
             })
             .get()
             .unwrap();
     }
 
-    fn request_finished_callback(&self, request: NetworkRequest, status_code: i32) {
+    fn request_finished_callback(&self, request: NetworkRequest, status_code: i32, folder: String) {
         if status_code != 200 {
             let mut status = self.status.borrow_mut();
             *status = DownloadStatus::Failed(format!(
@@ -76,7 +85,7 @@ impl NavdataDownloader {
             ));
             return;
         }
-        let path = PathBuf::from("\\work/navdata");
+        let path = PathBuf::from(format!("\\work/navdata/{}", folder));
         if let Err(e) = fs::create_dir_all(&path) {
             let mut status = self.status.borrow_mut();
             *status = DownloadStatus::Failed(format!("Failed to create directory: {}", e));
@@ -89,9 +98,18 @@ impl NavdataDownloader {
             *status = DownloadStatus::Failed("No data received".to_string());
             return;
         }
+        // Extract the data from the request
         let data = data.unwrap();
         let cursor = Cursor::new(data);
-        let zip = zip::ZipArchive::new(cursor).unwrap();
+        let zip = zip::ZipArchive::new(cursor);
+        if zip.is_err() {
+            let mut status = self.status.borrow_mut();
+            *status = DownloadStatus::Failed(
+                "Failed to create zip archive. Is this a zip file?".to_string(),
+            );
+            return;
+        }
+        let zip = zip.unwrap();
 
         let handler = ZipFileHandler::new(zip, path);
 
@@ -167,5 +185,19 @@ impl NavdataDownloader {
             *zip_handler = None;
         }
         self.update_and_get_status();
+    }
+
+    pub fn delete_all_files(&self) {
+        // if we are downloading, quietly fail
+        if self.update_and_get_status() != DownloadStatus::NoDownload {
+            println!("[WASM] Cannot delete files while downloading");
+            return;
+        }
+        let path = PathBuf::from("\\work/navdata");
+        // iterate through all files in the directory and delete them
+        match fs::remove_dir_all(&path) {
+            Ok(_) => (),
+            Err(e) => println!("[WASM] Failed to delete all files: {}", e),
+        }
     }
 }
