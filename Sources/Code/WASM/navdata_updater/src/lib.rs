@@ -1,6 +1,5 @@
 mod dispatcher;
 mod download;
-mod util;
 
 #[msfs::gauge(name=navdata_updater)]
 async fn navdata_updater(mut gauge: msfs::Gauge) -> Result<(), Box<dyn std::error::Error>> {

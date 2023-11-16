@@ -1,7 +1,6 @@
-use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::download::downloader::{DownloadStatus, NavdataDownloader};
+use crate::download::downloader::NavdataDownloader;
 use msfs::{commbus::*, MSFSEvent};
 
 pub struct Dispatcher<'a> {
@@ -12,7 +11,7 @@ pub struct Dispatcher<'a> {
 impl<'a> Dispatcher<'a> {
     pub fn new() -> Self {
         Dispatcher {
-            commbus: CommBus::new(),
+            commbus: CommBus::default(),
             downloader: Rc::new(NavdataDownloader::new()),
         }
     }
@@ -26,8 +25,7 @@ impl<'a> Dispatcher<'a> {
                 self.handle_update();
             }
             MSFSEvent::PreKill => {
-                // TODO: replace this!
-                CommBus::unregister_all();
+                self.commbus.unregister_all();
             }
 
             _ => {}
@@ -40,62 +38,26 @@ impl<'a> Dispatcher<'a> {
             let captured_downloader = self.downloader.clone();
             self.commbus
                 .register("NAVIGRAPH_DownloadNavdata", move |args| {
-                    captured_downloader.download(args)
+                    captured_downloader.download(Dispatcher::trim_null_terminator(args))
                 })
                 .expect("Failed to register NAVIGRAPH_DownloadNavdata");
         }
-        // Left out for now as the sim doesn't seem to like deleting files (?)
-        // {
-        //     let captured_downloader = self.downloader.clone();
-        //     self.commbus
-        //         .register("NAVIGRAPH_DeleteAllFiles", move |_| {
-        //             captured_downloader.delete_all_files()
-        //         })
-        //         .expect("Failed to register NAVIGRAPH_DeleteAllFiles");
-        // }
+        {
+            let captured_downloader = self.downloader.clone();
+            self.commbus
+                .register("NAVIGRAPH_SetDownloadOptions", move |args| {
+                    captured_downloader.set_download_options(Dispatcher::trim_null_terminator(args))
+                })
+                .expect("Failed to register NAVIGRAPH_SetDownloadOptions");
+        }
     }
 
     fn handle_update(&mut self) {
         // update unzip
-        // todo: maybe another way to check instead of cloning? i mean we drop the value anyway but not sure on performance
-        let captured_downloader = self.downloader.clone();
-        let status = captured_downloader.update_and_get_status();
-        if captured_downloader.update_and_get_status() == DownloadStatus::Extracting {
-            let statistics = captured_downloader.get_download_statistics().unwrap(); // will always be Some because we are extracting
-            let mut map = HashMap::new();
-            map.insert("total", statistics.total_files);
-            map.insert("unzipped", statistics.files_unzipped);
-            let data = serde_json::to_string(&map).unwrap();
-            CommBus::call(
-                "NAVIGRAPH_UnzippedFilesRemaining",
-                &data,
-                CommBusBroadcastFlags::All,
-            );
-            let has_more_files = captured_downloader.unzip_batch(10);
-            if !has_more_files {
-                println!("[WASM] finished unzip");
-                CommBus::call(
-                    "NAVIGRAPH_NavdataDownloaded",
-                    "",
-                    CommBusBroadcastFlags::All,
-                );
-                captured_downloader.clear_zip_handler();
-            }
-        } else if let DownloadStatus::Failed(_) = status {
-            let error_message = match status {
-                DownloadStatus::Failed(message) => message,
-                _ => "Unknown error".to_owned(),
-            };
-            let mut map = HashMap::new();
-            map.insert("error", &error_message);
-            let data = serde_json::to_string(&map).unwrap();
-            CommBus::call(
-                "NAVIGRAPH_DownloadFailed",
-                &data,
-                CommBusBroadcastFlags::All,
-            );
-            // clear the zip handler
-            captured_downloader.clear_zip_handler();
-        }
+        self.downloader.on_update();
+    }
+
+    fn trim_null_terminator(s: &str) -> &str {
+        s.trim_end_matches(char::from(0))
     }
 }

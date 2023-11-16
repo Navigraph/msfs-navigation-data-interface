@@ -1,13 +1,17 @@
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fs;
 use std::io::Cursor;
 use std::path::PathBuf;
 use std::rc::Rc;
 
-use msfs::network::*;
+use msfs::{commbus::*, network::*};
 
 use crate::download::zip_handler::ZipFileHandler;
-use crate::util::JsonParser;
+
+pub struct DownloadOptions {
+    batch_size: usize,
+}
 
 pub struct DownloadStatistics {
     pub total_files: usize,
@@ -27,6 +31,7 @@ pub enum DownloadStatus {
 pub struct NavdataDownloader {
     zip_handler: RefCell<Option<ZipFileHandler<Cursor<Vec<u8>>>>>,
     status: RefCell<DownloadStatus>,
+    options: RefCell<DownloadOptions>,
 }
 
 impl NavdataDownloader {
@@ -34,35 +39,102 @@ impl NavdataDownloader {
         NavdataDownloader {
             zip_handler: RefCell::new(None),
             status: RefCell::new(DownloadStatus::NoDownload),
+            options: RefCell::new(DownloadOptions { batch_size: 10 }), // default batch size
         }
     }
 
-    pub fn download(self: &Rc<Self>, args: &[u8]) {
-        // Silently fail if we are already downloading
+    pub fn on_update(&self) {
+        let status = self.update_and_get_status();
+        // If we are extracting, extract the next batch of files
+        if status == DownloadStatus::Extracting {
+            // Send the statistics to the JS side
+            let statistics: DownloadStatistics = self.get_download_statistics().unwrap();
+            let mut map = HashMap::new();
+            map.insert("total", statistics.total_files);
+            map.insert("unzipped", statistics.files_unzipped);
+            let data = serde_json::to_string(&map).unwrap();
+            CommBus::call(
+                "NAVIGRAPH_UnzippedFilesRemaining",
+                &data,
+                CommBusBroadcastFlags::All,
+            );
+
+            // Unzip the next batch of files
+            let has_more_files = self.unzip_batch(10);
+            if !has_more_files {
+                println!("[WASM] finished unzip");
+                CommBus::call(
+                    "NAVIGRAPH_NavdataDownloaded",
+                    "",
+                    CommBusBroadcastFlags::All,
+                );
+
+                self.clear_zip_handler();
+            }
+        } else if let DownloadStatus::Failed(_) = status {
+            let error_message = match status {
+                DownloadStatus::Failed(message) => message,
+                _ => "Unknown error".to_owned(),
+            };
+            // Send the error message to the JS side
+            let mut map = HashMap::new();
+            map.insert("error", &error_message);
+            let data = serde_json::to_string(&map).unwrap();
+            CommBus::call(
+                "NAVIGRAPH_DownloadFailed",
+                &data,
+                CommBusBroadcastFlags::All,
+            );
+
+            self.clear_zip_handler();
+        }
+    }
+
+    pub fn set_download_options(self: &Rc<Self>, args: &str) {
+        // Parse the JSON
+        let json_result: Result<serde_json::Value, serde_json::Error> = serde_json::from_str(args);
+        if json_result.is_err() {
+            println!(
+                "[WASM] Failed to parse JSON: {}",
+                json_result.err().unwrap()
+            );
+            return;
+        }
+        let json = json_result.unwrap();
+        let batch_size = json["batchSize"].as_u64().unwrap_or_default() as usize;
+
+        // Set the options (only batch size for now)
+        let mut options = self.options.borrow_mut();
+        options.batch_size = batch_size;
+    }
+
+    pub fn download(self: &Rc<Self>, args: &str) {
+        // Silently fail if we are already downloading (maybe we should send an error message?)
         if self.update_and_get_status() != DownloadStatus::NoDownload {
             println!("[WASM] Already downloading");
             return;
         }
 
-        // Set our status to downloading (needs to be done in its own scope so that the borrow_mut is dropped)
-        {
+        // Parse the JSON
+        let json_result: Result<serde_json::Value, serde_json::Error> = serde_json::from_str(args);
+        if json_result.is_ok() {
+            // Set our status to downloading (needs to be done in its own scope so that the borrow_mut is dropped)
             let mut status = self.status.borrow_mut();
             *status = DownloadStatus::Downloading;
             println!("[WASM] Downloading");
-        }
-
-        let json_result = JsonParser::parse(args);
-        if json_result.is_err() {
+        } else {
+            // If we failed to parse the JSON, set our status to failed (read above for why this is in its own scope)
             let mut status = self.status.borrow_mut();
             let error = json_result.err().unwrap();
             *status = DownloadStatus::Failed(format!("JSON Parsing error from JS: {}", error));
             println!("[WASM] Failed: {}", error);
             return;
         }
+        // Safe to unwrap since we already checked if it was an error
         let json = json_result.unwrap();
         let url = json["url"].as_str().unwrap_or_default();
 
-        // check if json has "folder"
+        // Check if json has "folder"
         let folder = json["folder"].as_str().unwrap_or_default().to_owned();
 
         let captured_self = self.clone();
@@ -76,6 +148,7 @@ impl NavdataDownloader {
     }
 
     fn request_finished_callback(&self, request: NetworkRequest, status_code: i32, folder: String) {
+        // Fail if the status code is not 200
         if status_code != 200 {
             let mut status = self.status.borrow_mut();
             *status = DownloadStatus::Failed(format!(
@@ -85,6 +158,7 @@ impl NavdataDownloader {
             ));
             return;
         }
+        // Create the directory if it doesn't exist
         let path = PathBuf::from(format!("\\work/navdata/{}", folder));
         if let Err(e) = fs::create_dir_all(&path) {
             let mut status = self.status.borrow_mut();
@@ -92,6 +166,7 @@ impl NavdataDownloader {
             return;
         }
 
+        // Check the data from the request
         let data = request.data();
         if data.is_none() {
             let mut status = self.status.borrow_mut();
@@ -109,10 +184,11 @@ impl NavdataDownloader {
             );
             return;
         }
+        // Unwrap is safe since we already checked if it was an error
         let zip = zip.unwrap();
 
+        // Create the zip handler
         let handler = ZipFileHandler::new(zip, path);
-
         let mut zip_handler = self.zip_handler.borrow_mut();
         *zip_handler = Some(handler);
 
@@ -127,7 +203,7 @@ impl NavdataDownloader {
     pub fn get_download_statistics(
         &self,
     ) -> Result<DownloadStatistics, Box<dyn std::error::Error>> {
-        let zip_handler_ref = self.zip_handler.borrow(); // Borrow and hold onto the reference
+        let zip_handler_ref = self.zip_handler.borrow();
         let zip_handler = zip_handler_ref.as_ref().ok_or("No zip handler")?;
 
         let total_files = zip_handler.zip_file_count;
@@ -141,8 +217,9 @@ impl NavdataDownloader {
         })
     }
 
-    /// This basically either sets the status to no download, extracting, or done
     pub fn update_and_get_status(&self) -> DownloadStatus {
+        // This basically either sets the status to no download, extracting, or done
+
         let mut status = self.status.borrow_mut();
         let zip_handler_option = self.zip_handler.borrow();
 
@@ -166,9 +243,6 @@ impl NavdataDownloader {
         status.clone()
     }
 
-    /// Unzips a batch of files
-    ///
-    /// Returns true if there are more files to unzip (false if we are done)
     pub fn unzip_batch(&self, batch_size: usize) -> bool {
         let mut zip_handler = self.zip_handler.borrow_mut();
         match zip_handler.as_mut() {
@@ -185,19 +259,5 @@ impl NavdataDownloader {
             *zip_handler = None;
         }
         self.update_and_get_status();
-    }
-
-    pub fn delete_all_files(&self) {
-        // if we are downloading, quietly fail
-        if self.update_and_get_status() != DownloadStatus::NoDownload {
-            println!("[WASM] Cannot delete files while downloading");
-            return;
-        }
-        let path = PathBuf::from("\\work/navdata");
-        // iterate through all files in the directory and delete them
-        match fs::remove_dir_all(&path) {
-            Ok(_) => (),
-            Err(e) => println!("[WASM] Failed to delete all files: {}", e),
-        }
     }
 }

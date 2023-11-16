@@ -28,9 +28,9 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
         let unwrapped_zip_archive = self.zip_archive.as_mut().unwrap();
         for _ in 0..batch_size {
             if self.current_file_index >= self.zip_file_count {
-                // lets clear our zip
+                // Done extracting, drop the zip archive
                 self.zip_archive = None;
-                return false; // no more files to unzip
+                return false;
             }
 
             let mut file = match unwrapped_zip_archive.by_index(self.current_file_index) {
