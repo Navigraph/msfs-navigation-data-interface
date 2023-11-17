@@ -1,2 +1,1 @@
-call run_cargo_cmd.bat build --release
-copy "target\wasm32-wasi\release\navdata_updater.wasm" "..\..\..\..\PackageSources\SimObjects\Airplanes\Navigraph_Navdata_Updater_Aircraft\panel\navdata_updater.wasm"
+.\scripts\run_docker_cmd.bat ./scripts/build.sh
