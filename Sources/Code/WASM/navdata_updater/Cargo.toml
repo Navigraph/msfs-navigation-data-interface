@@ -14,7 +14,7 @@ lto = true
 strip = true
 
 [dependencies]
-msfs = { git = "https://github.com/pepperoni505/msfs-rs.git", branch = "main" }
+msfs = { git = "https://github.com/flybywiresim/msfs-rs.git", rev = "b438d3e" }
 serde = "1.0.190"
 serde_json = "1.0.108"
 rusqlite = { git = "https://github.com/navigraph/rusqlite", rev = "366c520", features = ["bundled", "wasm32-wasi-vfs"] }
