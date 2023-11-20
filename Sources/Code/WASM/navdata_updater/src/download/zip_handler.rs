@@ -2,6 +2,8 @@ use std::fs;
 use std::io;
 use std::path::PathBuf;
 
+use crate::util;
+
 pub struct ZipFileHandler<R: io::Read + io::Seek> {
     pub zip_archive: Option<zip::ZipArchive<R>>,
     path_buf: PathBuf,
@@ -46,13 +48,9 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
                 fs::create_dir_all(outpath).unwrap();
             } else {
                 if let Some(p) = outpath.parent() {
-                    if !p.exists() {
+                    if !util::path_exists(p) {
                         fs::create_dir_all(p).unwrap();
                     }
-                }
-                // If file already exists, delete it so we can overwrite it
-                if outpath.exists() {
-                    fs::remove_file(&outpath).unwrap();
                 }
                 let mut outfile = fs::File::create(outpath).unwrap();
                 io::copy(&mut file, &mut outfile).unwrap();

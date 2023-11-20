@@ -50,6 +50,14 @@ impl<'a> Dispatcher<'a> {
                 })
                 .expect("Failed to register NAVIGRAPH_SetDownloadOptions");
         }
+        {
+            let captured_downloader = self.downloader.clone();
+            self.commbus
+                .register("NAVIGRAPH_DeleteAllNavdata", move |_| {
+                    captured_downloader.delete_all_navdata()
+                })
+                .expect("Failed to register NAVIGRAPH_DeleteAllNavdata");
+        }
     }
 
     fn handle_update(&mut self) {

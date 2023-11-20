@@ -21,3 +21,26 @@ pub fn get_path_type(path: &Path) -> PathType {
     }
     PathType::DoesNotExist
 }
+
+pub fn path_exists(path: &Path) -> bool {
+    get_path_type(path) != PathType::DoesNotExist
+}
+
+pub fn delete_folder_recursively(path: &Path) -> io::Result<()> {
+    // Make sure we are deleting a directory (and in turn that it exists)
+    if get_path_type(path) != PathType::Directory {
+        return Ok(());
+    }
+    // We need to collect the entries into a vector since we can't iterate over them while deleting them
+    for entry in fs::read_dir(path)?.collect::<Vec<_>>() {
+        let entry = entry?;
+        let path = entry.path();
+        if get_path_type(&path) == PathType::Directory {
+            delete_folder_recursively(&path)?;
+        } else {
+            fs::remove_file(&path)?;
+        }
+    }
+    fs::remove_dir(path)?;
+    Ok(())
+}

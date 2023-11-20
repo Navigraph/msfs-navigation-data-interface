@@ -2,12 +2,12 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Cursor;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use msfs::{commbus::*, network::*};
 
-use crate::download::zip_handler::ZipFileHandler;
+use crate::{download::zip_handler::ZipFileHandler, util};
 
 pub struct DownloadOptions {
     batch_size: usize,
@@ -158,8 +158,20 @@ impl NavdataDownloader {
             ));
             return;
         }
-        // Create the directory if it doesn't exist
+        
         let path = PathBuf::from(format!("\\work/navdata/{}", folder));
+        // If the directory exists, delete it
+        if util::path_exists(&path) {
+            match util::delete_folder_recursively(&path) {
+                Ok(_) => (),
+                Err(e) => {
+                    let mut status = self.status.borrow_mut();
+                    *status = DownloadStatus::Failed(format!("Failed to delete directory: {}", e));
+                    return;
+                }
+            }
+        }
+        // Re create the directory
         if let Err(e) = fs::create_dir_all(&path) {
             let mut status = self.status.borrow_mut();
             *status = DownloadStatus::Failed(format!("Failed to create directory: {}", e));
@@ -259,5 +271,12 @@ impl NavdataDownloader {
             *zip_handler = None;
         }
         self.update_and_get_status();
+    }
+
+    pub fn delete_all_navdata(&self) {
+        let path = Path::new("\\work/navdata");
+        if util::path_exists(path) {
+            let _ = util::delete_folder_recursively(path);
+        }
     }
 }
