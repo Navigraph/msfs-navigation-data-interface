@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Flags needed to get sqlite3 to work in the sim
 export LIBSQLITE3_FLAGS="-DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_SHARED_CACHE -D_LARGEFILE64_SOURCE"
 

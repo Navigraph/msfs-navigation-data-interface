@@ -1,0 +1,27 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build WASM module
+        run: |
+          ./src/navdata_updater/scripts/run_docker_cmd.sh ./scripts/build.sh
+      - name: Copy WASM to aircraft sample
+        run: |
+          cp ./src/navdata_updater/out/navdata_updater.wasm ./samples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navdata_Updater_Aircraft/panel/navdata_updater.wasm
+      - name: Upload WASM module to GitHub
+        uses: actions/upload-artifact@v2
+        with:
+          name: navdata_updater.wasm
+          path: ./src/navdata_updater/out/navdata_updater.wasm
+      - name: Upload sample to GitHub
+        uses: actions/upload-artifact@v2
+        with:
+          name: aircraft_sample
+          path: ./samples/aircraft/
