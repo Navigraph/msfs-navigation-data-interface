@@ -5,7 +5,8 @@ _PackageInt
 tsconfig.tsbuildinfo
 .vs
 Sources/Code/WASM/NavdataUpdater/MSFS/Debug
-PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/DataUpdaterSample
+samples\aircraft\PackageSources\html_ui\Pages\VCockpit\Instruments\Navigraph\DataUpdaterSample
+samples\aircraft\PackageSources\SimObjects\Airplanes\Navigraph_Navdata_Updater_Aircraft\panel\navdata_updater.wasm
 
 # Rust
 # will have compiled files and executables
@@ -21,3 +22,5 @@ Cargo.lock
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
+
+.vscode

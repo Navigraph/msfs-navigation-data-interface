@@ -1,0 +1,21 @@
+[package]
+name = "navdata_updater"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.65"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = true
+strip = true
+
+[dependencies]
+msfs = { git = "https://github.com/flybywiresim/msfs-rs.git", rev = "b438d3e" }
+serde = "1.0.190"
+serde_json = "1.0.108"
+rusqlite = { git = "https://github.com/navigraph/rusqlite", rev = "719640f", features = ["bundled", "wasm32-wasi-vfs"] }
+zip = { version = "0.6.4", default-features = false, features = ["deflate"] }

@@ -1,0 +1,1 @@
+.\scripts\run_docker_cmd.bat ./scripts/build.sh
