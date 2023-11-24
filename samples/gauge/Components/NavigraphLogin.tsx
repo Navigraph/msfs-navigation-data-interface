@@ -39,6 +39,14 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       const percent = Math.round((args.unzipped / args.total) * 100)
       this.navdataTextRef.instance.textContent = `Unzipping files... ${percent}% complete`
     })
+
+    this.commBusListener.on("NAVIGRAPH_DownloadFailed", (jsonArgs: string) => {
+      const args = JSON.parse(jsonArgs)
+      console.error("WASM download failed", args)
+      this.navdataTextRef.instance.textContent = `Download failed: ${args.error}`
+      // set style to red
+      this.navdataTextRef.instance.style.color = "red"
+    })
   }
 
   public render(): VNode {
