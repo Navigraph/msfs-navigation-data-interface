@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "npx rollup -c",
-    "dev": "npx rollup -cw",
+    "build": "cross-env DEBUG=false npx rollup -c",
+    "dev": "cross-env DEBUG=true npx rollup -cw",
     "format": "prettier --write .",
     "lint": "eslint --ext ts,tsx ."
   },
@@ -19,6 +19,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@typescript-eslint/eslint-plugin": "^6.9.0",
     "@typescript-eslint/parser": "^6.9.0",
+    "cross-env": "^7.0.3",
     "esbuild": "^0.19.5",
     "eslint": "^8.52.0",
     "eslint-config-prettier": "^9.0.0",
