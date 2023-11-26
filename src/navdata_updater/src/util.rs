@@ -15,9 +15,19 @@ pub fn get_path_type(path: &Path) -> PathType {
     if file_res.is_ok() {
         return PathType::File;
     }
-    let dir_res = fs::read_dir(path);
-    if dir_res.is_ok() {
-        return PathType::Directory;
+    let mut dir_res = match fs::read_dir(path) {
+        Ok(dir_res) => dir_res,
+        Err(_) => {
+            return PathType::DoesNotExist;
+        }
+    };
+
+    let next = dir_res.next();
+
+    if next.is_some() {
+        if next.unwrap().is_ok() {
+            return PathType::Directory;
+        }
     }
     PathType::DoesNotExist
 }

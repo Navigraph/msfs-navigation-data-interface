@@ -158,7 +158,7 @@ impl NavdataDownloader {
             ));
             return;
         }
-        
+
         let path = PathBuf::from(format!("\\work/navdata/{}", folder));
         // If the directory exists, delete it
         if util::path_exists(&path) {

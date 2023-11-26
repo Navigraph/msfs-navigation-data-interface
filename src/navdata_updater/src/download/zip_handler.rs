@@ -44,6 +44,14 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
                 None => continue,
             };
 
+            // Check how many times "." appears in the file name
+            let dot_count = outpath.to_str().unwrap_or_default().matches('.').count();
+            // Skip if there are more than 1 "." in the file name (MSFS crashes if we try to extract these files for some reason)
+            if dot_count > 1 {
+                self.current_file_index += 1;
+                continue;
+            }
+
             if (*file.name()).ends_with('/') {
                 fs::create_dir_all(outpath).unwrap();
             } else {
