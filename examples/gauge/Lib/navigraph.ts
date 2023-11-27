@@ -11,7 +11,7 @@ const config: NavigraphApp = {
 }
 
 if (!config.clientId || config.clientId.includes("<")) {
-  alert("Please add your client credentials in lib/navigraph.ts.")
+  console.error("Please add your client credentials in an .env file in the root of the project.")
 }
 
 initializeApp(config)
