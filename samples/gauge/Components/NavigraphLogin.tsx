@@ -31,6 +31,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
     this.commBusListener.on("NAVIGRAPH_NavdataDownloaded", () => {
       console.info("WASM downloaded navdata")
       this.navdataTextRef.instance.textContent = "Navdata downloaded!"
+      this.navdataTextRef.instance.style.color = "white"
     })
 
     this.commBusListener.on("NAVIGRAPH_UnzippedFilesRemaining", (jsonArgs: string) => {
@@ -38,6 +39,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       console.info("WASM unzipping files", args)
       const percent = Math.round((args.unzipped / args.total) * 100)
       this.navdataTextRef.instance.textContent = `Unzipping files... ${percent}% complete`
+      this.navdataTextRef.instance.style.color = "white"
     })
 
     this.commBusListener.on("NAVIGRAPH_DownloadFailed", (jsonArgs: string) => {
@@ -137,6 +139,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
           }),
         )
         this.navdataTextRef.instance.textContent = "Downloading navdata..."
+        this.navdataTextRef.instance.style.color = "white"
       })
       .catch(e => console.error(e))
   }
