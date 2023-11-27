@@ -24,3 +24,5 @@ Cargo.lock
 *.pdb
 
 .vscode
+.env
+*.local

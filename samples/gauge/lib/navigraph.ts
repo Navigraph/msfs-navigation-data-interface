@@ -5,9 +5,13 @@ import { getChartsAPI } from "@navigraph/charts"
 import { getPackagesAPI } from "@navigraph/packages"
 
 const config: NavigraphApp = {
-  clientId: "YOUR_CLIENT_ID",
-  clientSecret: "YOUR_CLIENT_SECRET",
+  clientId: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET,
   scopes: [Scope.FMSDATA],
+}
+
+if (!config.clientId || config.clientId.includes("<")) {
+  alert("Please add your client credentials in lib/navigraph.ts.")
 }
 
 initializeApp(config)
