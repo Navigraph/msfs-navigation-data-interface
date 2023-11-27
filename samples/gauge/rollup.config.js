@@ -25,8 +25,8 @@ export default {
     resolve(),
     esbuild({ target: "es2017" }),
     replace({
-      "process.env.CLIENT_ID": JSON.stringify(process.env.CLIENT_ID),
-      "process.env.CLIENT_SECRET": JSON.stringify(process.env.CLIENT_SECRET),
+      "process.env.NG_CLIENT_ID": JSON.stringify(process.env.NG_CLIENT_ID),
+      "process.env.NG_CLIENT_SECRET": JSON.stringify(process.env.NG_CLIENT_SECRET),
       preventAssignment: true,
     }),
     copy({

@@ -2,7 +2,7 @@
 
 declare namespace NodeJS {
   interface ProcessEnv {
-    CLIENT_ID: string
-    CLIENT_SECRET: string
+    NG_CLIENT_ID: string
+    NG_CLIENT_SECRET: string
   }
 }
