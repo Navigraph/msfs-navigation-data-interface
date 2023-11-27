@@ -1,8 +1,8 @@
 import { DataStore } from "@microsoft/msfs-sdk"
-import { initializeApp, NavigraphApp, Scope } from "@navigraph/app"
-import { getAuth } from "@navigraph/auth"
-import { getChartsAPI } from "@navigraph/charts"
-import { getPackagesAPI } from "@navigraph/packages"
+import { initializeApp, NavigraphApp, Scope } from "navigraph/app"
+import { getAuth } from "navigraph/auth"
+import { getChartsAPI } from "navigraph/charts"
+import { getPackagesAPI } from "navigraph/packages"
 
 const config: NavigraphApp = {
   clientId: process.env.CLIENT_ID,
