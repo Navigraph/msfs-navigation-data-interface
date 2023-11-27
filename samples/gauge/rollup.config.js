@@ -27,6 +27,7 @@ export default {
     replace({
       "process.env.CLIENT_ID": JSON.stringify(process.env.CLIENT_ID),
       "process.env.CLIENT_SECRET": JSON.stringify(process.env.CLIENT_SECRET),
+      preventAssignment: true,
     }),
     copy({
       targets: [
