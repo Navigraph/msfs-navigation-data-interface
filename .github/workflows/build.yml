@@ -11,9 +11,9 @@ jobs:
         uses: actions/checkout@v2
       - name: Build WASM module
         run: |
-          ./src/navdata_updater/scripts/run_docker_cmd.sh ./scripts/build.sh
+          ./src/wasm_navdata_interface/scripts/run_docker_cmd.sh ./scripts/build.sh
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v2
         with:
-          name: navdata_updater.wasm
-          path: ./src/navdata_updater/out/navdata_updater.wasm
+          name: navdata_interface.wasm
+          path: ./src/wasm_navdata_interface/out/navdata_interface.wasm

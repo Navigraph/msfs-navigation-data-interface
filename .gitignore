@@ -4,9 +4,9 @@ _PackageInt
 .rollup.cache
 tsconfig.tsbuildinfo
 .vs
-examples/aircraft/PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/DataUpdaterSample
-examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navdata_Updater_Aircraft/panel/navdata_updater.wasm
-src/navdata_updater/out
+examples/aircraft/PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/NavdataInterfaceSample
+examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navdata_Interface_Aircraft/panel/navdata_interface.wasm
+src/wasm_navdata_interface/out
 
 # Rust
 # will have compiled files and executables

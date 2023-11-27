@@ -2,7 +2,7 @@
 <AssetPackage Version="0.1.0">
 	<ItemSettings>
 		<ContentType>AIRCRAFT</ContentType>
-		<Title>Navigraph Updater Sample Aircraft</Title>
+		<Title>Navigraph Navdata Interface Sample Aircraft</Title>
 		<Manufacturer>My Manufacturer</Manufacturer>
 		<Creator>Navigraph</Creator>
 	</ItemSettings>
@@ -16,8 +16,8 @@
 			<Flags>
 				<FSXCompatibility>false</FSXCompatibility>
 			</Flags>
-			<AssetDir>PackageDefinitions\navigraph-aircraft-updater-sample\ContentInfo\</AssetDir>
-			<OutputDir>ContentInfo\navigraph-aircraft-updater-sample\</OutputDir>
+			<AssetDir>PackageDefinitions\navigraph-aircraft-navdata-interface-sample\ContentInfo\</AssetDir>
+			<OutputDir>ContentInfo\navigraph-aircraft-navdata-interface-sample\</OutputDir>
 		</AssetGroup>
 		<AssetGroup Name="Data">
 			<Type>Copy</Type>
@@ -32,8 +32,8 @@
 			<Flags>
 				<FSXCompatibility>false</FSXCompatibility>
 			</Flags>
-			<AssetDir>PackageSources\SimObjects\Airplanes\Navigraph_Navdata_Updater_Aircraft\</AssetDir>
-			<OutputDir>SimObjects\Airplanes\Navigraph_Navdata_Updater_Aircraft\</OutputDir>
+			<AssetDir>PackageSources\SimObjects\Airplanes\Navigraph_Navdata_Interface_Aircraft\</AssetDir>
+			<OutputDir>SimObjects\Airplanes\Navigraph_Navdata_Interface_Aircraft\</OutputDir>
 		</AssetGroup>
 		<AssetGroup Name="html_ui">
 			<Type>Copy</Type>
@@ -45,4 +45,3 @@
 		</AssetGroup>
 	</AssetGroups>
 </AssetPackage>
-

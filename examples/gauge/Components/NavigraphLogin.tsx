@@ -44,9 +44,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
     this.commBusListener.on("NAVIGRAPH_DownloadFailed", (jsonArgs: string) => {
       const args = JSON.parse(jsonArgs)
-      console.error("WASM download failed", args)
       this.navdataTextRef.instance.textContent = `Download failed: ${args.error}`
-      // set style to red
       this.navdataTextRef.instance.style.color = "red"
     })
   }

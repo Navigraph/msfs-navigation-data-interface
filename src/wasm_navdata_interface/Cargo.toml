@@ -1,5 +1,5 @@
 [package]
-name = "navdata_updater"
+name = "navdata_interface"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.65"
