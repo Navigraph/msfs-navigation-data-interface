@@ -25,6 +25,7 @@ pub fn get_path_type(path: &Path) -> PathType {
     let next = dir_res.next();
 
     if next.is_some() {
+        // Safe to unwrap since we know next is some
         if next.unwrap().is_ok() {
             return PathType::Directory;
         }
