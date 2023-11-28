@@ -1,11 +1,12 @@
 use std::rc::Rc;
 
 use crate::download::downloader::NavdataDownloader;
-use msfs::{commbus::*, MSFSEvent};
+use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
 
 pub struct Dispatcher<'a> {
     commbus: CommBus<'a>,
     downloader: Rc<NavdataDownloader>,
+    delta_time: std::time::Duration,
 }
 
 impl<'a> Dispatcher<'a> {
@@ -13,6 +14,7 @@ impl<'a> Dispatcher<'a> {
         Dispatcher {
             commbus: CommBus::default(),
             downloader: Rc::new(NavdataDownloader::new()),
+            delta_time: std::time::Duration::from_secs(0),
         }
     }
 
@@ -21,8 +23,8 @@ impl<'a> Dispatcher<'a> {
             MSFSEvent::PostInitialize => {
                 self.handle_initialized();
             }
-            MSFSEvent::PreUpdate => {
-                self.handle_update();
+            MSFSEvent::PreDraw(data) => {
+                self.handle_update(data);
             }
             MSFSEvent::PreKill => {
                 self.commbus.unregister_all();
@@ -33,7 +35,6 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn handle_initialized(&mut self) {
-        CommBus::call("NAVIGRAPH_Initialized", "", CommBusBroadcastFlags::All);
         {
             let captured_downloader = self.downloader.clone();
             self.commbus
@@ -60,8 +61,16 @@ impl<'a> Dispatcher<'a> {
         }
     }
 
-    fn handle_update(&mut self) {
-        // update unzip
+    fn handle_update(&mut self, data: &sGaugeDrawData) {
+        // Accumulate delta time for heartbeat
+        self.delta_time += data.delta_time();
+
+        // Send heartbeat every 5 seconds
+        if self.delta_time >= std::time::Duration::from_secs(5) {
+            CommBus::call("NAVIGRAPH_Heartbeat", "", CommBusBroadcastFlags::All);
+            self.delta_time = std::time::Duration::from_secs(0);
+        }
+
         self.downloader.on_update();
     }
 

@@ -21,6 +21,8 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
   private commBusListener: ViewListener.ViewListener
 
+  private wasmInitialized = false
+
   constructor(props: NavigraphLoginProps) {
     super(props)
 
@@ -28,24 +30,28 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       console.info("JS_LISTENER_COMM_BUS registered")
     })
 
+    this.commBusListener.on("NAVIGRAPH_Heartbeat", () => {
+      if (!this.wasmInitialized) {
+        this.wasmInitialized = true
+        console.log("WASM initialized")
+      }
+    })
+
     this.commBusListener.on("NAVIGRAPH_NavdataDownloaded", () => {
       console.info("WASM downloaded navdata")
-      this.navdataTextRef.instance.textContent = "Navdata downloaded!"
-      this.navdataTextRef.instance.style.color = "white"
+      this.displayMessage("Navdata downloaded")
     })
 
     this.commBusListener.on("NAVIGRAPH_UnzippedFilesRemaining", (jsonArgs: string) => {
       const args = JSON.parse(jsonArgs)
       console.info("WASM unzipping files", args)
       const percent = Math.round((args.unzipped / args.total) * 100)
-      this.navdataTextRef.instance.textContent = `Unzipping files... ${percent}% complete`
-      this.navdataTextRef.instance.style.color = "white"
+      this.displayMessage(`Unzipping files... ${percent}% complete`)
     })
 
     this.commBusListener.on("NAVIGRAPH_DownloadFailed", (jsonArgs: string) => {
       const args = JSON.parse(jsonArgs)
-      this.navdataTextRef.instance.textContent = `Download failed: ${args.error}`
-      this.navdataTextRef.instance.style.color = "red"
+      this.displayError(args.error)
     })
   }
 
@@ -77,7 +83,9 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   public onAfterRender(node: VNode): void {
     super.onAfterRender(node)
 
-    this.loginButtonRef.instance.addEventListener("click", () => this.handleClick().catch(e => console.error(e)))
+    this.loginButtonRef.instance.addEventListener("click", () =>
+      this.handleClick().catch(e => this.displayError(e.message)),
+    )
     this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
 
     AuthService.user.sub(user => {
@@ -85,12 +93,12 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
         this.qrCodeRef.instance.src = ""
         this.qrCodeRef.instance.style.display = "none"
         this.loginButtonRef.instance.textContent = "Log out"
-        this.textRef.instance.textContent = `Welcome, ${user.preferred_username}`
+        this.displayMessage(`Welcome, ${user.preferred_username}`)
 
         this.handleLogin()
       } else {
         this.loginButtonRef.instance.textContent = "Sign in"
-        this.textRef.instance.textContent = "Not signed in"
+        this.displayMessage("Not logged in")
       }
     }, true)
   }
@@ -106,7 +114,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
           this.qrCodeRef.instance.style.display = "block"
           console.info(p.verification_uri_complete)
         }
-      }, this.cancelSource.token).catch(e => console.error("Failed to sign in!", e))
+      }, this.cancelSource.token).catch(e => this.displayError(e.message))
     }
   }
 
@@ -128,17 +136,30 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       .then(pkg => {
         const url = pkg.file.url
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        this.commBusListener.call(
-          "COMM_BUS_WASM_CALLBACK",
-          "NAVIGRAPH_DownloadNavdata",
-          JSON.stringify({
-            url,
-            folder: pkg.format,
-          }),
-        )
-        this.navdataTextRef.instance.textContent = "Downloading navdata..."
-        this.navdataTextRef.instance.style.color = "white"
+        if (this.wasmInitialized) {
+          this.commBusListener.call(
+            "COMM_BUS_WASM_CALLBACK",
+            "NAVIGRAPH_DownloadNavdata",
+            JSON.stringify({
+              url,
+              folder: pkg.format,
+            }),
+          )
+          this.displayMessage("Downloading navdata...")
+        } else {
+          this.displayError("WASM not initialized")
+        }
       })
-      .catch(e => console.error(e))
+      .catch(e => this.displayError(e.message))
+  }
+
+  private displayMessage(message: string) {
+    this.navdataTextRef.instance.textContent = message
+    this.navdataTextRef.instance.style.color = "white"
+  }
+
+  private displayError(error: string) {
+    this.navdataTextRef.instance.textContent = error
+    this.navdataTextRef.instance.style.color = "red"
   }
 }
