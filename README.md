@@ -18,7 +18,7 @@ Here's an overview on the structure of this repository, which is designed to be 
 
 ## Including in Your Aircraft
 
-1. You'll need to either build the WASM module yourself (not recommended, but documented further down) or download it from [the latest release](https://github.com/Navigraph/msfs-navdata-interface/releases).
+1. You'll need to either build the WASM module yourself (not recommended, but documented further down) or download it from [the latest release](https://github.com/Navigraph/msfs-navdata-interface/releases) (alternatively you can download it off of a commit by looking at the uploaded artifacts).
 2. Add the WASM module into your `panel` folder in `PackageSources`
 3. Add the following entry into `panel.cfg` (make sure to replace `NN` with the proper `VCockpit` ID):
    ```
