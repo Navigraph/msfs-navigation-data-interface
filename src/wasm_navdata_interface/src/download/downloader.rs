@@ -170,15 +170,22 @@ impl NavdataDownloader {
         }
         // Safe to unwrap since we already checked if it was an error
         let json = json_result.unwrap();
-        let url = json["url"].as_str().unwrap_or_default();
+        let url = json["url"].as_str().unwrap_or_default().to_owned();
 
         // Check if json has "folder"
         let folder = json["folder"].as_str().unwrap_or_default().to_owned();
 
+        // Make sure we have both a url and a folder
+        if url.is_empty() || folder.is_empty() {
+            let mut status = self.status.borrow_mut();
+            *status = DownloadStatus::Failed("URL or folder is empty".to_string());
+            return;
+        }
+
         // Create the request
         let captured_self = self.clone();
         println!("[WASM] Creating request");
-        match NetworkRequestBuilder::new(url)
+        match NetworkRequestBuilder::new(&url)
             .unwrap()
             .with_callback(move |request, status_code| {
                 captured_self.request_finished_callback(request, status_code, folder)
