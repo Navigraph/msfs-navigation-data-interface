@@ -1,6 +1,6 @@
 # Navigraph Navdata Interface in MSFS
 
-This is a barebones implementation to be able to download up-to-date Navigraph navdata into the sim (more specifically into the `work` folder of the aircraft).
+This is a barebones implementation to be able to download up-to-date Navigraph navdata into MSFS (more specifically into the `work` folder of the aircraft).
 
 Documentation on the events used on the CommBus is located [here](/DOCS.md)
 

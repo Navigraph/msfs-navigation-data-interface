@@ -14,7 +14,7 @@ jobs:
       - name: Build WASM module
         run: |
           ./src/wasm_navdata_interface/scripts/run_docker_cmd.sh ./scripts/build.sh
-      - name: Release
+      - name: Pre-Release
         uses: softprops/action-gh-release@v1
         with:
           files: ./src/wasm_navdata_interface/out/navdata_interface.wasm
