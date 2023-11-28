@@ -2,6 +2,8 @@
 
 This is a barebones implementation to be able to download up-to-date Navigraph navdata into the sim (more specifically into the `work` folder of the aircraft).
 
+Documentation on the events used on the CommBus is located [here](/DOCS.md)
+
 ## Repository Structure
 
 Here's an overview on the structure of this repository, which is designed to be as simple as possible to use
@@ -27,7 +29,6 @@ Here's an overview on the structure of this repository, which is designed to be 
    htmlgauge00=WasmInstrument/WasmInstrument.html?wasm_module=navdata_interface.wasm&wasm_gauge=navdata_interface,0,0,1,1
    ```
    - Note that if you already have a `VCockpit` with `NO_TEXTURE` you can just add another `htmlgauge` to it, while making sure to increase the index
-4. Everything is set! All you need to do now is make sure you provide the module with a proper download link. More on that [here](/DOCS.md)
 
 ## Building the Sample Aircraft
 

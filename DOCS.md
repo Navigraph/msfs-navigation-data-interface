@@ -1,6 +1,6 @@
 # Overview
 
-This document outlines the events used for communication with the WASM module. All data exchanged via these events is in the form of JSON strings. Remember to correctly stringify and parse this data for proper communication!
+This document outlines the events used for communication with the WASM module. All data exchanged via these events is in the form of JSON strings over the CommBus API. Remember to correctly stringify and parse this data for proper communication!
 
 ## Listener Events
 
