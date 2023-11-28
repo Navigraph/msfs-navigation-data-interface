@@ -1,7 +1,10 @@
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*"
+      - "!v*-rc*"
+      - "!v*-alpha*"
+      - "!v*-beta*"
 
 jobs:
   build:
@@ -12,8 +15,7 @@ jobs:
       - name: Build WASM module
         run: |
           ./src/wasm_navdata_interface/scripts/run_docker_cmd.sh ./scripts/build.sh
-      - name: Upload WASM module to GitHub
-        uses: actions/upload-artifact@v2
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: navdata_interface.wasm
-          path: ./src/wasm_navdata_interface/out/navdata_interface.wasm
+          files: ./src/wasm_navdata_interface/out/navdata_interface.wasm
