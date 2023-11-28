@@ -60,7 +60,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       <div class="auth-container">
         <div class="horizontal">
           <div class="vertical">
-            <div ref={this.textRef} />
+            <div ref={this.textRef}>Loading</div>
             <div ref={this.loginButtonRef} class="button" />
             <div ref={this.navdataTextRef} />
             <img ref={this.qrCodeRef} class="qr-code" />
@@ -93,12 +93,12 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
         this.qrCodeRef.instance.src = ""
         this.qrCodeRef.instance.style.display = "none"
         this.loginButtonRef.instance.textContent = "Log out"
-        this.displayMessage(`Welcome, ${user.preferred_username}`)
+        this.textRef.instance.textContent = `Welcome, ${user.preferred_username}`
 
         this.handleLogin()
       } else {
         this.loginButtonRef.instance.textContent = "Sign in"
-        this.displayMessage("Not logged in")
+        this.textRef.instance.textContent = "Not logged in"
       }
     }, true)
   }
