@@ -17,3 +17,8 @@ jobs:
         with:
           name: navdata_interface.wasm
           path: ./src/wasm_navdata_interface/out/navdata_interface.wasm
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ./src/wasm_navdata_interface/out/navdata_interface.wasm
