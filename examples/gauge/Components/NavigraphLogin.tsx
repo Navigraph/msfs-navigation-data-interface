@@ -19,15 +19,15 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
   private cancelSource = CancelToken.source()
 
-  private commBusListener: ViewListener.ViewListener
+  private commBusListener: CommBusListener
 
   private wasmInitialized = false
 
   constructor(props: NavigraphLoginProps) {
     super(props)
 
-    this.commBusListener = RegisterViewListener("JS_LISTENER_COMM_BUS", () => {
-      console.info("JS_LISTENER_COMM_BUS registered")
+    this.commBusListener = RegisterCommBusListener(() => {
+      console.info("CommBus listener registered")
     })
 
     this.commBusListener.on("NAVIGRAPH_Heartbeat", () => {
@@ -137,8 +137,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
         const url = pkg.file.url
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         if (this.wasmInitialized) {
-          this.commBusListener.call(
-            "COMM_BUS_WASM_CALLBACK",
+          this.commBusListener.callWasm(
             "NAVIGRAPH_DownloadNavdata",
             JSON.stringify({
               url,
