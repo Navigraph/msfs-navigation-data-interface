@@ -51,12 +51,12 @@ Callable events are to be actively invoked to interact with the WASM module.
 
 - **Type**: Callable
 - **Description**: Triggers the download of a navdata package. **Note: there will be a temporary freeze and drop in frames (this can be mitigated by setting download options) due to the downloading and unzipping process. Once it's complete, performance returns to normal**
-- **Data**: JSON string with "url" (package URL) and "folder" (target extraction directory under `work/navdata/`) keys.
+- **Data**: JSON string with "url" (package URL) and "folder" (target extraction directory under `work/{FOLDER}`) keys.
   - **Example**:
     ```json
     {
       "url": "totallyvalidpackageurl",
-      "folder": "avionics"
+      "folder": "navdata/avionics"
     }
     ```
 

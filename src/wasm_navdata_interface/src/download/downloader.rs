@@ -213,7 +213,7 @@ impl NavdataDownloader {
             return;
         }
 
-        let path = PathBuf::from(format!("\\work/navdata/{}", folder));
+        let path = PathBuf::from(format!("\\work/{}", folder));
         // If the directory exists, delete it
         if util::path_exists(&path) {
             match util::delete_folder_recursively(&path) {
