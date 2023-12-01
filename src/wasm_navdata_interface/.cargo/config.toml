@@ -3,6 +3,8 @@ rustflags = [
   "-Clink-arg=--export-table",
   "-Clink-arg=--export=malloc",
   "-Clink-arg=--export=free",
+  "-Clink-arg=-L/usr/lib/llvm-15/lib/clang/15.0.7/lib/wasi",
+  "-Clink-arg=-lclang_rt.builtins-wasm32"
 ]
 
 [build]
