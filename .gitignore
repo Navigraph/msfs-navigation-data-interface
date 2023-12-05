@@ -26,3 +26,4 @@ Cargo.lock
 .vscode
 .env
 *.local
+.DS_Store
