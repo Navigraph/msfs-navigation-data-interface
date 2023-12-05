@@ -7,7 +7,7 @@ import { getPackagesAPI } from "navigraph/packages"
 const config: NavigraphApp = {
   clientId: process.env.NG_CLIENT_ID,
   clientSecret: process.env.NG_CLIENT_SECRET,
-  scopes: [Scope.FMSDATA],
+  scopes: [Scope.FMSDATA, Scope.CHARTS],
 }
 
 if (!config.clientId || config.clientId.includes("<")) {
