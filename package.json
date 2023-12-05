@@ -1,0 +1,7 @@
+{
+  "name": "msfs-navdata-interface",
+  "workspaces": [
+    "src/*",
+    "examples/*"
+  ]
+}
