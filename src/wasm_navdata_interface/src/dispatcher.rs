@@ -77,7 +77,7 @@ impl<'a> Dispatcher<'a> {
 
     fn handle_initialized(&mut self) {
         {
-            // TODO: why do we need to clone twice?
+            // We need to clone twice because we need to move the queue into the closure and then clone it again whenever it gets called
             let captured_queue = Rc::clone(&self.queue);
             self.commbus
                 .register("NAVIGRAPH_CallFunction", move |args| {
@@ -99,78 +99,7 @@ impl<'a> Dispatcher<'a> {
         }
 
         // Process queue
-        let mut queue = self.queue.borrow_mut();
-        if !queue.is_empty() {
-            let requests_to_update: Vec<Rc<RefCell<Request>>> = queue
-                .iter()
-                .filter(|request| request.borrow().status == RequestStatus::NotStarted)
-                .cloned()
-                .collect();
-
-            for request in requests_to_update {
-                {
-                    let mut mutable_request = request.borrow_mut();
-                    mutable_request.status = RequestStatus::InProgress;
-                }
-
-                let request_type = {
-                    let borrowed_request = request.borrow();
-                    borrowed_request.request_type.clone()
-                };
-                match request_type {
-                    RequestType::DownloadNavdata => {
-                        self.downloader.download(Rc::clone(&request));
-                    }
-                    RequestType::SetDownloadOptions => {
-                        self.downloader.set_download_options(Rc::clone(&request));
-                    }
-                    RequestType::DeleteAllNavdata => {
-                        NavdataDownloader::delete_all_navdata(Rc::clone(&request));
-                    }
-                    RequestType::SetActiveDatabase => {
-                        self.database.set_active_database(Rc::clone(&request));
-                    }
-                    RequestType::ExecuteSQLQuery => {
-                        self.database.execute_sql_query(Rc::clone(&request));
-                    }
-                }
-            }
-
-            let collected_queue = queue.clone();
-            for request in collected_queue.iter() {
-                let borrowed_request = request.borrow();
-
-                // At this point, every request should be in progress or completed (success or failure)
-                if borrowed_request.status == RequestStatus::InProgress {
-                    continue;
-                }
-
-                let mut json = serde_json::json!({
-                    "id": borrowed_request.id,
-                });
-                if let RequestStatus::Success(ref request_data) = borrowed_request.status {
-                    let request_data = match request_data {
-                        Some(data) => data.clone(),
-                        None => serde_json::json!({}),
-                    };
-                    println!("Request {} succeeded", borrowed_request.id);
-                    json["status"] = "success".into();
-                    json["data"] = request_data.into();
-                } else if let RequestStatus::Failure(ref request_error) = borrowed_request.status {
-                    println!("Request failed: {}", request_error);
-                    json["status"] = "error".into();
-                    json["message"] = request_error.clone().into();
-                }
-                if let Ok(serialized_json) = serde_json::to_string(&json) {
-                    CommBus::call(
-                        "NAVIGRAPH_FunctionResult",
-                        &serialized_json,
-                        CommBusBroadcastFlags::All,
-                    );
-                }
-                queue.retain(|r| r.borrow().id != borrowed_request.id);
-            }
-        }
+        self.process_queue();
 
         self.downloader.on_update();
     }
@@ -193,6 +122,55 @@ impl<'a> Dispatcher<'a> {
         }
     }
 
+    fn process_queue(&mut self) {
+        let mut queue = self.queue.borrow_mut();
+
+        // Filter and update the status of the requests that haven't started yet
+        for request in queue.iter()
+            .filter(|request| request.borrow().status == RequestStatus::NotStarted)
+            .cloned() 
+        {
+            request.borrow_mut().status = RequestStatus::InProgress;
+
+            let request_type = request.borrow().request_type.clone();
+            match request_type {
+                RequestType::DownloadNavdata => self.downloader.download(Rc::clone(&request)),
+                RequestType::SetDownloadOptions => self.downloader.set_download_options(Rc::clone(&request)),
+                RequestType::DeleteAllNavdata => NavdataDownloader::delete_all_navdata(Rc::clone(&request)),
+                RequestType::SetActiveDatabase => self.database.set_active_database(Rc::clone(&request)),
+                RequestType::ExecuteSQLQuery => self.database.execute_sql_query(Rc::clone(&request)),
+            }
+        }
+
+        // Process completed requests
+        queue.retain(|request| {
+            let borrowed_request = request.borrow();
+            if borrowed_request.status == RequestStatus::InProgress {
+                return true;
+            }
+
+            let mut json = serde_json::json!({ "id": borrowed_request.id });
+            match borrowed_request.status {
+                RequestStatus::Success(ref data) => {
+                    println!("Request {} succeeded", borrowed_request.id);
+                    json["status"] = "success".into();
+                    json["data"] = data.clone().unwrap_or_else(|| serde_json::json!({})).into();
+                },
+                RequestStatus::Failure(ref error) => {
+                    println!("Request failed: {}", error);
+                    json["status"] = "error".into();
+                    json["message"] = error.clone().into();
+                },
+                _ => (),
+            }
+
+            if let Ok(serialized_json) = serde_json::to_string(&json) {
+                CommBus::call("NAVIGRAPH_FunctionResult", &serialized_json, CommBusBroadcastFlags::All);
+            }
+            false
+        });
+    }
+
     fn add_to_queue(
         queue: Rc<RefCell<Vec<Rc<RefCell<Request>>>>>,
         args: &str,
@@ -208,7 +186,7 @@ impl<'a> Dispatcher<'a> {
         let request_type = RequestType::from_str(request).ok_or("Failed to parse request type")?;
 
         queue.borrow_mut().push(Rc::new(RefCell::new(Request {
-            request_type: request_type,
+            request_type,
             id: id.to_string(),
             args: json_result,
             status: RequestStatus::NotStarted,
