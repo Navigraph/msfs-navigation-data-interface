@@ -1,5 +1,6 @@
 mod dispatcher;
 mod download;
+mod query;
 mod util;
 
 #[msfs::gauge(name=navdata_interface)]

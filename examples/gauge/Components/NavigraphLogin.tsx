@@ -4,6 +4,7 @@ import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
 import "./NavigraphLogin.css"
 import { Dropdown } from "./Dropdown"
+import { NavigraphNavdataSDK } from "@navigraph/navdata-sdk"
 
 interface NavigraphLoginProps extends ComponentProps {
   bus: EventBus
@@ -16,43 +17,29 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   private readonly qrCodeRef = FSComponent.createRef<HTMLImageElement>()
   private readonly dropdownRef = FSComponent.createRef<Dropdown>()
   private readonly downloadButtonRef = FSComponent.createRef<HTMLButtonElement>()
+  private readonly executeButtonRef = FSComponent.createRef<HTMLButtonElement>()
+  private readonly inputRef = FSComponent.createRef<HTMLInputElement>()
 
   private cancelSource = CancelToken.source()
 
-  private commBusListener: CommBusListener
-
-  private wasmInitialized = false
+  private navdataSdk: NavigraphNavdataSDK
 
   constructor(props: NavigraphLoginProps) {
     super(props)
 
-    this.commBusListener = RegisterCommBusListener(() => {
-      console.info("CommBus listener registered")
-    })
+    this.navdataSdk = new NavigraphNavdataSDK()
 
-    this.commBusListener.on("NAVIGRAPH_Heartbeat", () => {
-      if (!this.wasmInitialized) {
-        this.wasmInitialized = true
-        console.log("WASM initialized")
-      }
-    })
+    // this.commBusListener.on("NAVIGRAPH_UnzippedFilesRemaining", (jsonArgs: string) => {
+    //   const args = JSON.parse(jsonArgs)
+    //   console.info("WASM unzipping files", args)
+    //   const percent = Math.round((args.unzipped / args.total) * 100)
+    //   this.displayMessage(`Unzipping files... ${percent}% complete`)
+    // })
 
-    this.commBusListener.on("NAVIGRAPH_NavdataDownloaded", () => {
-      console.info("WASM downloaded navdata")
-      this.displayMessage("Navdata downloaded")
-    })
-
-    this.commBusListener.on("NAVIGRAPH_UnzippedFilesRemaining", (jsonArgs: string) => {
-      const args = JSON.parse(jsonArgs)
-      console.info("WASM unzipping files", args)
-      const percent = Math.round((args.unzipped / args.total) * 100)
-      this.displayMessage(`Unzipping files... ${percent}% complete`)
-    })
-
-    this.commBusListener.on("NAVIGRAPH_DownloadFailed", (jsonArgs: string) => {
-      const args = JSON.parse(jsonArgs)
-      this.displayError(args.error)
-    })
+    // this.commBusListener.on("NAVIGRAPH_DownloadFailed", (jsonArgs: string) => {
+    //   const args = JSON.parse(jsonArgs)
+    //   this.displayError(args.error)
+    // })
   }
 
   public render(): VNode {
@@ -69,6 +56,10 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
             <Dropdown ref={this.dropdownRef} />
             <div ref={this.downloadButtonRef} class="button">
               Download
+            </div>
+            <input ref={this.inputRef} type="text" id="sql" name="sql" value="SELECT * FROM tbl_airports" class="text-field" />
+            <div ref={this.executeButtonRef} class="button">
+              Execute SQL
             </div>
           </div>
         </div>
@@ -87,6 +78,18 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       this.handleClick().catch(e => this.displayError(e.message)),
     )
     this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
+
+    this.executeButtonRef.instance.addEventListener("click", () => {
+      console.log("Executing SQL query")
+      console.time("query");
+      this.navdataSdk.callWasm("NAVIGRAPH_CallFunction", {
+        function: "ExecuteSQLQuery",
+        sql: this.inputRef.instance.value,
+      }).then((data) => {
+        console.log(data);
+        console.timeEnd("query");
+      });
+    });
 
     AuthService.user.sub(user => {
       if (user) {
@@ -134,17 +137,26 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
     packages
       .getPackage(this.dropdownRef.instance.getNavdataFormat() as string)
       .then(pkg => {
-        const url = pkg.file.url
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        if (this.wasmInitialized) {
-          this.commBusListener.callWasm(
-            "NAVIGRAPH_DownloadNavdata",
-            JSON.stringify({
-              url,
-              folder: pkg.format,
-            }),
-          )
+        if (this.navdataSdk.getIsInitialized()) {
           this.displayMessage("Downloading navdata...")
+          this.navdataSdk.callWasm(
+            "NAVIGRAPH_CallFunction",
+            {
+              function: "DownloadNavdata",
+              url: pkg.file.url,
+              folder: pkg.format,
+            },
+          ).then(() => {
+            console.info("WASM downloaded navdata")
+            this.displayMessage("Downloaded!")
+            this.displayMessage("Navdata downloaded")
+            this.navdataSdk.callWasm("NAVIGRAPH_CallFunction", {
+              function: "SetActiveDatabase",
+              path: pkg.format
+            }).then(() => {
+              console.info("WASM set active database")
+            });
+          });
         } else {
           this.displayError("WASM not initialized")
         }

@@ -37,3 +37,16 @@
   justify-content: center;
   align-items: center;
 }
+
+
+.text-field {
+  width: fit-content;
+  height: 50px;
+  font-size: x-large;
+  margin-top: 5px;
+  background: white;
+  color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

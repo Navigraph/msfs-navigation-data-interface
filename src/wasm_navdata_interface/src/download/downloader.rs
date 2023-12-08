@@ -6,6 +6,7 @@ use std::rc::Rc;
 
 use msfs::{commbus::*, network::*};
 
+use crate::dispatcher::{Request, RequestStatus};
 use crate::{
     download::zip_handler::{BatchReturn, ZipFileHandler},
     util,
@@ -33,6 +34,7 @@ pub struct NavdataDownloader {
     zip_handler: RefCell<Option<ZipFileHandler<Cursor<Vec<u8>>>>>,
     status: RefCell<DownloadStatus>,
     options: RefCell<DownloadOptions>,
+    request: RefCell<Option<Rc<RefCell<Request>>>>,
 }
 
 impl NavdataDownloader {
@@ -41,6 +43,7 @@ impl NavdataDownloader {
             zip_handler: RefCell::new(None),
             status: RefCell::new(DownloadStatus::NoDownload),
             options: RefCell::new(DownloadOptions { batch_size: 10 }), // default batch size
+            request: RefCell::new(None),
         }
     }
 
@@ -58,17 +61,13 @@ impl NavdataDownloader {
 
         if let Some(message) = failed_message {
             // Send the error message to the JS side
-            let error_message = serde_json::json!({
-                "error": message
-            });
-            if let Ok(data) = serde_json::to_string(&error_message) {
-                println!("[WASM] Sending error message: {}", message);
-                CommBus::call(
-                    "NAVIGRAPH_DownloadFailed",
-                    &data,
-                    CommBusBroadcastFlags::All,
-                );
+            let borrowed_request = self.request.borrow();
+            if (*borrowed_request).is_none() {
+                println!("[WASM] Request is none");
+                return;
             }
+            let mut borrowed_request = borrowed_request.as_ref().unwrap().borrow_mut();
+            borrowed_request.status = RequestStatus::Failure(message.clone());
 
             self.reset_download();
         }
@@ -107,11 +106,13 @@ impl NavdataDownloader {
             match unzip_status {
                 Ok(BatchReturn::Finished) => {
                     println!("[WASM] Finished extracting");
-                    CommBus::call(
-                        "NAVIGRAPH_NavdataDownloaded",
-                        "",
-                        CommBusBroadcastFlags::All,
-                    );
+                    let borrowed_request = self.request.borrow();
+                    if (*borrowed_request).is_none() {
+                        println!("[WASM] Request is none");
+                        return;
+                    }
+                    let mut borrowed_request = borrowed_request.as_ref().unwrap().borrow_mut();
+                    borrowed_request.status = RequestStatus::Success(None);
 
                     self.reset_download();
                 }
@@ -125,51 +126,37 @@ impl NavdataDownloader {
         }
     }
 
-    pub fn set_download_options(self: &Rc<Self>, args: &str) {
-        // Parse the JSON
-        let json_result: Result<serde_json::Value, serde_json::Error> = serde_json::from_str(args);
-        if let Err(err) = json_result {
-            println!("[WASM] Failed to parse JSON: {}", err);
-            return;
-        }
-        // Safe to unwrap since we already checked if it was an error
-        let json = json_result.unwrap();
-        // Get batch size, if it fails to parse then just return
-        let batch_size = match json["batchSize"].as_u64() {
-            Some(batch_size) => batch_size as usize,
-            None => return,
-        };
+    pub fn set_download_options(self: &Rc<Self>, request: Rc<RefCell<Request>>) {
+        {
+            let json = request.borrow().args.clone();
+            // Get batch size, if it fails to parse then just return
+            let batch_size = match json["batchSize"].as_u64() {
+                Some(batch_size) => batch_size as usize,
+                None => return,
+            };
 
-        // Set the options (only batch size for now)
-        let mut options = self.options.borrow_mut();
-        options.batch_size = batch_size;
+            // Set the options (only batch size for now)
+            let mut options = self.options.borrow_mut();
+            options.batch_size = batch_size;
+        }
+        request.borrow_mut().status = RequestStatus::Success(None);
     }
 
-    pub fn download(self: &Rc<Self>, args: &str) {
+    pub fn download(self: &Rc<Self>, request: Rc<RefCell<Request>>) {
         // Silently fail if we are already downloading (maybe we should send an error message?)
         if *self.status.borrow() == DownloadStatus::Downloading {
             println!("[WASM] Already downloading");
             return;
-        }
-
-        // Parse the JSON
-        let json_result: Result<serde_json::Value, serde_json::Error> = serde_json::from_str(args);
-        if json_result.is_ok() {
+        } else {
             // Set our status to downloading (needs to be done in its own scope so that the borrow_mut is dropped)
             let mut status = self.status.borrow_mut();
             *status = DownloadStatus::Downloading;
             println!("[WASM] Downloading");
-        } else {
-            // If we failed to parse the JSON, set our status to failed (read above for why this is in its own scope)
-            let mut status = self.status.borrow_mut();
-            // Safe to unwrap since we already checked if it was an error
-            let error = json_result.err().unwrap();
-            *status = DownloadStatus::Failed(format!("JSON Parsing error from JS: {}", error));
-            println!("[WASM] Failed: {}", error);
-            return;
         }
-        // Safe to unwrap since we already checked if it was an error
-        let json = json_result.unwrap();
+        self.request.borrow_mut().replace(request.clone());
+
+        let json = request.borrow().args.clone();
+
         let url = json["url"].as_str().unwrap_or_default().to_owned();
 
         // Check if json has "folder"
@@ -187,8 +174,8 @@ impl NavdataDownloader {
         println!("[WASM] Creating request");
         match NetworkRequestBuilder::new(&url)
             .unwrap()
-            .with_callback(move |request, status_code| {
-                captured_self.request_finished_callback(request, status_code, folder)
+            .with_callback(move |network_request, status_code| {
+                captured_self.request_finished_callback(network_request, status_code, folder)
             })
             .get()
         {
@@ -305,10 +292,11 @@ impl NavdataDownloader {
         *self.status.borrow_mut() = DownloadStatus::NoDownload;
     }
 
-    pub fn delete_all_navdata(&self) {
+    pub fn delete_all_navdata(request: Rc<RefCell<Request>>) {
         let path = Path::new("\\work/navdata");
         if util::path_exists(path) {
             let _ = util::delete_folder_recursively(path);
         }
+        request.borrow_mut().status = RequestStatus::Success(None);
     }
 }

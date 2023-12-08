@@ -1,5 +1,1 @@
-const navdataSDK = {
-  getAirport: (icao: string) => "nooop",
-};
-
-export default navdataSDK;
+export * from "./navdata_sdk";
