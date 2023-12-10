@@ -3,8 +3,8 @@ import { CancelToken, navigraphRequest } from "navigraph/auth"
 import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
 import "./NavigraphLogin.css"
-import { Dropdown } from "./Dropdown"
 import { NavigraphNavdataSDK } from "@navigraph/navdata-sdk"
+import { Dropdown } from "./Dropdown"
 
 interface NavigraphLoginProps extends ComponentProps {
   bus: EventBus
@@ -57,7 +57,14 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
             <div ref={this.downloadButtonRef} class="button">
               Download
             </div>
-            <input ref={this.inputRef} type="text" id="sql" name="sql" value="SELECT * FROM tbl_airports" class="text-field" />
+            <input
+              ref={this.inputRef}
+              type="text"
+              id="sql"
+              name="sql"
+              value="SELECT * FROM tbl_airports"
+              class="text-field"
+            />
             <div ref={this.executeButtonRef} class="button">
               Execute SQL
             </div>
@@ -81,15 +88,17 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
     this.executeButtonRef.instance.addEventListener("click", () => {
       console.log("Executing SQL query")
-      console.time("query");
-      this.navdataSdk.callWasm("NAVIGRAPH_CallFunction", {
-        function: "ExecuteSQLQuery",
-        sql: this.inputRef.instance.value,
-      }).then((data) => {
-        console.log(data);
-        console.timeEnd("query");
-      });
-    });
+      console.time("query")
+      this.navdataSdk
+        .callWasm("NAVIGRAPH_CallFunction", {
+          function: "ExecuteSQLQuery",
+          sql: this.inputRef.instance.value,
+        })
+        .then(data => {
+          console.log(data)
+          console.timeEnd("query")
+        })
+    })
 
     AuthService.user.sub(user => {
       if (user) {
@@ -139,24 +148,25 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       .then(pkg => {
         if (this.navdataSdk.getIsInitialized()) {
           this.displayMessage("Downloading navdata...")
-          this.navdataSdk.callWasm(
-            "NAVIGRAPH_CallFunction",
-            {
+          this.navdataSdk
+            .callWasm("NAVIGRAPH_CallFunction", {
               function: "DownloadNavdata",
               url: pkg.file.url,
               folder: pkg.format,
-            },
-          ).then(() => {
-            console.info("WASM downloaded navdata")
-            this.displayMessage("Downloaded!")
-            this.displayMessage("Navdata downloaded")
-            this.navdataSdk.callWasm("NAVIGRAPH_CallFunction", {
-              function: "SetActiveDatabase",
-              path: pkg.format
-            }).then(() => {
-              console.info("WASM set active database")
-            });
-          });
+            })
+            .then(() => {
+              console.info("WASM downloaded navdata")
+              this.displayMessage("Downloaded!")
+              this.displayMessage("Navdata downloaded")
+              this.navdataSdk
+                .callWasm("NAVIGRAPH_CallFunction", {
+                  function: "SetActiveDatabase",
+                  path: pkg.format,
+                })
+                .then(() => {
+                  console.info("WASM set active database")
+                })
+            })
         } else {
           this.displayError("WASM not initialized")
         }
