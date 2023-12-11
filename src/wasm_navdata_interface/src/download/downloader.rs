@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use msfs::{commbus::*, network::*};
 
-use crate::dispatcher::{Request, RequestStatus};
+use crate::dispatcher::{Dispatcher, Request, RequestStatus};
 use crate::{
     download::zip_handler::{BatchReturn, ZipFileHandler},
     util,
@@ -14,12 +14,6 @@ use crate::{
 
 pub struct DownloadOptions {
     batch_size: usize,
-}
-
-pub struct DownloadStatistics {
-    pub total_files: usize,
-    pub files_unzipped: usize,
-    pub files_to_unzip: usize,
 }
 
 #[derive(PartialEq, Eq, Clone)]
@@ -86,21 +80,6 @@ impl NavdataDownloader {
 
         // Only proceed if there are zip files to process
         if extract_next_batch {
-            // Send the statistics to the JS side
-            if let Ok(statistics) = self.get_download_statistics() {
-                let data = serde_json::json!({
-                    "total": statistics.total_files,
-                    "unzipped": statistics.files_unzipped,
-                });
-                if let Ok(data) = serde_json::to_string(&data) {
-                    CommBus::call(
-                        "NAVIGRAPH_UnzippedFilesRemaining",
-                        &data,
-                        CommBusBroadcastFlags::All,
-                    );
-                }
-            }
-
             // Unzip the next batch of files
             let unzip_status = self.unzip_batch(self.options.borrow().batch_size);
             match unzip_status {
@@ -128,7 +107,7 @@ impl NavdataDownloader {
 
     pub fn set_download_options(self: &Rc<Self>, request: Rc<RefCell<Request>>) {
         {
-            let json = request.borrow().args.clone();
+            let json = request.borrow().data.clone();
             // Get batch size, if it fails to parse then just return
             let batch_size = match json["batchSize"].as_u64() {
                 Some(batch_size) => batch_size as usize,
@@ -155,7 +134,7 @@ impl NavdataDownloader {
         }
         self.request.borrow_mut().replace(request.clone());
 
-        let json = request.borrow().args.clone();
+        let json = request.borrow().data.clone();
 
         let url = json["url"].as_str().unwrap_or_default().to_owned();
 
@@ -201,24 +180,6 @@ impl NavdataDownloader {
         }
 
         let path = PathBuf::from(format!("\\work/{}", folder));
-        // If the directory exists, delete it
-        if util::path_exists(&path) {
-            match util::delete_folder_recursively(&path) {
-                Ok(_) => (),
-                Err(e) => {
-                    println!("[WASM] Failed to delete directory: {}", e);
-                    let mut status = self.status.borrow_mut();
-                    *status = DownloadStatus::Failed(format!("Failed to delete directory: {}", e));
-                    return;
-                }
-            }
-        }
-        // Re create the directory
-        if let Err(e) = fs::create_dir_all(&path) {
-            let mut status = self.status.borrow_mut();
-            *status = DownloadStatus::Failed(format!("Failed to create directory: {}", e));
-            return;
-        }
 
         // Check the data from the request
         let data = request.data();
@@ -254,23 +215,6 @@ impl NavdataDownloader {
         }
     }
 
-    pub fn get_download_statistics(
-        &self,
-    ) -> Result<DownloadStatistics, Box<dyn std::error::Error>> {
-        let zip_handler_ref = self.zip_handler.borrow();
-        let zip_handler = zip_handler_ref.as_ref().ok_or("No zip handler")?;
-
-        let total_files = zip_handler.zip_file_count;
-        let files_unzipped = zip_handler.current_file_index;
-        let files_to_unzip = total_files - files_unzipped;
-
-        Ok(DownloadStatistics {
-            total_files,
-            files_unzipped,
-            files_to_unzip,
-        })
-    }
-
     pub fn unzip_batch(
         &self,
         batch_size: usize,
@@ -290,13 +234,5 @@ impl NavdataDownloader {
         self.zip_handler.borrow_mut().take();
 
         *self.status.borrow_mut() = DownloadStatus::NoDownload;
-    }
-
-    pub fn delete_all_navdata(request: Rc<RefCell<Request>>) {
-        let path = Path::new("\\work/navdata");
-        if util::path_exists(path) {
-            let _ = util::delete_folder_recursively(path);
-        }
-        request.borrow_mut().status = RequestStatus::Success(None);
     }
 }

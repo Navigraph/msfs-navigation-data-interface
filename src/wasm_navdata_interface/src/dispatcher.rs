@@ -1,13 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{download::downloader::NavdataDownloader, query::database::Database};
+use crate::{download::downloader::NavdataDownloader, query::database::Database, util};
 use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
 
 #[derive(Copy, Clone)]
 pub enum RequestType {
     DownloadNavdata,
     SetDownloadOptions,
-    DeleteAllNavdata,
     SetActiveDatabase,
     ExecuteSQLQuery,
 }
@@ -17,7 +16,6 @@ impl RequestType {
         match s {
             "DownloadNavdata" => Some(RequestType::DownloadNavdata),
             "SetDownloadOptions" => Some(RequestType::SetDownloadOptions),
-            "DeleteAllNavdata" => Some(RequestType::DeleteAllNavdata),
             "SetActiveDatabase" => Some(RequestType::SetActiveDatabase),
             "ExecuteSQLQuery" => Some(RequestType::ExecuteSQLQuery),
             _ => None,
@@ -36,7 +34,7 @@ pub enum RequestStatus {
 pub struct Request {
     pub request_type: RequestType,
     pub id: String,
-    pub args: serde_json::Value,
+    pub data: serde_json::Value,
     pub status: RequestStatus,
 }
 
@@ -81,8 +79,11 @@ impl<'a> Dispatcher<'a> {
             let captured_queue = Rc::clone(&self.queue);
             self.commbus
                 .register("NAVIGRAPH_CallFunction", move |args| {
-                    // TODO: call fail
-                    Dispatcher::add_to_queue(Rc::clone(&captured_queue), args);
+                    // TODO: maybe send error back to sim?
+                    match Dispatcher::add_to_queue(Rc::clone(&captured_queue), args) {
+                        Ok(_) => (),
+                        Err(e) => println!("Failed to add to queue: {}", e),
+                    }
                 })
                 .expect("Failed to register NAVIGRAPH_CallFunction");
         }
@@ -98,47 +99,33 @@ impl<'a> Dispatcher<'a> {
             self.delta_time = std::time::Duration::from_secs(0);
         }
 
-        // Process queue
         self.process_queue();
-
         self.downloader.on_update();
-    }
-
-    fn send_event(event: &str, data: Option<serde_json::Value>) {
-        // replace data with empty object if None
-        let data = data.unwrap_or(serde_json::json!({}));
-        let json = serde_json::json!({
-            "event": event,
-            "data": data,
-        });
-        if let Ok(serialized_json) = serde_json::to_string(&json) {
-            CommBus::call(
-                "NAVIGRAPH_Event",
-                &serialized_json,
-                CommBusBroadcastFlags::All,
-            );
-        } else {
-            println!("Failed to serialize event {}", event);
-        }
     }
 
     fn process_queue(&mut self) {
         let mut queue = self.queue.borrow_mut();
 
         // Filter and update the status of the requests that haven't started yet
-        for request in queue.iter()
+        for request in queue
+            .iter()
             .filter(|request| request.borrow().status == RequestStatus::NotStarted)
-            .cloned() 
+            .cloned()
         {
             request.borrow_mut().status = RequestStatus::InProgress;
 
             let request_type = request.borrow().request_type.clone();
             match request_type {
                 RequestType::DownloadNavdata => self.downloader.download(Rc::clone(&request)),
-                RequestType::SetDownloadOptions => self.downloader.set_download_options(Rc::clone(&request)),
-                RequestType::DeleteAllNavdata => NavdataDownloader::delete_all_navdata(Rc::clone(&request)),
-                RequestType::SetActiveDatabase => self.database.set_active_database(Rc::clone(&request)),
-                RequestType::ExecuteSQLQuery => self.database.execute_sql_query(Rc::clone(&request)),
+                RequestType::SetDownloadOptions => {
+                    self.downloader.set_download_options(Rc::clone(&request))
+                }
+                RequestType::SetActiveDatabase => {
+                    self.database.set_active_database(Rc::clone(&request))
+                }
+                RequestType::ExecuteSQLQuery => {
+                    self.database.execute_sql_query(Rc::clone(&request))
+                }
             }
         }
 
@@ -155,17 +142,21 @@ impl<'a> Dispatcher<'a> {
                     println!("Request {} succeeded", borrowed_request.id);
                     json["status"] = "success".into();
                     json["data"] = data.clone().unwrap_or_else(|| serde_json::json!({})).into();
-                },
+                }
                 RequestStatus::Failure(ref error) => {
                     println!("Request failed: {}", error);
                     json["status"] = "error".into();
-                    json["message"] = error.clone().into();
-                },
+                    json["data"] = error.clone().into();
+                }
                 _ => (),
             }
 
             if let Ok(serialized_json) = serde_json::to_string(&json) {
-                CommBus::call("NAVIGRAPH_FunctionResult", &serialized_json, CommBusBroadcastFlags::All);
+                CommBus::call(
+                    "NAVIGRAPH_FunctionResult",
+                    &serialized_json,
+                    CommBusBroadcastFlags::All,
+                );
             }
             false
         });
@@ -175,7 +166,7 @@ impl<'a> Dispatcher<'a> {
         queue: Rc<RefCell<Vec<Rc<RefCell<Request>>>>>,
         args: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let args = Dispatcher::trim_null_terminator(args);
+        let args = util::trim_null_terminator(args);
         let json_result: serde_json::Value = serde_json::from_str(args)?;
 
         let request = json_result["function"]
@@ -188,14 +179,28 @@ impl<'a> Dispatcher<'a> {
         queue.borrow_mut().push(Rc::new(RefCell::new(Request {
             request_type,
             id: id.to_string(),
-            args: json_result,
+            data: json_result["data"].clone(),
             status: RequestStatus::NotStarted,
         })));
 
         Ok(())
     }
 
-    fn trim_null_terminator(s: &str) -> &str {
-        s.trim_end_matches(char::from(0))
+    pub fn send_event(event: &str, data: Option<serde_json::Value>) {
+        // replace data with empty object if None
+        let data = data.unwrap_or(serde_json::json!({}));
+        let json = serde_json::json!({
+            "event": event,
+            "data": data,
+        });
+        if let Ok(serialized_json) = serde_json::to_string(&json) {
+            CommBus::call(
+                "NAVIGRAPH_Event",
+                &serialized_json,
+                CommBusBroadcastFlags::All,
+            );
+        } else {
+            println!("Failed to serialize event {}", event);
+        }
     }
 }

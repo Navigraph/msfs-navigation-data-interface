@@ -3,7 +3,7 @@ import { CancelToken, navigraphRequest } from "navigraph/auth"
 import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
 import "./NavigraphLogin.css"
-import { NavigraphNavdataSDK } from "@navigraph/navdata-sdk"
+import { NavigraphEventType, NavigraphNavdataSDK } from "@navigraph/navdata-sdk"
 import { Dropdown } from "./Dropdown"
 
 interface NavigraphLoginProps extends ComponentProps {
@@ -29,17 +29,14 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
     this.navdataSdk = new NavigraphNavdataSDK()
 
-    // this.commBusListener.on("NAVIGRAPH_UnzippedFilesRemaining", (jsonArgs: string) => {
-    //   const args = JSON.parse(jsonArgs)
-    //   console.info("WASM unzipping files", args)
-    //   const percent = Math.round((args.unzipped / args.total) * 100)
-    //   this.displayMessage(`Unzipping files... ${percent}% complete`)
-    // })
-
-    // this.commBusListener.on("NAVIGRAPH_DownloadFailed", (jsonArgs: string) => {
-    //   const args = JSON.parse(jsonArgs)
-    //   this.displayError(args.error)
-    // })
+    this.navdataSdk.onEvent(NavigraphEventType.DownloadStatus, (data: unknown) => {
+      if (data.phase === "delete") {
+        this.displayMessage(`Cleaning destination directory. ${data.deleted} files deleted so far`)
+      } else if (data.phase === "unzip") {
+        const percent = Math.round((data.unzipped / data.total_to_unzip) * 100)
+        this.displayMessage(`Unzipping files... ${percent}% complete`)
+      }
+    })
   }
 
   public render(): VNode {
@@ -89,15 +86,10 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
     this.executeButtonRef.instance.addEventListener("click", () => {
       console.log("Executing SQL query")
       console.time("query")
-      this.navdataSdk
-        .callWasm("NAVIGRAPH_CallFunction", {
-          function: "ExecuteSQLQuery",
-          sql: this.inputRef.instance.value,
-        })
-        .then(data => {
-          console.log(data)
-          console.timeEnd("query")
-        })
+      this.navdataSdk.executeSql(this.inputRef.instance.value).then(data => {
+        console.log(data)
+        console.timeEnd("query")
+      })
     })
 
     AuthService.user.sub(user => {
@@ -149,29 +141,23 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
         if (this.navdataSdk.getIsInitialized()) {
           this.displayMessage("Downloading navdata...")
           this.navdataSdk
-            .callWasm("NAVIGRAPH_CallFunction", {
-              function: "DownloadNavdata",
-              url: pkg.file.url,
-              folder: pkg.format,
-            })
+            .downloadNavdata(pkg.file.url, pkg.format)
             .then(() => {
               console.info("WASM downloaded navdata")
               this.displayMessage("Downloaded!")
               this.displayMessage("Navdata downloaded")
-              this.navdataSdk
-                .callWasm("NAVIGRAPH_CallFunction", {
-                  function: "SetActiveDatabase",
-                  path: pkg.format,
-                })
-                .then(() => {
-                  console.info("WASM set active database")
-                })
+              this.navdataSdk.setActiveDatabase(pkg.format).then(() => {
+                console.info("WASM set active database")
+              })
+            })
+            .catch(e => {
+              this.displayError(e)
             })
         } else {
           this.displayError("WASM not initialized")
         }
       })
-      .catch(e => this.displayError(e.message))
+      .catch(e => this.displayError(e))
   }
 
   private displayMessage(message: string) {

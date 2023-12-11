@@ -2,19 +2,34 @@ use std::fs;
 use std::io;
 use std::path::PathBuf;
 
+use crate::dispatcher::Dispatcher;
 use crate::util;
 
 #[derive(PartialEq, Eq)]
+
+enum Phase {
+    Delete,
+    Unzip,
+}
 pub enum BatchReturn {
+    MoreFilesToDelete,
     MoreFilesToUnzip,
     Finished,
 }
 
 pub struct ZipFileHandler<R: io::Read + io::Seek> {
+    // Zip archive to extract
     pub zip_archive: Option<zip::ZipArchive<R>>,
-    path_buf: PathBuf,
+    // Current file index in the zip archive
     pub current_file_index: usize,
+    // Total number of files in the zip archive
     pub zip_file_count: usize,
+    // Path to the directory to extract to
+    path_buf: PathBuf,
+    // Number of files deleted so far
+    deleted: usize,
+    // Whether or not we have cleaned the destination folder yet
+    cleaned_destination: bool,
 }
 
 impl<R: io::Read + io::Seek> ZipFileHandler<R> {
@@ -23,9 +38,11 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
         let zip_file_count = zip_archive.len();
         Self {
             zip_archive: Some(zip_archive),
-            path_buf,
             current_file_index: 0,
             zip_file_count,
+            path_buf,
+            deleted: 0,
+            cleaned_destination: false,
         }
     }
 
@@ -36,6 +53,22 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
         if self.zip_archive.is_none() {
             return Err("No zip archive to extract".to_string().into());
         }
+
+        // If we haven't cleaned the destination folder yet, do so now
+        if !self.cleaned_destination {
+            self.send_status_update(Phase::Delete)?;
+
+            util::delete_folder_recursively(&self.path_buf, Some(batch_size))?;
+            if !util::path_exists(&self.path_buf) {
+                fs::create_dir_all(&self.path_buf)?;
+                self.cleaned_destination = true;
+                return Ok(BatchReturn::MoreFilesToUnzip);
+            }
+            self.deleted += batch_size;
+            return Ok(BatchReturn::MoreFilesToDelete);
+        }
+
+        self.send_status_update(Phase::Unzip)?;
 
         let zip_archive = self
             .zip_archive
@@ -85,5 +118,19 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
             self.current_file_index += 1;
         }
         Ok(BatchReturn::MoreFilesToUnzip)
+    }
+
+    fn send_status_update(&self, phase: Phase) -> Result<(), Box<dyn std::error::Error>> {
+        let data = serde_json::json!({
+            "phase": match phase {
+                Phase::Delete => "delete",
+                Phase::Unzip => "unzip",
+            },
+            "deleted": self.deleted,
+            "total_to_unzip": self.zip_file_count,
+            "unzipped": self.current_file_index,
+        });
+        Dispatcher::send_event("DownloadStatus", Some(data));
+        Ok(())
     }
 }

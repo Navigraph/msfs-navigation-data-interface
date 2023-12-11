@@ -25,19 +25,19 @@ impl Database {
             0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x20,
             0x33, 0x00,
         ];
-        // we are going to search this directory for a database
-        for entry in std::fs::read_dir("\\work/avionics_v2")? {
+        // We are going to search this directory for a database
+        for entry in std::fs::read_dir(path)? {
             let entry = entry?;
             let path = entry.path();
             if util::get_path_type(&path) == util::PathType::File {
                 let path = path.to_str().ok_or("Invalid path")?;
-                // get first 16 bytes of file
+                // Get first 16 bytes of file
                 let mut file = std::fs::File::open(path)?;
                 let mut buf = [0; 16];
                 file.read_exact(buf.as_mut())?;
-                // compare bytes to sqlite header
+                // Compare bytes to sqlite header
                 if buf == sqlite_header {
-                    // we found a database
+                    // We found a database
                     return Ok(path.to_string());
                 }
             }
@@ -48,7 +48,7 @@ impl Database {
     pub fn set_active_database(self: &Rc<Self>, request: Rc<RefCell<Request>>) {
         // In its own scope so that we can drop the borrow of request
         {
-            let json = request.borrow().args.clone();
+            let json = request.borrow().data.clone();
             let path = json["path"].as_str();
             if path.is_none() {
                 request.borrow_mut().status =
@@ -86,7 +86,7 @@ impl Database {
     pub fn execute_sql_query(self: &Rc<Self>, request: Rc<RefCell<Request>>) {
         let mut sql = String::new();
         {
-            let args_json = request.borrow().args.clone();
+            let args_json = request.borrow().data.clone();
             let parsed_sql = args_json["sql"].as_str();
             if parsed_sql.is_none() {
                 request.borrow_mut().status = RequestStatus::Failure("No SQL provided".to_string());
