@@ -4,38 +4,38 @@ use crate::{download::downloader::NavdataDownloader, query::database::Database, 
 use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
 
 #[derive(Copy, Clone)]
-pub enum RequestType {
+pub enum TaskType {
     DownloadNavdata,
     SetDownloadOptions,
     SetActiveDatabase,
     ExecuteSQLQuery,
 }
 
-impl RequestType {
+impl TaskType {
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
-            "DownloadNavdata" => Some(RequestType::DownloadNavdata),
-            "SetDownloadOptions" => Some(RequestType::SetDownloadOptions),
-            "SetActiveDatabase" => Some(RequestType::SetActiveDatabase),
-            "ExecuteSQLQuery" => Some(RequestType::ExecuteSQLQuery),
+            "DownloadNavdata" => Some(TaskType::DownloadNavdata),
+            "SetDownloadOptions" => Some(TaskType::SetDownloadOptions),
+            "SetActiveDatabase" => Some(TaskType::SetActiveDatabase),
+            "ExecuteSQLQuery" => Some(TaskType::ExecuteSQLQuery),
             _ => None,
         }
     }
 }
 
 #[derive(PartialEq, Eq)]
-pub enum RequestStatus {
+pub enum TaskStatus {
     NotStarted,
     InProgress,
     Success(Option<serde_json::Value>),
     Failure(String),
 }
 
-pub struct Request {
-    pub request_type: RequestType,
+pub struct Task {
+    pub task_type: TaskType,
     pub id: String,
     pub data: serde_json::Value,
-    pub status: RequestStatus,
+    pub status: TaskStatus,
 }
 
 pub struct Dispatcher<'a> {
@@ -43,7 +43,7 @@ pub struct Dispatcher<'a> {
     downloader: Rc<NavdataDownloader>,
     database: Rc<Database>,
     delta_time: std::time::Duration,
-    queue: Rc<RefCell<Vec<Rc<RefCell<Request>>>>>,
+    queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
 }
 
 impl<'a> Dispatcher<'a> {
@@ -106,44 +106,40 @@ impl<'a> Dispatcher<'a> {
     fn process_queue(&mut self) {
         let mut queue = self.queue.borrow_mut();
 
-        // Filter and update the status of the requests that haven't started yet
-        for request in queue
+        // Filter and update the status of the task that haven't started yet
+        for task in queue
             .iter()
-            .filter(|request| request.borrow().status == RequestStatus::NotStarted)
+            .filter(|task| task.borrow().status == TaskStatus::NotStarted)
         {
-            request.borrow_mut().status = RequestStatus::InProgress;
+            task.borrow_mut().status = TaskStatus::InProgress;
 
-            let request_type = request.borrow().request_type;
-            match request_type {
-                RequestType::DownloadNavdata => self.downloader.download(Rc::clone(request)),
-                RequestType::SetDownloadOptions => {
-                    self.downloader.set_download_options(Rc::clone(request))
+            let task_type = task.borrow().task_type;
+            match task_type {
+                TaskType::DownloadNavdata => self.downloader.download(Rc::clone(task)),
+                TaskType::SetDownloadOptions => {
+                    self.downloader.set_download_options(Rc::clone(task))
                 }
-                RequestType::SetActiveDatabase => {
-                    self.database.set_active_database(Rc::clone(request))
-                }
-                RequestType::ExecuteSQLQuery => {
-                    self.database.execute_sql_query(Rc::clone(request))
-                }
+                TaskType::SetActiveDatabase => self.database.set_active_database(Rc::clone(task)),
+                TaskType::ExecuteSQLQuery => self.database.execute_sql_query(Rc::clone(task)),
             }
         }
 
-        // Process completed requests
-        queue.retain(|request| {
-            let borrowed_request = request.borrow();
-            if borrowed_request.status == RequestStatus::InProgress {
+        // Process completed tasks
+        queue.retain(|task| {
+            let borrowed_task = task.borrow();
+            if borrowed_task.status == TaskStatus::InProgress {
                 return true;
             }
 
-            let mut json = serde_json::json!({ "id": borrowed_request.id });
-            match borrowed_request.status {
-                RequestStatus::Success(ref data) => {
-                    println!("Request {} succeeded", borrowed_request.id);
+            let mut json = serde_json::json!({ "id": borrowed_task.id });
+            match borrowed_task.status {
+                TaskStatus::Success(ref data) => {
+                    println!("Task {} succeeded", borrowed_task.id);
                     json["status"] = "success".into();
                     json["data"] = data.clone().unwrap_or_else(|| serde_json::json!({}));
                 }
-                RequestStatus::Failure(ref error) => {
-                    println!("Request failed: {}", error);
+                TaskStatus::Failure(ref error) => {
+                    println!("Task failed: {}", error);
                     json["status"] = "error".into();
                     json["data"] = error.clone().into();
                 }
@@ -162,24 +158,24 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn add_to_queue(
-        queue: Rc<RefCell<Vec<Rc<RefCell<Request>>>>>,
+        queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
         args: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let args = util::trim_null_terminator(args);
         let json_result: serde_json::Value = serde_json::from_str(args)?;
 
-        let request = json_result["function"]
+        let task = json_result["function"]
             .as_str()
             .ok_or("Failed to parse function")?;
         let id = json_result["id"].as_str().ok_or("Failed to parse id")?;
 
-        let request_type = RequestType::from_str(request).ok_or("Failed to parse request type")?;
+        let task_type = TaskType::from_str(task).ok_or("Failed to parse task type")?;
 
-        queue.borrow_mut().push(Rc::new(RefCell::new(Request {
-            request_type,
+        queue.borrow_mut().push(Rc::new(RefCell::new(Task {
+            task_type,
             id: id.to_string(),
             data: json_result["data"].clone(),
-            status: RequestStatus::NotStarted,
+            status: TaskStatus::NotStarted,
         })));
 
         Ok(())

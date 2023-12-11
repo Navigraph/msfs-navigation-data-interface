@@ -1,15 +1,13 @@
 use std::cell::RefCell;
 
 use std::io::Cursor;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use std::rc::Rc;
 
-use msfs::{network::*};
+use msfs::network::*;
 
-use crate::dispatcher::{Request, RequestStatus};
-use crate::{
-    download::zip_handler::{BatchReturn, ZipFileHandler},
-};
+use crate::dispatcher::{Task, TaskStatus};
+use crate::download::zip_handler::{BatchReturn, ZipFileHandler};
 
 pub struct DownloadOptions {
     batch_size: usize,
@@ -27,7 +25,7 @@ pub struct NavdataDownloader {
     zip_handler: RefCell<Option<ZipFileHandler<Cursor<Vec<u8>>>>>,
     status: RefCell<DownloadStatus>,
     options: RefCell<DownloadOptions>,
-    request: RefCell<Option<Rc<RefCell<Request>>>>,
+    task: RefCell<Option<Rc<RefCell<Task>>>>,
 }
 
 impl NavdataDownloader {
@@ -36,7 +34,7 @@ impl NavdataDownloader {
             zip_handler: RefCell::new(None),
             status: RefCell::new(DownloadStatus::NoDownload),
             options: RefCell::new(DownloadOptions { batch_size: 10 }), // default batch size
-            request: RefCell::new(None),
+            task: RefCell::new(None),
         }
     }
 
@@ -54,13 +52,13 @@ impl NavdataDownloader {
 
         if let Some(message) = failed_message {
             // Send the error message to the JS side
-            let borrowed_request = self.request.borrow();
-            if (*borrowed_request).is_none() {
-                println!("[WASM] Request is none");
+            let borrowed_task = self.task.borrow();
+            if (*borrowed_task).is_none() {
+                println!("[WASM] Task is none");
                 return;
             }
-            let mut borrowed_request = borrowed_request.as_ref().unwrap().borrow_mut();
-            borrowed_request.status = RequestStatus::Failure(message.clone());
+            let mut borrowed_task = borrowed_task.as_ref().unwrap().borrow_mut();
+            borrowed_task.status = TaskStatus::Failure(message.clone());
 
             self.reset_download();
         }
@@ -84,13 +82,13 @@ impl NavdataDownloader {
             match unzip_status {
                 Ok(BatchReturn::Finished) => {
                     println!("[WASM] Finished extracting");
-                    let borrowed_request = self.request.borrow();
-                    if (*borrowed_request).is_none() {
+                    let borrowed_task = self.task.borrow();
+                    if (*borrowed_task).is_none() {
                         println!("[WASM] Request is none");
                         return;
                     }
-                    let mut borrowed_request = borrowed_request.as_ref().unwrap().borrow_mut();
-                    borrowed_request.status = RequestStatus::Success(None);
+                    let mut borrowed_task = borrowed_task.as_ref().unwrap().borrow_mut();
+                    borrowed_task.status = TaskStatus::Success(None);
 
                     self.reset_download();
                 }
@@ -104,9 +102,9 @@ impl NavdataDownloader {
         }
     }
 
-    pub fn set_download_options(self: &Rc<Self>, request: Rc<RefCell<Request>>) {
+    pub fn set_download_options(self: &Rc<Self>, task: Rc<RefCell<Task>>) {
         {
-            let json = request.borrow().data.clone();
+            let json = task.borrow().data.clone();
             // Get batch size, if it fails to parse then just return
             let batch_size = match json["batchSize"].as_u64() {
                 Some(batch_size) => batch_size as usize,
@@ -117,10 +115,10 @@ impl NavdataDownloader {
             let mut options = self.options.borrow_mut();
             options.batch_size = batch_size;
         }
-        request.borrow_mut().status = RequestStatus::Success(None);
+        task.borrow_mut().status = TaskStatus::Success(None);
     }
 
-    pub fn download(self: &Rc<Self>, request: Rc<RefCell<Request>>) {
+    pub fn download(self: &Rc<Self>, task: Rc<RefCell<Task>>) {
         // Silently fail if we are already downloading (maybe we should send an error message?)
         if *self.status.borrow() == DownloadStatus::Downloading {
             println!("[WASM] Already downloading");
@@ -131,9 +129,9 @@ impl NavdataDownloader {
             *status = DownloadStatus::Downloading;
             println!("[WASM] Downloading");
         }
-        self.request.borrow_mut().replace(request.clone());
+        self.task.borrow_mut().replace(task.clone());
 
-        let json = request.borrow().data.clone();
+        let json = task.borrow().data.clone();
 
         let url = json["url"].as_str().unwrap_or_default().to_owned();
 

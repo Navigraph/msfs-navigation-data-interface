@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::{io::Read, rc::Rc};
 
 use crate::{
-    dispatcher::{Request, RequestStatus},
+    dispatcher::{Task, TaskStatus},
     util,
 };
 
@@ -45,14 +45,13 @@ impl Database {
         Err("No database found".into())
     }
 
-    pub fn set_active_database(self: &Rc<Self>, request: Rc<RefCell<Request>>) {
-        // In its own scope so that we can drop the borrow of request
+    pub fn set_active_database(self: &Rc<Self>, task: Rc<RefCell<Task>>) {
+        // In its own scope so that we can drop the borrow of task
         {
-            let json = request.borrow().data.clone();
+            let json = task.borrow().data.clone();
             let path = json["path"].as_str();
             if path.is_none() {
-                request.borrow_mut().status =
-                    RequestStatus::Failure("No path provided".to_string());
+                task.borrow_mut().status = TaskStatus::Failure("No path provided".to_string());
                 return;
             }
             let mut path = path.unwrap().to_owned();
@@ -74,22 +73,21 @@ impl Database {
 
             let res = self.try_open(&path);
             if res.is_err() {
-                request.borrow_mut().status =
-                    RequestStatus::Failure(res.err().unwrap().to_string());
+                task.borrow_mut().status = TaskStatus::Failure(res.err().unwrap().to_string());
                 return;
             }
             println!("Opened database at {}", path);
         }
-        request.borrow_mut().status = RequestStatus::Success(None);
+        task.borrow_mut().status = TaskStatus::Success(None);
     }
 
-    pub fn execute_sql_query(self: &Rc<Self>, request: Rc<RefCell<Request>>) {
+    pub fn execute_sql_query(self: &Rc<Self>, task: Rc<RefCell<Task>>) {
         let mut sql = String::new();
         {
-            let args_json = request.borrow().data.clone();
+            let args_json = task.borrow().data.clone();
             let parsed_sql = args_json["sql"].as_str();
             if parsed_sql.is_none() {
-                request.borrow_mut().status = RequestStatus::Failure("No SQL provided".to_string());
+                task.borrow_mut().status = TaskStatus::Failure("No SQL provided".to_string());
                 return;
             }
             sql = parsed_sql.unwrap().to_string();
@@ -99,10 +97,10 @@ impl Database {
 
         match res {
             Ok(json) => {
-                request.borrow_mut().status = RequestStatus::Success(Some(json));
+                task.borrow_mut().status = TaskStatus::Success(Some(json));
             }
             Err(e) => {
-                request.borrow_mut().status = RequestStatus::Failure(e.to_string());
+                task.borrow_mut().status = TaskStatus::Failure(e.to_string());
             }
         }
     }
