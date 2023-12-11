@@ -110,21 +110,20 @@ impl<'a> Dispatcher<'a> {
         for request in queue
             .iter()
             .filter(|request| request.borrow().status == RequestStatus::NotStarted)
-            .cloned()
         {
             request.borrow_mut().status = RequestStatus::InProgress;
 
-            let request_type = request.borrow().request_type.clone();
+            let request_type = request.borrow().request_type;
             match request_type {
-                RequestType::DownloadNavdata => self.downloader.download(Rc::clone(&request)),
+                RequestType::DownloadNavdata => self.downloader.download(Rc::clone(request)),
                 RequestType::SetDownloadOptions => {
-                    self.downloader.set_download_options(Rc::clone(&request))
+                    self.downloader.set_download_options(Rc::clone(request))
                 }
                 RequestType::SetActiveDatabase => {
-                    self.database.set_active_database(Rc::clone(&request))
+                    self.database.set_active_database(Rc::clone(request))
                 }
                 RequestType::ExecuteSQLQuery => {
-                    self.database.execute_sql_query(Rc::clone(&request))
+                    self.database.execute_sql_query(Rc::clone(request))
                 }
             }
         }
@@ -141,7 +140,7 @@ impl<'a> Dispatcher<'a> {
                 RequestStatus::Success(ref data) => {
                     println!("Request {} succeeded", borrowed_request.id);
                     json["status"] = "success".into();
-                    json["data"] = data.clone().unwrap_or_else(|| serde_json::json!({})).into();
+                    json["data"] = data.clone().unwrap_or_else(|| serde_json::json!({}));
                 }
                 RequestStatus::Failure(ref error) => {
                     println!("Request failed: {}", error);

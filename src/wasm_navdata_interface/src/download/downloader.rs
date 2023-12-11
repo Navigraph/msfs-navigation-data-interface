@@ -1,15 +1,14 @@
 use std::cell::RefCell;
-use std::fs;
+
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 use std::rc::Rc;
 
-use msfs::{commbus::*, network::*};
+use msfs::{network::*};
 
-use crate::dispatcher::{Dispatcher, Request, RequestStatus};
+use crate::dispatcher::{Request, RequestStatus};
 use crate::{
     download::zip_handler::{BatchReturn, ZipFileHandler},
-    util,
 };
 
 pub struct DownloadOptions {
@@ -162,7 +161,6 @@ impl NavdataDownloader {
             None => {
                 let mut status = self.status.borrow_mut();
                 *status = DownloadStatus::Failed("Failed to create request".to_string());
-                return;
             }
         }
     }
