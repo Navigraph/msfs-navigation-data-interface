@@ -1,27 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
-use crate::{download::downloader::NavdataDownloader, query::database::Database, util};
+use crate::{
+    download::downloader::NavdataDownloader,
+    json_structs::{events, functions},
+    query::database::Database,
+    util,
+};
 use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
-
-#[derive(Copy, Clone)]
-pub enum TaskType {
-    DownloadNavdata,
-    SetDownloadOptions,
-    SetActiveDatabase,
-    ExecuteSQLQuery,
-}
-
-impl TaskType {
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "DownloadNavdata" => Some(TaskType::DownloadNavdata),
-            "SetDownloadOptions" => Some(TaskType::SetDownloadOptions),
-            "SetActiveDatabase" => Some(TaskType::SetActiveDatabase),
-            "ExecuteSQLQuery" => Some(TaskType::ExecuteSQLQuery),
-            _ => None,
-        }
-    }
-}
 
 #[derive(PartialEq, Eq)]
 pub enum TaskStatus {
@@ -31,22 +16,22 @@ pub enum TaskStatus {
     Failure(String),
 }
 
-impl TaskStatus {
-    pub fn to_id(&self) -> Option<usize> {
-        match self {
-            TaskStatus::NotStarted => None,
-            TaskStatus::InProgress => None,
-            TaskStatus::Success(_) => Some(1),
-            TaskStatus::Failure(_) => Some(0),
-        }
-    }
+pub struct Task {
+    pub function_type: functions::FunctionType,
+    pub id: String,
+    pub data: Option<serde_json::Value>,
+    pub status: TaskStatus,
 }
 
-pub struct Task {
-    pub task_type: TaskType,
-    pub id: String,
-    pub data: serde_json::Value,
-    pub status: TaskStatus,
+impl Task {
+    pub fn parse_data_as<T>(&self) -> Result<T, Box<dyn std::error::Error>>
+    where
+        T: serde::de::DeserializeOwned,
+    {
+        let data = self.data.clone().ok_or("No data provided")?;
+        let params = serde_json::from_value::<T>(data)?;
+        Ok(params)
+    }
 }
 
 pub struct Dispatcher<'a> {
@@ -106,7 +91,7 @@ impl<'a> Dispatcher<'a> {
 
         // Send heartbeat every 5 seconds
         if self.delta_time >= std::time::Duration::from_secs(5) {
-            Dispatcher::send_event("Heartbeat", None);
+            Dispatcher::send_event(events::EventType::Heartbeat, None);
             self.delta_time = std::time::Duration::from_secs(0);
         }
 
@@ -124,39 +109,61 @@ impl<'a> Dispatcher<'a> {
         {
             task.borrow_mut().status = TaskStatus::InProgress;
 
-            let task_type = task.borrow().task_type;
-            match task_type {
-                TaskType::DownloadNavdata => self.downloader.download(Rc::clone(task)),
-                TaskType::SetDownloadOptions => {
-                    self.downloader.set_download_options(Rc::clone(task))
+            let function_type = task.borrow().function_type;
+
+            match function_type {
+                functions::FunctionType::DownloadNavdata => {
+                    // We can't use the execute_task function here because the download process doesn't finish in the function call, which
+                    // results in slightly "messier" code
+
+                    // Close the database connection if it's open so we don't get any errors if we are replacing the database
+                    self.database.close_connection();
+
+                    // Now we can download the navdata
+                    self.downloader.download(Rc::clone(task))
                 }
-                TaskType::SetActiveDatabase => self.database.set_active_database(Rc::clone(task)),
-                TaskType::ExecuteSQLQuery => self.database.execute_sql_query(Rc::clone(task)),
+                functions::FunctionType::SetDownloadOptions => {
+                    Dispatcher::execute_task(task.clone(), |t| {
+                        self.downloader.set_download_options(t)
+                    })
+                }
+                functions::FunctionType::SetActiveDatabase => {
+                    Dispatcher::execute_task(task.clone(), |t| self.database.set_active_database(t))
+                }
+                functions::FunctionType::ExecuteSQLQuery => {
+                    Dispatcher::execute_task(task.clone(), |t| self.database.execute_sql_query(t))
+                }
             }
         }
 
-        // Process completed tasks
+        // Process completed tasks (everything should at least be in progress at this point)
         queue.retain(|task| {
-            let borrowed_task = task.borrow();
-            if borrowed_task.status == TaskStatus::InProgress {
+            if let TaskStatus::InProgress = task.borrow().status {
                 return true;
             }
 
-            let mut json = serde_json::json!({ "id": borrowed_task.id });
-            let status_id = borrowed_task.status.to_id();
-            match borrowed_task.status {
-                TaskStatus::Success(ref data) => {
-                    println!("Task {} succeeded", borrowed_task.id);
-                    json["status"] = status_id.unwrap().into();
-                    json["data"] = data.clone().unwrap_or_else(|| serde_json::json!({}));
+            let status: functions::FunctionStatus;
+            let data: Option<serde_json::Value>;
+
+            let (status, data) = match task.borrow().status {
+                TaskStatus::Success(ref result) => {
+                    status = functions::FunctionStatus::Success;
+                    data = result.clone();
+                    (status, data)
                 }
                 TaskStatus::Failure(ref error) => {
-                    println!("Task failed: {}", error);
-                    json["status"] = status_id.unwrap().into();
-                    json["data"] = error.clone().into();
+                    status = functions::FunctionStatus::Error;
+                    data = Some(error.clone().into());
+                    (status, data)
                 }
-                _ => (),
-            }
+                _ => unreachable!(), // This should never happen
+            };
+
+            let json = functions::FunctionResult {
+                id: task.borrow().id.clone(),
+                status,
+                data,
+            };
 
             if let Ok(serialized_json) = serde_json::to_string(&json) {
                 CommBus::call(
@@ -169,37 +176,39 @@ impl<'a> Dispatcher<'a> {
         });
     }
 
+    /// Executes a task and handles the result (sets the status of the task)
+    fn execute_task<F>(task: Rc<RefCell<Task>>, task_operation: F)
+    where
+        F: FnOnce(Rc<RefCell<Task>>) -> Result<(), Box<dyn std::error::Error>>,
+    {
+        match task_operation(task.clone()) {
+            Ok(_) => (),
+            Err(e) => {
+                println!("Task failed: {}", e);
+                task.borrow_mut().status = TaskStatus::Failure(e.to_string());
+            }
+        }
+    }
+
     fn add_to_queue(
         queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
         args: &str,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let args = util::trim_null_terminator(args);
-        let json_result: serde_json::Value = serde_json::from_str(args)?;
-
-        let task = json_result["function"]
-            .as_str()
-            .ok_or("Failed to parse function")?;
-        let id = json_result["id"].as_str().ok_or("Failed to parse id")?;
-
-        let task_type = TaskType::from_str(task).ok_or("Failed to parse task type")?;
+        let json_result: functions::CallFunction = serde_json::from_str(args)?;
 
         queue.borrow_mut().push(Rc::new(RefCell::new(Task {
-            task_type,
-            id: id.to_string(),
-            data: json_result["data"].clone(),
+            function_type: json_result.function,
+            id: json_result.id,
+            data: json_result.data,
             status: TaskStatus::NotStarted,
         })));
 
         Ok(())
     }
 
-    pub fn send_event(event: &str, data: Option<serde_json::Value>) {
-        // replace data with empty object if None
-        let data = data.unwrap_or(serde_json::json!({}));
-        let json = serde_json::json!({
-            "event": event,
-            "data": data,
-        });
+    pub fn send_event(event: events::EventType, data: Option<serde_json::Value>) {
+        let json = events::Event { event, data };
         if let Ok(serialized_json) = serde_json::to_string(&json) {
             CommBus::call(
                 "NAVIGRAPH_Event",
@@ -207,7 +216,7 @@ impl<'a> Dispatcher<'a> {
                 CommBusBroadcastFlags::All,
             );
         } else {
-            println!("Failed to serialize event {}", event);
+            println!("Failed to serialize event");
         }
     }
 }

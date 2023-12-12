@@ -8,6 +8,7 @@ use msfs::network::*;
 
 use crate::dispatcher::{Dispatcher, Task, TaskStatus};
 use crate::download::zip_handler::{BatchReturn, ZipFileHandler};
+use crate::json_structs::{events, params};
 
 pub struct DownloadOptions {
     batch_size: usize,
@@ -20,18 +21,6 @@ pub enum DownloadStatus {
     CleaningDestination,
     Extracting,
     Failed(String),
-}
-
-impl DownloadStatus {
-    /// Converts the enum to a number so that we can match it on the JS side (or on the WASM side)
-    pub fn to_phase_number(&self) -> Option<usize> {
-        match self {
-            DownloadStatus::Downloading => Some(0),
-            DownloadStatus::CleaningDestination => Some(1),
-            DownloadStatus::Extracting => Some(2),
-            _ => None, // This should never happen
-        }
-    }
 }
 
 pub struct NavdataDownloader {
@@ -106,20 +95,22 @@ impl NavdataDownloader {
         }
     }
 
-    pub fn set_download_options(self: &Rc<Self>, task: Rc<RefCell<Task>>) {
+    pub fn set_download_options(
+        self: &Rc<Self>,
+        task: Rc<RefCell<Task>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         {
-            let json = task.borrow().data.clone();
-            // Get batch size, if it fails to parse then just return
-            let batch_size = match json["batchSize"].as_u64() {
-                Some(batch_size) => batch_size as usize,
-                None => return,
-            };
+            let params = task
+                .borrow()
+                .parse_data_as::<params::SetDownloadOptionsParams>()?;
 
             // Set the options (only batch size for now)
             let mut options = self.options.borrow_mut();
-            options.batch_size = batch_size;
+            options.batch_size = params.batch_size;
         }
         task.borrow_mut().status = TaskStatus::Success(None);
+
+        Ok(())
     }
 
     /// Starts the download process
@@ -135,28 +126,27 @@ impl NavdataDownloader {
         }
         self.task.borrow_mut().replace(task.clone());
 
-        let json = task.borrow().data.clone();
-
-        let url = json["url"].as_str().unwrap_or_default().to_owned();
-
-        // Check if json has "folder"
-        let folder = json["folder"].as_str().unwrap_or_default().to_owned();
-
-        // Make sure we have both a url and a folder
-        if url.is_empty() || folder.is_empty() {
-            self.download_status.replace(DownloadStatus::Failed(
-                "No url or folder provided".to_string(),
-            ));
-            return;
-        }
+        let params = match task
+            .borrow()
+            .parse_data_as::<params::DownloadNavdataParams>()
+        {
+            Ok(params) => params,
+            Err(e) => {
+                self.download_status.replace(DownloadStatus::Failed(format!(
+                    "Failed to parse params: {}",
+                    e
+                )));
+                return;
+            }
+        };
 
         // Create the request
         let captured_self = self.clone();
         println!("[WASM] Creating request");
-        match NetworkRequestBuilder::new(&url)
+        match NetworkRequestBuilder::new(&params.url)
             .unwrap()
             .with_callback(move |network_request, status_code| {
-                captured_self.request_finished_callback(network_request, status_code, folder)
+                captured_self.request_finished_callback(network_request, status_code, params.path)
             })
             .get()
         {
@@ -177,18 +167,26 @@ impl NavdataDownloader {
         unzipped: Option<usize>,
     ) {
         let status = self.download_status.borrow();
-        let phase = status.to_phase_number();
-        // This should never happen, but if it does, just return since we shouldn't send an update
-        if phase.is_none() {
-            return;
-        }
-        let data = serde_json::json!({
-            "phase": phase,
-            "deleted": deleted,
-            "total_to_unzip": total_to_unzip,
-            "unzipped": unzipped,
-        });
-        Dispatcher::send_event("DownloadProgress", Some(data));
+        let phase: events::DownloadProgressPhase = match *status {
+            DownloadStatus::Downloading => events::DownloadProgressPhase::Downloading,
+            DownloadStatus::CleaningDestination => events::DownloadProgressPhase::Cleaning,
+            DownloadStatus::Extracting => events::DownloadProgressPhase::Extracting,
+            _ => return, // Don't send an update if we are not downloading
+        };
+        let data = events::DownloadProgressEvent {
+            phase,
+            deleted,
+            total_to_unzip,
+            unzipped,
+        };
+        let serialized_data = match serde_json::to_value(data) {
+            Ok(data) => data,
+            Err(e) => {
+                println!("[WASM] Failed to serialize download progress event: {}", e);
+                return;
+            }
+        };
+        Dispatcher::send_event(events::EventType::DownloadProgress, Some(serialized_data));
     }
 
     fn request_finished_callback(&self, request: NetworkRequest, status_code: i32, folder: String) {

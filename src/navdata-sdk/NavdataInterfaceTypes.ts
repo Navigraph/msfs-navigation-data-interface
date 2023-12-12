@@ -5,14 +5,14 @@ export interface CommBusMessage {
 }
 
 export enum NavigraphEventType {
-  Heartbeat,
-  DownloadProgress,
+  Heartbeat = "Heartbeat",
+  DownloadProgress = "DownloadProgress",
 }
 
 export enum DownloadProgressPhase {
-  Downloading, // 0
-  Cleaning, // 1
-  Extracting, // 2
+  Downloading = "Downloading",
+  Cleaning = "Cleaning",
+  Extracting = "Extracting",
 }
 
 export interface DownloadProgressData {
@@ -30,8 +30,8 @@ export enum NavigraphFunction {
 }
 
 export enum FunctionResultStatus {
-  Error, // 0
-  Success, // 1
+  Error = "Error",
+  Success = "Success",
 }
 
 export interface FunctionResultArgs {
@@ -46,6 +46,6 @@ export interface Callback<T = unknown> {
 }
 
 export interface RawNavigraphEvent {
-  event: string
+  event: NavigraphEventType
   data: unknown
 }

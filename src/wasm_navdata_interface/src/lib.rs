@@ -1,5 +1,6 @@
 mod dispatcher;
 mod download;
+mod json_structs;
 mod query;
 mod util;
 

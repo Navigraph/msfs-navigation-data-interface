@@ -38,14 +38,14 @@ export class NavigraphNavdataInterface {
   }
 
   /**
-   * Downloads the navdata from the given URL to the given folder
+   * Downloads the navdata from the given URL to the given path
    *
    * @param url - A valid signed URL to download the navdata from
-   * @param folder - The folder to download the navdata to
+   * @param path - The path to download the navdata to
    * @returns A promise that resolves when the download is complete
    */
-  public async downloadNavdata(url: string, folder: string): Promise<void> {
-    return await this.callWasmFunction(NavigraphFunction.DownloadNavdata, { url, folder })
+  public async downloadNavdata(url: string, path: string): Promise<void> {
+    return await this.callWasmFunction(NavigraphFunction.DownloadNavdata, { url, path })
   }
 
   /**
@@ -98,6 +98,9 @@ export class NavigraphNavdataInterface {
     })
   }
 
+  /**
+   * Registers the event listeners for the interface
+   */
   private onRegister(): void {
     this.listener.on("NAVIGRAPH_FunctionResult", (jsonArgs: string) => {
       const args = JSON.parse(jsonArgs) as FunctionResultArgs
@@ -120,7 +123,7 @@ export class NavigraphNavdataInterface {
       const args = JSON.parse(jsonArgs) as RawNavigraphEvent
 
       // If this is the heartbeat event, set the interface as initialized
-      if (args.event === NavigraphEventType[NavigraphEventType.Heartbeat] && !this.isInitialized) {
+      if (args.event === NavigraphEventType.Heartbeat && !this.isInitialized) {
         this.isInitialized = true
         if (this.onReadyCallback) {
           this.onReadyCallback()
@@ -129,8 +132,7 @@ export class NavigraphNavdataInterface {
 
       // Call all callbacks for the event
       if (args.event in NavigraphEventType) {
-        const event = NavigraphEventType[args.event as keyof typeof NavigraphEventType]
-        const callbacks = this.eventListeners.filter(cb => cb.event === event)
+        const callbacks = this.eventListeners.filter(cb => cb.event === args.event)
         callbacks.forEach(cb => cb.callback(args.data))
       }
     })
