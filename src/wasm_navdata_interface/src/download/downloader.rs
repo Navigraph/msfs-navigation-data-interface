@@ -22,6 +22,18 @@ pub enum DownloadStatus {
     Failed(String),
 }
 
+impl DownloadStatus {
+    /// Converts the enum to a number so that we can match it on the JS side (or on the WASM side)
+    pub fn to_phase_number(&self) -> Option<usize> {
+        match self {
+            DownloadStatus::Downloading => Some(0),
+            DownloadStatus::CleaningDestination => Some(1),
+            DownloadStatus::Extracting => Some(2),
+            _ => None, // This should never happen
+        }
+    }
+}
+
 pub struct NavdataDownloader {
     zip_handler: RefCell<Option<ZipFileHandler<Cursor<Vec<u8>>>>>,
     download_status: RefCell<DownloadStatus>,
@@ -165,14 +177,13 @@ impl NavdataDownloader {
         unzipped: Option<usize>,
     ) {
         let status = self.download_status.borrow();
+        let phase = status.to_phase_number();
+        // This should never happen, but if it does, just return since we shouldn't send an update
+        if phase.is_none() {
+            return;
+        }
         let data = serde_json::json!({
-            // Match enum on the JS side (this is bad)
-            "phase": match *status {
-                DownloadStatus::Downloading => 0,
-                DownloadStatus::CleaningDestination => 1,
-                DownloadStatus::Extracting => 2,
-                _ => return, // Don't send an update if we are not downloading (this should never happen)
-            },
+            "phase": phase,
             "deleted": deleted,
             "total_to_unzip": total_to_unzip,
             "unzipped": unzipped,
