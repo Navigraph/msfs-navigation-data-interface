@@ -31,6 +31,17 @@ pub enum TaskStatus {
     Failure(String),
 }
 
+impl TaskStatus {
+    pub fn to_id(&self) -> Option<usize> {
+        match self {
+            TaskStatus::NotStarted => None,
+            TaskStatus::InProgress => None,
+            TaskStatus::Success(_) => Some(1),
+            TaskStatus::Failure(_) => Some(0),
+        }
+    }
+}
+
 pub struct Task {
     pub task_type: TaskType,
     pub id: String,
@@ -132,15 +143,16 @@ impl<'a> Dispatcher<'a> {
             }
 
             let mut json = serde_json::json!({ "id": borrowed_task.id });
+            let status_id = borrowed_task.status.to_id();
             match borrowed_task.status {
                 TaskStatus::Success(ref data) => {
                     println!("Task {} succeeded", borrowed_task.id);
-                    json["status"] = "success".into();
+                    json["status"] = status_id.unwrap().into();
                     json["data"] = data.clone().unwrap_or_else(|| serde_json::json!({}));
                 }
                 TaskStatus::Failure(ref error) => {
                     println!("Task failed: {}", error);
-                    json["status"] = "error".into();
+                    json["status"] = status_id.unwrap().into();
                     json["data"] = error.clone().into();
                 }
                 _ => (),

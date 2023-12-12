@@ -3,7 +3,7 @@ import { CancelToken, navigraphRequest } from "navigraph/auth"
 import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
 import "./NavigraphLogin.css"
-import { NavigraphEventType, NavigraphNavdataSDK } from "@navigraph/navdata-sdk"
+import { DownloadProgressPhase, NavigraphEventType, NavigraphNavdataInterface } from "@navigraph/navdata-sdk"
 import { Dropdown } from "./Dropdown"
 
 interface NavigraphLoginProps extends ComponentProps {
@@ -22,17 +22,26 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
   private cancelSource = CancelToken.source()
 
-  private navdataSdk: NavigraphNavdataSDK
+  private navdataInterface: NavigraphNavdataInterface
 
   constructor(props: NavigraphLoginProps) {
     super(props)
 
-    this.navdataSdk = new NavigraphNavdataSDK()
+    this.navdataInterface = new NavigraphNavdataInterface()
 
-    this.navdataSdk.onEvent(NavigraphEventType.DownloadStatus, (data: unknown) => {
-      if (data.phase === "delete") {
+    this.navdataInterface.onEvent(NavigraphEventType.DownloadProgress, data => {
+      if (data.phase === DownloadProgressPhase.Downloading) {
+        this.displayMessage("Downloading navdata...")
+      } else if (data.phase === DownloadProgressPhase.Cleaning) {
+        if (!data.deleted) {
+          return
+        }
         this.displayMessage(`Cleaning destination directory. ${data.deleted} files deleted so far`)
-      } else if (data.phase === "unzip") {
+      } else if (data.phase === DownloadProgressPhase.Extracting) {
+        // Ensure non-null
+        if (!data.unzipped || !data.total_to_unzip) {
+          return
+        }
         const percent = Math.round((data.unzipped / data.total_to_unzip) * 100)
         this.displayMessage(`Unzipping files... ${percent}% complete`)
       }
@@ -78,18 +87,19 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   public onAfterRender(node: VNode): void {
     super.onAfterRender(node)
 
-    this.loginButtonRef.instance.addEventListener("click", () =>
-      this.handleClick().catch(e => this.displayError(e.message)),
-    )
+    this.loginButtonRef.instance.addEventListener("click", () => this.handleClick().catch(e => this.displayError(e)))
     this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
 
     this.executeButtonRef.instance.addEventListener("click", () => {
-      console.log("Executing SQL query")
       console.time("query")
-      this.navdataSdk.executeSql(this.inputRef.instance.value).then(data => {
-        console.log(data)
-        console.timeEnd("query")
-      })
+      this.navdataInterface
+        .executeSql(this.inputRef.instance.value)
+        .then(data => {
+          console.timeEnd("query")
+        })
+        .catch(e => {
+          console.error(e)
+        })
     })
 
     AuthService.user.sub(user => {
@@ -138,17 +148,21 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
     packages
       .getPackage(this.dropdownRef.instance.getNavdataFormat() as string)
       .then(pkg => {
-        if (this.navdataSdk.getIsInitialized()) {
-          this.displayMessage("Downloading navdata...")
-          this.navdataSdk
+        if (this.navdataInterface.getIsInitialized()) {
+          this.navdataInterface
             .downloadNavdata(pkg.file.url, pkg.format)
             .then(() => {
               console.info("WASM downloaded navdata")
               this.displayMessage("Downloaded!")
               this.displayMessage("Navdata downloaded")
-              this.navdataSdk.setActiveDatabase(pkg.format).then(() => {
-                console.info("WASM set active database")
-              })
+              this.navdataInterface
+                .setActiveDatabase(pkg.format)
+                .then(() => {
+                  console.info("WASM set active database")
+                })
+                .catch(e => {
+                  this.displayError(e)
+                })
             })
             .catch(e => {
               this.displayError(e)

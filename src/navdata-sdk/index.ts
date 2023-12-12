@@ -1,1 +1,2 @@
-export * from "./navdata_sdk"
+export * from "./NavdataInterfaceTypes"
+export * from "./NavigraphNavdataInterface"
