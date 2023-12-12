@@ -23,10 +23,10 @@ export interface DownloadProgressData {
 }
 
 export enum NavigraphFunction {
-  DownloadNavdata,
-  SetDownloadOptions,
-  SetActiveDatabase,
-  ExecuteSQLQuery,
+  DownloadNavdata = "DownloadNavdata",
+  SetDownloadOptions = "SetDownloadOptions",
+  SetActiveDatabase = "SetActiveDatabase",
+  ExecuteSQLQuery = "ExecuteSQLQuery",
 }
 
 export enum FunctionResultStatus {

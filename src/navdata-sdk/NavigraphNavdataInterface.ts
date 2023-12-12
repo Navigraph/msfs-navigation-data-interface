@@ -34,7 +34,7 @@ export class NavigraphNavdataInterface {
    * @returns A promise that resolves with the result of the query
    */
   public async executeSql(sql: string): Promise<unknown> {
-    return await this.callWasmFunction(NavigraphFunction[NavigraphFunction.ExecuteSQLQuery], { sql })
+    return await this.callWasmFunction(NavigraphFunction.ExecuteSQLQuery, { sql })
   }
 
   /**
@@ -45,7 +45,7 @@ export class NavigraphNavdataInterface {
    * @returns A promise that resolves when the download is complete
    */
   public async downloadNavdata(url: string, folder: string): Promise<void> {
-    return await this.callWasmFunction(NavigraphFunction[NavigraphFunction.DownloadNavdata], { url, folder })
+    return await this.callWasmFunction(NavigraphFunction.DownloadNavdata, { url, folder })
   }
 
   /**
@@ -55,7 +55,7 @@ export class NavigraphNavdataInterface {
    * @returns A promise that resolves when the function is complete
    */
   public async setDownloadOptions(batchSize: number): Promise<void> {
-    return await this.callWasmFunction(NavigraphFunction[NavigraphFunction.SetDownloadOptions], batchSize)
+    return await this.callWasmFunction(NavigraphFunction.SetDownloadOptions, batchSize)
   }
 
   /**
@@ -68,7 +68,7 @@ export class NavigraphNavdataInterface {
    * @returns A promise that resolves when the function is complete
    */
   public async setActiveDatabase(path: string): Promise<void> {
-    return await this.callWasmFunction(NavigraphFunction[NavigraphFunction.SetActiveDatabase], { path })
+    return await this.callWasmFunction(NavigraphFunction.SetActiveDatabase, { path })
   }
 
   /**
