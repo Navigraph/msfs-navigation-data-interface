@@ -88,7 +88,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   public onAfterRender(node: VNode): void {
     super.onAfterRender(node)
 
-    this.loginButtonRef.instance.addEventListener("click", () => this.handleClick().catch(e => this.displayError(e)))
+    this.loginButtonRef.instance.addEventListener("click", () => this.handleClick())
     this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
 
     this.executeButtonRef.instance.addEventListener("click", () => {
@@ -119,17 +119,22 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   }
 
   private async handleClick() {
-    if (AuthService.getUser()) {
-      await AuthService.signOut()
-    } else {
-      this.cancelSource = CancelToken.source() // Reset any previous cancellations
-      AuthService.signIn(p => {
-        if (p) {
-          this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${p.verification_uri_complete}`
-          this.qrCodeRef.instance.style.display = "block"
-          console.info(p.verification_uri_complete)
-        }
-      }, this.cancelSource.token).catch(e => this.displayError(e.message))
+    try {
+      if (AuthService.getUser()) {
+        await AuthService.signOut()
+      } else {
+        this.cancelSource = CancelToken.source() // Reset any previous cancellations
+        await AuthService.signIn(p => {
+          if (p) {
+            this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${p.verification_uri_complete}`
+            this.qrCodeRef.instance.style.display = "block"
+            console.info(p.verification_uri_complete)
+          }
+        }, this.cancelSource.token)
+      }
+    } catch (err) {
+      if (err instanceof Error) this.displayError(err.message)
+      else this.displayError(`Unknown error: ${String(err)}`)
     }
   }
 
@@ -145,34 +150,24 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       .catch(e => console.error(e))
   }
 
-  private handleDownloadClick() {
-    packages
-      .getPackage(this.dropdownRef.instance.getNavdataFormat() as string)
-      .then(pkg => {
-        if (this.navdataInterface.getIsInitialized()) {
-          this.navdataInterface
-            .downloadNavdata(pkg.file.url, pkg.format)
-            .then(() => {
-              console.info("WASM downloaded navdata")
-              this.displayMessage("Downloaded!")
-              this.displayMessage("Navdata downloaded")
-              this.navdataInterface
-                .setActiveDatabase(pkg.format)
-                .then(() => {
-                  console.info("WASM set active database")
-                })
-                .catch(e => {
-                  this.displayError(e)
-                })
-            })
-            .catch(e => {
-              this.displayError(e)
-            })
-        } else {
-          this.displayError("WASM not initialized")
-        }
-      })
-      .catch(e => this.displayError(e))
+  private async handleDownloadClick() {
+    try {
+      // Get default package for client
+      const pkg = await packages.getPackage(this.dropdownRef.instance.getNavdataFormat() as string)
+
+      if (!this.navdataInterface.getIsInitialized()) throw new Error("Navdata interface not initialized")
+
+      // Download navdata to work dir
+      await this.navdataInterface.downloadNavdata(pkg.file.url, pkg.format)
+      this.displayMessage("Navdata downloaded")
+
+      // Set active database to recently downloaded package
+      await this.navdataInterface.setActiveDatabase(pkg.format)
+      console.info("WASM set active database")
+    } catch (err) {
+      if (err instanceof Error) this.displayError(err.message)
+      else this.displayError(`Unknown error: ${String(err)}`)
+    }
   }
 
   private displayMessage(message: string) {
