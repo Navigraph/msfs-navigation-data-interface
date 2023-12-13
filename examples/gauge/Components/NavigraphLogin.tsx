@@ -1,5 +1,5 @@
 import { ComponentProps, DisplayComponent, EventBus, FSComponent, VNode } from "@microsoft/msfs-sdk"
-import { CancelToken, navigraphRequest } from "navigraph/auth"
+import { CancelToken } from "navigraph/auth"
 import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
 import "./NavigraphLogin.css"
@@ -30,20 +30,21 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
     this.navdataInterface = new NavigraphNavdataInterface()
 
     this.navdataInterface.onEvent(NavigraphEventType.DownloadProgress, data => {
-      if (data.phase === DownloadProgressPhase.Downloading) {
-        this.displayMessage("Downloading navdata...")
-      } else if (data.phase === DownloadProgressPhase.Cleaning) {
-        if (!data.deleted) {
-          return
+      switch (data.phase) {
+        case DownloadProgressPhase.Downloading:
+          this.displayMessage("Downloading navdata...")
+          break
+        case DownloadProgressPhase.Cleaning:
+          if (!data.deleted) return
+          this.displayMessage(`Cleaning destination directory. ${data.deleted} files deleted so far`)
+          break
+        case DownloadProgressPhase.Extracting: {
+          // Ensure non-null
+          if (!data.unzipped || !data.total_to_unzip) return
+          const percent = Math.round((data.unzipped / data.total_to_unzip) * 100)
+          this.displayMessage(`Unzipping files... ${percent}% complete`)
+          break
         }
-        this.displayMessage(`Cleaning destination directory. ${data.deleted} files deleted so far`)
-      } else if (data.phase === DownloadProgressPhase.Extracting) {
-        // Ensure non-null
-        if (!data.unzipped || !data.total_to_unzip) {
-          return
-        }
-        const percent = Math.round((data.unzipped / data.total_to_unzip) * 100)
-        this.displayMessage(`Unzipping files... ${percent}% complete`)
       }
     })
   }
