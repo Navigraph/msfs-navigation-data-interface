@@ -6,4 +6,3 @@ package-lock.json
 *.gltf
 *.json
 *.yml
-msfstypes/
