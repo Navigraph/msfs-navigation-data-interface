@@ -10,6 +10,9 @@ import {
   NavigraphFunction,
   RawNavigraphEvent,
 } from "./NavdataInterfaceTypes"
+import {
+  Airport
+} from "./NavigraphDFDTypes"
 
 export class NavigraphNavdataInterface {
   private readonly listener: CommBusListener
@@ -76,6 +79,16 @@ export class NavigraphNavdataInterface {
    */
   public async setActiveDatabase(path: string): Promise<void> {
     return await this.callWasmFunction("SetActiveDatabase", { path })
+  }
+
+  /**
+   * Gets the airport from the given ICAO code
+   *
+   * @param icao - ICAO code of the airport to get
+   * @returns A promise that resolves with the airport data
+   */
+  public async getAirport(icao: string): Promise<Airport> {
+    return await this.callWasmFunction(NavigraphFunction.GetAirport, { icao })
   }
 
   /**

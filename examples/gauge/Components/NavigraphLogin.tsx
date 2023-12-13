@@ -29,6 +29,17 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
     this.navdataInterface = new NavigraphNavdataInterface()
 
+    this.navdataInterface.onReady(() => {
+      this.navdataInterface
+        .setActiveDatabase("avionics_v2")
+        .then(() => {
+          console.info("WASM set active database")
+        })
+        .catch(e => {
+          this.displayError(e)
+        })
+    })
+
     this.navdataInterface.onEvent(NavigraphEventType.DownloadProgress, data => {
       switch (data.phase) {
         case DownloadProgressPhase.Downloading:
@@ -64,14 +75,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
             <div ref={this.downloadButtonRef} class="button">
               Download
             </div>
-            <input
-              ref={this.inputRef}
-              type="text"
-              id="sql"
-              name="sql"
-              value="SELECT * FROM tbl_airports"
-              class="text-field"
-            />
+            <input ref={this.inputRef} type="text" id="sql" name="sql" value="ESSA" class="text-field" />
             <div ref={this.executeButtonRef} class="button">
               Execute SQL
             </div>
@@ -94,8 +98,9 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
     this.executeButtonRef.instance.addEventListener("click", () => {
       console.time("query")
       this.navdataInterface
-        .executeSql(this.inputRef.instance.value)
-        .then(data => {
+        .getAirport(this.inputRef.instance.value)
+        .then(airport => {
+          console.log(airport)
           console.timeEnd("query")
         })
         .catch(e => {

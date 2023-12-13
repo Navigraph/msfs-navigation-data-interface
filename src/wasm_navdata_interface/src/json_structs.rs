@@ -13,6 +13,8 @@ pub mod functions {
         SetActiveDatabase,
         #[serde(rename = "ExecuteSQLQuery")]
         ExecuteSQLQuery,
+        #[serde(rename = "GetAirport")]
+        GetAirport,
     }
 
     #[derive(serde::Serialize)]
@@ -113,5 +115,11 @@ pub mod params {
     pub struct ExecuteSQLQueryParams {
         /// SQL query to execute
         pub sql: String,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct GetAirportData {
+        /// ICAO code of the airport
+        pub icao: String,
     }
 }

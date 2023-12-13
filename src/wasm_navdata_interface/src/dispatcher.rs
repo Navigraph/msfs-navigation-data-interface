@@ -133,6 +133,9 @@ impl<'a> Dispatcher<'a> {
                 functions::FunctionType::ExecuteSQLQuery => {
                     Dispatcher::execute_task(task.clone(), |t| self.database.execute_sql_query(t))
                 }
+                functions::FunctionType::GetAirport => {
+                    Dispatcher::execute_task(task.clone(), |t| self.database.get_airport(t))
+                }
             }
         }
 

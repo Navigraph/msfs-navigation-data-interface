@@ -17,5 +17,9 @@ strip = true
 msfs = { git = "https://github.com/flybywiresim/msfs-rs.git", rev = "b438d3e" }
 serde = { version = "1.0.190", features = ["derive"] }
 serde_json = "1.0.108"
-rusqlite = { git = "https://github.com/navigraph/rusqlite", rev = "7921774", features = ["bundled"] }
+rusqlite = { version = "0.30.0", features = ["bundled"] }
 zip = { version = "0.6.4", default-features = false, features = ["deflate"] }
+serde_rusqlite = "0.34.0"
+
+[patch.crates-io]
+rusqlite = { git = "https://github.com/navigraph/rusqlite", rev = "7921774" }

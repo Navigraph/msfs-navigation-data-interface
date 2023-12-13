@@ -4,6 +4,7 @@ use std::rc::Rc;
 use crate::{
     dispatcher::{Task, TaskStatus},
     json_structs::params,
+    query::sql_structs,
     util,
 };
 
@@ -96,6 +97,55 @@ impl Database {
         task.borrow_mut().status = TaskStatus::Success(Some(json));
 
         Ok(())
+    }
+
+    pub fn get_airport(
+        self: &Rc<Self>,
+        task: Rc<RefCell<Task>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let params = task.borrow().parse_data_as::<params::GetAirportData>()?;
+
+        let borrowed_db = self.database.borrow();
+        let conn = borrowed_db.as_ref().ok_or("No database open")?;
+
+        let mut stmt =
+            conn.prepare("SELECT * FROM tbl_airports WHERE airport_identifier = (?1)")?;
+
+        let airport = Database::fetch_row::<sql_structs::Airports>(&mut stmt, &[&params.icao])?;
+
+        // Serialize the airport data
+        let json = serde_json::to_value(airport)?;
+
+        task.borrow_mut().status = TaskStatus::Success(Some(json));
+
+        Ok(())
+    }
+
+    fn fetch_row<T>(
+        stmt: &mut rusqlite::Statement,
+        params: &[&dyn rusqlite::ToSql],
+    ) -> Result<T, Box<dyn std::error::Error>>
+    where
+        T: for<'r> serde::Deserialize<'r>,
+    {
+        let mut rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
+        let row = rows.next().ok_or("No row found")??;
+        Ok(row)
+    }
+
+    fn fetch_rows<T>(
+        stmt: &mut rusqlite::Statement,
+        params: &[&dyn rusqlite::ToSql],
+    ) -> Result<Vec<T>, Box<dyn std::error::Error>>
+    where
+        T: for<'r> serde::Deserialize<'r>,
+    {
+        let mut rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
+        let mut data = Vec::new();
+        while let Some(row) = rows.next() {
+            data.push(row.map_err(|e| e.to_string())?);
+        }
+        Ok(data)
     }
 
     pub fn close_connection(&self) {

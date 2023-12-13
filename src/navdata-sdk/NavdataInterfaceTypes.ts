@@ -27,6 +27,7 @@ export enum NavigraphFunction {
   SetDownloadOptions = "SetDownloadOptions",
   SetActiveDatabase = "SetActiveDatabase",
   ExecuteSQLQuery = "ExecuteSQLQuery",
+  GetAirport = "GetAirport",
 }
 
 export enum FunctionResultStatus {
