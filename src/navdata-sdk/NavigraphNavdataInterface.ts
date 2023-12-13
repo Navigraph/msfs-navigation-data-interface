@@ -1,3 +1,5 @@
+/// <reference types="./CommBus.d.ts" />
+
 import {
   Callback,
   CommBusMessage,
@@ -20,7 +22,7 @@ export class NavigraphNavdataInterface {
 
   /**
    * Creates a new NavigraphNavdataInterface
-   * 
+   *
    * @remarks
    * `RegisterCommBusListener` is called during construction. This means that the class must be instantiated once the function is available.
    */

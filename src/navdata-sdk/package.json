@@ -4,5 +4,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@microsoft/msfs-types": "^1.14.6"
   }
 }
