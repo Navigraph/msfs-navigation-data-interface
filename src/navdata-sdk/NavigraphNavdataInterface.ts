@@ -41,7 +41,7 @@ export class NavigraphNavdataInterface {
    * @returns A promise that resolves with the result of the query
    */
   public async executeSql(sql: string): Promise<unknown> {
-    return await this.callWasmFunction(NavigraphFunction.ExecuteSQLQuery, { sql })
+    return await this.callWasmFunction("ExecuteSQLQuery", { sql })
   }
 
   /**
@@ -52,7 +52,7 @@ export class NavigraphNavdataInterface {
    * @returns A promise that resolves when the download is complete
    */
   public async downloadNavdata(url: string, path: string): Promise<void> {
-    return await this.callWasmFunction(NavigraphFunction.DownloadNavdata, { url, path })
+    return await this.callWasmFunction("DownloadNavdata", { url, path })
   }
 
   /**
@@ -62,7 +62,7 @@ export class NavigraphNavdataInterface {
    * @returns A promise that resolves when the function is complete
    */
   public async setDownloadOptions(batchSize: number): Promise<void> {
-    return await this.callWasmFunction(NavigraphFunction.SetDownloadOptions, batchSize)
+    return await this.callWasmFunction("SetDownloadOptions", batchSize)
   }
 
   /**
@@ -75,7 +75,7 @@ export class NavigraphNavdataInterface {
    * @returns A promise that resolves when the function is complete
    */
   public async setActiveDatabase(path: string): Promise<void> {
-    return await this.callWasmFunction(NavigraphFunction.SetActiveDatabase, { path })
+    return await this.callWasmFunction("SetActiveDatabase", { path })
   }
 
   /**
@@ -85,7 +85,7 @@ export class NavigraphNavdataInterface {
    * @param data - Data to pass to the function
    * @returns A promise that resolves when the function returns
    */
-  private async callWasmFunction<T = unknown>(name: string, data: unknown): Promise<T> {
+  private async callWasmFunction<T = unknown>(name: keyof typeof NavigraphFunction, data: unknown): Promise<T> {
     const id = Utils.generateGUID()
 
     const args = {
