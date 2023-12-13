@@ -1,4 +1,4 @@
-/// <reference types="./CommBus.d.ts" />
+/// <reference types="./commbus.d.ts" />
 
 import {
   Callback,
