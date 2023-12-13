@@ -14,8 +14,7 @@ import {
 export class NavigraphNavdataInterface {
   private readonly listener: CommBusListener
   private queue: CommBusMessage[] = []
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private eventListeners: Callback<any>[] = []
+  private eventListeners: Callback[] = []
   private onReadyCallback: (() => void) | null = null
 
   private isInitialized = false
@@ -160,7 +159,7 @@ export class NavigraphNavdataInterface {
       event,
       callback,
     }
-    this.eventListeners.push(cb)
+    this.eventListeners.push(cb as Callback)
   }
 
   /**
