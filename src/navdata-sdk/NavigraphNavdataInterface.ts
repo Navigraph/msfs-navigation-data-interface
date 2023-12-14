@@ -88,7 +88,7 @@ export class NavigraphNavdataInterface {
    * @returns A promise that resolves with the airport data
    */
   public async getAirport(icao: string): Promise<Airport> {
-    return await this.callWasmFunction(NavigraphFunction.GetAirport, { icao })
+    return await this.callWasmFunction("GetAirport", { icao })
   }
 
   /**
