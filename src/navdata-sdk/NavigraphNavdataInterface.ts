@@ -10,9 +10,7 @@ import {
   NavigraphFunction,
   RawNavigraphEvent,
 } from "./NavdataInterfaceTypes"
-import {
-  Airport
-} from "./NavigraphDFDTypes"
+import { Airport } from "./NavigraphDFDTypes"
 
 export class NavigraphNavdataInterface {
   private readonly listener: CommBusListener
