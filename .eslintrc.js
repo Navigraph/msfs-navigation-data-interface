@@ -1,6 +1,6 @@
 module.exports = {
   root: true,
-  ignorePatterns: [".eslintrc.js", "src/wasm_navdata_interface/", "msfstypes/"],
+  ignorePatterns: [".eslintrc.js", "src/wasm/", "msfstypes/"],
   env: { browser: true, commonjs: true, es6: true },
   plugins: ["@typescript-eslint"],
   extends: [
@@ -11,7 +11,7 @@ module.exports = {
   ],
   parserOptions: {
     tsconfigRootDir: __dirname,
-    project: ["./examples/gauge/tsconfig.json"],
+    project: ["./tsconfig.json"],
     ecmaVersion: 2022,
     sourceType: "module",
     ecmaFeatures: { jsx: true },

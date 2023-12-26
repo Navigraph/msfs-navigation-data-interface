@@ -1,10 +1,10 @@
-import { existsSync, mkdirSync, readFileSync } from "node:fs"
+import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs"
 import { argv, env } from "node:process"
 import * as path from "path"
 import random from "random-bigint"
 import { v4 } from "uuid"
 import { WASI } from "wasi"
-import { NavigraphNavdataInterface } from "./NavigraphNavdataInterface"
+import { NavigraphNavdataInterface } from "../js/NavigraphNavdataInterface"
 
 /**
  * struct sGaugeDrawData
@@ -103,7 +103,7 @@ global.Utils = {
   },
 }
 
-const work_path = path.resolve(`${process.cwd()}/../../test_out`)
+const work_path = path.resolve(`${process.cwd()}/test_out`)
 
 // if doesnt exist, create (so we don't need to commit it)
 if (!existsSync(work_path)) {
@@ -119,7 +119,7 @@ const wasi = new WASI({
   },
 })
 
-const wasm = new WebAssembly.Module(readFileSync("../wasm_navdata_interface/out/navdata_interface.wasm"))
+const wasm = new WebAssembly.Module(readFileSync("./out/msfs_navdata_interface.wasm"))
 
 let table: WebAssembly.Table
 
@@ -222,7 +222,7 @@ const navdataInterface = new NavigraphNavdataInterface()
 
 ;(async () => {
   await navdataInterface.downloadNavdata(
-    "https://packages.fmsdata.api.navigraph.com/0adb50e3-3c3e-4115-8324-e9fb625f03f1/e_dfd_2312.zip?sub=d2f9985c-1653-4052-ad35-68e5301c7428&Expires=1703568955&Key-Pair-Id=APKAJO4CE5J24DMH7HHA&Signature=BJdoFHkJ4VEzHIn9hRhZxx6nEF25LRIKOoTv2Ab-3ZwtgKU7Iagw489qDjYfQbgwJJvmZzgqHaoiPnqT63KP3NBQMGKlWp4~RqFUG0POXadMzrw8c4RemRzdU5zC8qyZ~333~ZUBc-D0YzoKoa47EiLLyvG0lGwXVlj1k1822BBmOYqarcIN12~XFhUD5GtUunyy~8pAIdHkwLq4MD2O70kqbp9-vC6nqwU0xNo9QkLg9TnWF6rIkjQl41JaVfwSHbvA2oMU01QqQk-urHJxZNVW0a5Ep2FGKFaJHUYYh8l~NvDlgzP2bioavEfyosW2fV5w14Aem3smarzB5qC4tQ__",
+    "https://packages.fmsdata.api.navigraph.com/0adb50e3-3c3e-4115-8324-e9fb625f03f1/e_dfd_2312.zip?sub=d2f9985c-1653-4052-ad35-68e5301c7428&Expires=1703629313&Key-Pair-Id=APKAJO4CE5J24DMH7HHA&Signature=TBj3RBtpFFrsHnkg2hXlz3HC7vrVyh9KIEOyYPJgvLhTdtiavzG-880t1oUHt5mdTX0zVcysHIE0ZOaSAxIdQqmm~ngLZNEowDM4RUclWkk5YJ0E9mnON~nEYJCagkV5cy0cK4K2NKyTAia153VcLALd1XQlefeA4bK-~mI2LGyfByHocKcP-z053SGoScTgALWUG6EA51rO3Nfu8m5q166PzkwUN00JzpSgUtSICj6cn9RHjOKA3~PBOg4x1edTd8kIo8Hxhmi4xEDIGN9V8xtdQD5yOccI20K9aa3CRU6tJa6KyKnOu0oc0Nql6WwAXPnZ4ypMrPtX~4Z6CLJ9pQ__",
     "test",
   )
   await navdataInterface.setActiveDatabase("test")

@@ -13,10 +13,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Build WASM module
-        run: |
-          ./src/wasm_navdata_interface/scripts/run_docker_cmd.sh ./scripts/build.sh
+        run: npm run build:wasm-workflow
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v2
         with:
-          name: navdata_interface.wasm
-          path: ./src/wasm_navdata_interface/out/navdata_interface.wasm
+          name: msfs_navdata_interface.wasm
+          path: ./out/msfs_navdata_interface.wasm
