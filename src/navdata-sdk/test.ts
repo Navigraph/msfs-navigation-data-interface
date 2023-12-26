@@ -56,10 +56,16 @@ function readString(pointer: number): string {
   return new TextDecoder().decode(memoryBuffer.slice(pointer, lastChar))
 }
 
+function malloc(size: number): number {
+  const pointer = instance.exports.malloc(size) as number
+  memoryBuffer = new Uint8Array(instance.exports.memory.buffer)
+  return pointer
+}
+
 function writeString(value: string): [number, number] {
   const encoded = new TextEncoder().encode(value)
 
-  const pointer = instance.exports.malloc(encoded.length) as number
+  const pointer = malloc(encoded.length, memoryBuffer)
 
   memoryBuffer.set(encoded, pointer)
 
@@ -154,7 +160,7 @@ instance = new WebAssembly.Instance(wasm, {
         .then(async blob => {
           const data = new Uint8Array(await blob.arrayBuffer())
 
-          const pointer = instance.exports.malloc(data.length) as number
+          const pointer = malloc(data.length, memoryBuffer)
 
           console.log(memoryBuffer)
           memoryBuffer.set(data, pointer)
@@ -195,7 +201,7 @@ async function lifeCycle() {
 
     const array = new Uint8Array([...floats, ...ints])
 
-    const pointer = instance.exports.malloc(array.length) as number
+    const pointer = malloc(array.length, memoryBuffer)
 
     memoryBuffer.set(array, pointer)
 
