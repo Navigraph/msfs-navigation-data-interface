@@ -12,24 +12,24 @@ pub enum PathType {
 
 /// We aren't able to get file metadata in the sim so we can't use some of the standard library file system functions (like is_dir, exists, and some others)
 pub fn get_path_type(path: &Path) -> PathType {
+    match fs::read_dir(path) {
+        Ok(mut dir_res) => {
+            let next = dir_res.next();
+
+            if let Some(result) = next {
+                if result.is_ok() {
+                    return PathType::Directory;
+                }
+            }
+        }
+        Err(_) => {}
+    };
+
     let file_res = fs::File::open(path);
     if file_res.is_ok() {
         return PathType::File;
     }
-    let mut dir_res = match fs::read_dir(path) {
-        Ok(dir_res) => dir_res,
-        Err(_) => {
-            return PathType::DoesNotExist;
-        }
-    };
 
-    let next = dir_res.next();
-
-    if let Some(result) = next {
-        if result.is_ok() {
-            return PathType::Directory;
-        }
-    }
     PathType::DoesNotExist
 }
 

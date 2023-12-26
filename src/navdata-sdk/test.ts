@@ -1,5 +1,6 @@
-import { readFileSync } from "node:fs"
+import { existsSync, mkdirSync, readFileSync } from "node:fs"
 import { argv, env } from "node:process"
+import * as path from "path"
 import random from "random-bigint"
 import { v4 } from "uuid"
 import { WASI } from "wasi"
@@ -102,13 +103,19 @@ global.Utils = {
   },
 }
 
+const work_path = path.resolve(`${process.cwd()}/../../test_out`)
+
+// if doesnt exist, create (so we don't need to commit it)
+if (!existsSync(work_path)) {
+  mkdirSync(work_path)
+}
+
 const wasi = new WASI({
   version: "preview1",
   args: argv,
   env,
   preopens: {
-    "/": process.cwd(),
-    "/work": process.cwd() + "\\work",
+    "\\work": work_path,
   },
 })
 
@@ -162,9 +169,7 @@ instance = new WebAssembly.Instance(wasm, {
 
           const pointer = malloc(data.length, memoryBuffer)
 
-          console.log(memoryBuffer)
           memoryBuffer.set(data, pointer)
-
           promiseResults.set(requestId, [pointer, data.length])
 
           const func = table.get(callback) as () => void
@@ -217,7 +222,9 @@ const navdataInterface = new NavigraphNavdataInterface()
 
 ;(async () => {
   await navdataInterface.downloadNavdata(
-    "https://packages.fmsdata.api.navigraph.com/0adb50e3-3c3e-4115-8324-e9fb625f03f1/e_dfd_2312.zip?sub=d2f9985c-1653-4052-ad35-68e5301c7428&Expires=1703563007&Key-Pair-Id=APKAJO4CE5J24DMH7HHA&Signature=gUhPAK645AwlcROHXj5kfdCgtJtcC1Wv172qJb84pNMyPo-s2FfJD8GNBxYXN6fQuIh4gKPCfNSKnDnjW2SHAPOaOFCKFDbGuFpEUp8rP94dTWtR2pAnZFq3Pu5WiBtgc~8wRNK6-Kf462Q6DCj9LsdXbatUfhiyZTrfUJoC0efAiMA3fMWAvd3O9u4fDURbtoGAVQGDA8uT80MRtoyqeZw66aQt-N2CxTdbMpvi8TkSU6KbdTb3zXu-oaJr6FvS39kpvynFRkBEIfiupW0MA0BJoY3Ac1ndN1rs3is~ZdTgX-cxPOMWB3Ra1DHl3Sgz~h7iEBAzCvo92ay5XW6KAQ__",
-    "",
+    "https://packages.fmsdata.api.navigraph.com/0adb50e3-3c3e-4115-8324-e9fb625f03f1/e_dfd_2312.zip?sub=d2f9985c-1653-4052-ad35-68e5301c7428&Expires=1703568955&Key-Pair-Id=APKAJO4CE5J24DMH7HHA&Signature=BJdoFHkJ4VEzHIn9hRhZxx6nEF25LRIKOoTv2Ab-3ZwtgKU7Iagw489qDjYfQbgwJJvmZzgqHaoiPnqT63KP3NBQMGKlWp4~RqFUG0POXadMzrw8c4RemRzdU5zC8qyZ~333~ZUBc-D0YzoKoa47EiLLyvG0lGwXVlj1k1822BBmOYqarcIN12~XFhUD5GtUunyy~8pAIdHkwLq4MD2O70kqbp9-vC6nqwU0xNo9QkLg9TnWF6rIkjQl41JaVfwSHbvA2oMU01QqQk-urHJxZNVW0a5Ep2FGKFaJHUYYh8l~NvDlgzP2bioavEfyosW2fV5w14Aem3smarzB5qC4tQ__",
+    "test",
   )
+  await navdataInterface.setActiveDatabase("test")
+  console.log(await navdataInterface.getAirport("KJFK"))
 })()

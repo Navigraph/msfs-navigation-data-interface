@@ -27,3 +27,5 @@ Cargo.lock
 .env
 *.local
 .DS_Store
+
+test_out/
