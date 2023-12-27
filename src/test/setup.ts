@@ -186,9 +186,10 @@ instance.exports.navdata_interface_gauge_callback("", PanelService.PANEL_SERVICE
 
 const drawRate = 30
 
-// TODO: Extract to seperate lifecycle
+let runLifecycle = true
+
 async function lifeCycle() {
-  while (true) {
+  while (runLifecycle) {
     await new Promise(resolve => setTimeout(resolve, 1000 / drawRate))
 
     const floats = new Uint8Array(new Float64Array([0, 0, 0, 1 / drawRate]).buffer) // First 4 64 bit doubles of sGaugeDrawData
@@ -207,3 +208,7 @@ async function lifeCycle() {
 }
 
 void lifeCycle()
+
+afterAll(() => {
+  runLifecycle = false
+})
