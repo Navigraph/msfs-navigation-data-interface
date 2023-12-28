@@ -1,23 +1,11 @@
-import { mkdirSync, readFileSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import { argv, env } from "node:process"
-import * as path from "path"
 import random from "random-bigint"
 import { v4 } from "uuid"
 import { WASI } from "wasi"
-
-/**
- * struct sGaugeDrawData
-{
-	double mx;
-	double my;
-	double t;
-	double dt; // In Seconds
-	int winWidth;
-	int winHeight;
-	int fbWidth;
-	int fbHeight;
-};
- */
+import { NavigraphNavdataInterface } from "../js"
+import { DATABASE_PATH } from "./constants"
+import "dotenv/config"
 
 enum PanelService {
   PANEL_SERVICE_POST_QUERY = 1,
@@ -41,8 +29,8 @@ enum PanelService {
 
 let instance: WebAssembly.Instance
 
-const wasmRegisteredEvents = new Map<string, [(args_pointer: number, args_size: number, ctx: number) => void, number]>()
-const jsRegisteredEvents = new Map<string, (jsonArgs: string) => void>()
+let wasmRegisteredEvents: [string, [(args_pointer: number, args_size: number, ctx: number) => void, number]][] = []
+const jsRegisteredEvents: [string, (jsonArgs: string) => void][] = []
 
 let memoryBuffer: Uint8Array
 
@@ -74,19 +62,19 @@ function writeString(value: string): [number, number] {
 
 class CommBusListener {
   callWasm(name: string, jsonBuf: string) {
-    const data = wasmRegisteredEvents.get(name)
+    const events = wasmRegisteredEvents.filter(([eventName]) => eventName === name)
 
-    if (!data) return
+    events.forEach(([, [func, t]]) => {
+      const [args, size] = writeString(jsonBuf)
 
-    const [func, t] = data
-
-    const [args, size] = writeString(jsonBuf)
-
-    func(args, size, t)
+      func(args, size, t)
+    })
   }
 
   on(eventName: string, callback: (args: string) => void) {
-    jsRegisteredEvents.set(eventName, callback)
+    if (!jsRegisteredEvents.find(([name, func]) => name === eventName && func === callback)) {
+      jsRegisteredEvents.push([eventName, callback])
+    }
   }
 }
 
@@ -120,20 +108,31 @@ const promiseResults = new Map<bigint, [number, number]>()
 instance = new WebAssembly.Instance(wasm, {
   wasi_snapshot_preview1: wasi.wasiImport,
   env: {
-    fsCommBusCall: (eventName: number, args: number) => {
-      jsRegisteredEvents.get(readString(eventName))?.(readString(args))
+    fsCommBusCall: (eventNamePointer: number, args: number) => {
+      const eventName = readString(eventNamePointer)
+
+      const events = jsRegisteredEvents.filter(([name]) => name === eventName)
+
+      events.forEach(([, func]) => {
+        func(readString(args))
+      })
+
       return true
     },
-    fsCommBusUnregister: (eventNamePointer: number) => {
+    fsCommBusUnregister: (eventNamePointer: number, callback: number) => {
       const eventName = readString(eventNamePointer)
-      wasmRegisteredEvents.delete(eventName)
+      const func = table.get(callback) as () => void
+
+      wasmRegisteredEvents = wasmRegisteredEvents.filter(([name, [func1]]) => name !== eventName || func1 !== func)
       return 0
     },
     fsCommBusRegister: (eventNamePointer: number, callback: number, t: number) => {
       const eventName = readString(eventNamePointer)
       const func = table.get(callback) as () => void
 
-      wasmRegisteredEvents.set(eventName, [func, t])
+      if (!wasmRegisteredEvents.find(([name, [func1]]) => name === eventName && func1 === func)) {
+        wasmRegisteredEvents.push([eventName, [func, t]])
+      }
 
       return true
     },
@@ -206,6 +205,18 @@ async function lifeCycle() {
     instance.exports.free(pointer)
   }
 }
+
+beforeAll(async () => {
+  const navdataInterface = new NavigraphNavdataInterface()
+
+  const downloadUrl = process.env.NAVDATA_SIGNED_URL
+
+  if (!downloadUrl) {
+    throw new Error("Please specify the env var `NAVDATA_SIGNED_URL`")
+  }
+
+  await navdataInterface.downloadNavdata(downloadUrl, DATABASE_PATH)
+}, 10000)
 
 void lifeCycle()
 
