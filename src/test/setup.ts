@@ -4,36 +4,83 @@ import random from "random-bigint"
 import { v4 } from "uuid"
 import { WASI } from "wasi"
 import { NavigraphNavdataInterface } from "../js"
-import { DATABASE_PATH } from "./constants"
+import { WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
 import "dotenv/config"
 
 enum PanelService {
-  PANEL_SERVICE_POST_QUERY = 1,
-  PANEL_SERVICE_PRE_INSTALL = 2,
-  PANEL_SERVICE_POST_INSTALL = 3,
-  PANEL_SERVICE_PRE_INITIALIZE = 4,
-  PANEL_SERVICE_POST_INITIALIZE = 5,
-  PANEL_SERVICE_PRE_UPDATE = 6,
-  PANEL_SERVICE_POST_UPDATE = 7,
-  PANEL_SERVICE_PRE_GENERATE = 8,
-  PANEL_SERVICE_POST_GENERATE = 9,
-  PANEL_SERVICE_PRE_DRAW = 10,
-  PANEL_SERVICE_POST_DRAW = 11,
-  PANEL_SERVICE_PRE_KILL = 12,
-  PANEL_SERVICE_POST_KILL = 13,
-  PANEL_SERVICE_CONNECT_TO_WINDOW = 14,
-  PANEL_SERVICE_DISCONNECT = 15,
-  PANEL_SERVICE_PANEL_OPEN = 16,
-  PANEL_SERVICE_PANEL_CLOSE = 17,
+  POST_QUERY = 1,
+  PRE_INSTALL = 2,
+  POST_INSTALL = 3,
+  PRE_INITIALIZE = 4,
+  POST_INITIALIZE = 5,
+  PRE_UPDATE = 6,
+  POST_UPDATE = 7,
+  PRE_GENERATE = 8,
+  POST_GENERATE = 9,
+  PRE_DRAW = 10,
+  POST_DRAW = 11,
+  PRE_KILL = 12,
+  POST_KILL = 13,
+  CONNECT_TO_WINDOW = 14,
+  DISCONNECT = 15,
+  PANEL_OPEN = 16,
+  PANEL_CLOSE = 17,
 }
 
-let instance: WebAssembly.Instance
+type WasmInstance = {
+  exports: {
+    navdata_interface_gauge_callback: (fsContext: bigint, serviceId: PanelService, dataPointer: number) => void
+    malloc: (size: number) => number
+    free: (pointer: number) => void
+    memory: WebAssembly.Memory
+    __indirect_function_table: WebAssembly.Table
+  }
+}
 
-let wasmRegisteredEvents: [string, [(args_pointer: number, args_size: number, ctx: number) => void, number]][] = []
-const jsRegisteredEvents: [string, (jsonArgs: string) => void][] = []
+// eslint-disable-next-line prefer-const
+let wasmInstance: WasmInstance // The instance of the wasm module
 
+type WasmEventCallback = (argsPointer: number, argsSize: number, ctx: number) => void
+
+/**
+ * The events registered by wasm CommBus
+ * [eventName: string, callback, ctx]
+ * The third value, ctx value must be passed to the callback when called
+ */
+let wasmRegisteredEvents: [string, WasmEventCallback, number][] = []
+
+type JSEventCallback = (args: string) => void
+
+/**
+ * The events registered by js CommBus
+ * [eventName, callback]
+ */
+const jsRegisteredEvents: [string, JSEventCallback][] = []
+
+/**
+ * A Uint8Array created from the wasm instance memory buffer
+ * This is how one should access the wasm memory
+ */
 let memoryBuffer: Uint8Array
 
+/**
+ * Allocate memory in the wasm instance. This memory can be accessed by slicing the `memoryBuffer` with the pointer and the size.
+ * @param size - The number of bytes to allocate
+ * @returns A pointer to the allocated memory.
+ */
+function malloc(size: number): number {
+  const pointer = wasmInstance.exports.malloc(size)
+  memoryBuffer = new Uint8Array(wasmInstance.exports.memory.buffer as ArrayBufferLike)
+  return pointer
+}
+
+/**
+ * Reads a CString from the `memoryBuffer`.
+ *
+ * The string terminates when a null byte is found
+ * @param pointer - The pointer to the location in `memoryBuffer` where the string is stored
+ * @returns The string from memory using `TextDecoder`
+ */
 function readString(pointer: number): string {
   let lastChar = pointer
 
@@ -44,16 +91,15 @@ function readString(pointer: number): string {
   return new TextDecoder().decode(memoryBuffer.slice(pointer, lastChar))
 }
 
-function malloc(size: number): number {
-  const pointer = instance.exports.malloc(size) as number
-  memoryBuffer = new Uint8Array(instance.exports.memory.buffer)
-  return pointer
-}
-
+/**
+ * Writes a string to the `memoryBuffer` which can be read by wasm.
+ * @param value - The string to write to memory
+ * @returns A tuple containing the pointer to the string and the size of the string
+ */
 function writeString(value: string): [number, number] {
   const encoded = new TextEncoder().encode(value)
 
-  const pointer = malloc(encoded.length, memoryBuffer)
+  const pointer = malloc(encoded.length)
 
   memoryBuffer.set(encoded, pointer)
 
@@ -61,52 +107,59 @@ function writeString(value: string): [number, number] {
 }
 
 class CommBusListener {
-  callWasm(name: string, jsonBuf: string) {
+  callWasm(name: string, args: string) {
     const events = wasmRegisteredEvents.filter(([eventName]) => eventName === name)
 
-    events.forEach(([, [func, t]]) => {
-      const [args, size] = writeString(jsonBuf)
+    events.forEach(([, func, ctx]) => {
+      const [pointer, size] = writeString(args)
 
-      func(args, size, t)
+      func(pointer, size, ctx)
     })
   }
 
-  on(eventName: string, callback: (args: string) => void) {
+  on(eventName: string, callback: JSEventCallback) {
     if (!jsRegisteredEvents.find(([name, func]) => name === eventName && func === callback)) {
       jsRegisteredEvents.push([eventName, callback])
     }
   }
 }
 
+// @ts-ignore The CommBusListener we return only needs to implement the CommBus functions we use
 global.RegisterCommBusListener = function RegisterCommBusListener(callback?: () => void) {
   if (callback) setTimeout(callback, 1)
 
   return new CommBusListener()
 }
 
+// @ts-ignore Currently we only use generateGUID
 global.Utils = {
   generateGUID() {
     return v4()
   },
 }
 
-const wasi = new WASI({
+const wasiSystem = new WASI({
   version: "preview1",
   args: argv,
   env,
   preopens: {
-    "\\work": "./test_out",
+    "\\work": WORK_FOLDER_PATH,
   },
 })
 
-const wasm = new WebAssembly.Module(readFileSync("./out/msfs_navdata_interface.wasm"))
+// Read the wasm from the file, and compile it into a module
+const wasmModule = new WebAssembly.Module(readFileSync(WEBASSEMBLY_PATH))
 
-let table: WebAssembly.Table
+// eslint-disable-next-line prefer-const
+let wasmFunctionTable: WebAssembly.Table // The table of callback functions in the wasm module
 
+/**
+ * Maps request ids to a tuple of the returned data's pointer, and the data's size
+ */
 const promiseResults = new Map<bigint, [number, number]>()
 
-instance = new WebAssembly.Instance(wasm, {
-  wasi_snapshot_preview1: wasi.wasiImport,
+wasmInstance = new WebAssembly.Instance(wasmModule, {
+  wasi_snapshot_preview1: wasiSystem.wasiImport,
   env: {
     fsCommBusCall: (eventNamePointer: number, args: number) => {
       const eventName = readString(eventNamePointer)
@@ -121,17 +174,17 @@ instance = new WebAssembly.Instance(wasm, {
     },
     fsCommBusUnregister: (eventNamePointer: number, callback: number) => {
       const eventName = readString(eventNamePointer)
-      const func = table.get(callback) as () => void
+      const func = wasmFunctionTable.get(callback) as WasmEventCallback
 
-      wasmRegisteredEvents = wasmRegisteredEvents.filter(([name, [func1]]) => name !== eventName || func1 !== func)
+      wasmRegisteredEvents = wasmRegisteredEvents.filter(([name, func1]) => name !== eventName || func1 !== func)
       return 0
     },
-    fsCommBusRegister: (eventNamePointer: number, callback: number, t: number) => {
+    fsCommBusRegister: (eventNamePointer: number, callback: number, ctx: number) => {
       const eventName = readString(eventNamePointer)
-      const func = table.get(callback) as () => void
+      const func = wasmFunctionTable.get(callback) as WasmEventCallback
 
-      if (!wasmRegisteredEvents.find(([name, [func1]]) => name === eventName && func1 === func)) {
-        wasmRegisteredEvents.push([eventName, [func, t]])
+      if (!wasmRegisteredEvents.find(([name, func1]) => name === eventName && func1 === func)) {
+        wasmRegisteredEvents.push([eventName, func, ctx])
       }
 
       return true
@@ -148,11 +201,12 @@ instance = new WebAssembly.Instance(wasm, {
 
       return data[0]
     },
-    fsNetworkHttpRequestGet: (urlPointer: number, paramPointer: number, callback: number, t: number) => {
+    fsNetworkHttpRequestGet: (urlPointer: number, paramPointer: number, callback: number, ctx: number) => {
       const url = readString(urlPointer)
 
       const requestId: bigint = random(32) // Setting it to 64 does... strange things
 
+      // Currently the only network request is for the navdata zip which is downloaded as a blob
       fetch(url)
         .then(result => result.blob())
         .then(async blob => {
@@ -163,8 +217,8 @@ instance = new WebAssembly.Instance(wasm, {
           memoryBuffer.set(data, pointer)
           promiseResults.set(requestId, [pointer, data.length])
 
-          const func = table.get(callback) as () => void
-          func(requestId, 200, t)
+          const func = wasmFunctionTable.get(callback) as (requestId: bigint, statusCode: number, ctx: number) => void
+          func(requestId, 200, ctx)
         })
         .catch(err => {
           console.error(err)
@@ -173,20 +227,29 @@ instance = new WebAssembly.Instance(wasm, {
       return requestId
     },
   },
-})
+}) as WasmInstance
 
-memoryBuffer = new Uint8Array(instance.exports.memory.buffer)
-table = instance.exports.__indirect_function_table
+// Initially assign `memoryBuffer` to a new Uint8Array linked to the exported memoryBuffer
+memoryBuffer = new Uint8Array(wasmInstance.exports.memory.buffer)
+wasmFunctionTable = wasmInstance.exports.__indirect_function_table
 
-wasi.initialize(instance)
+wasiSystem.initialize(wasmInstance)
 
-instance.exports.navdata_interface_gauge_callback("", PanelService.PANEL_SERVICE_PRE_INSTALL, () => {})
-instance.exports.navdata_interface_gauge_callback("", PanelService.PANEL_SERVICE_POST_INITIALIZE, () => {})
+const fsContext = BigInt(0)
+
+// Run the initialisation functions to setup the gauge
+wasmInstance.exports.navdata_interface_gauge_callback(fsContext, PanelService.PRE_INSTALL, 0)
+wasmInstance.exports.navdata_interface_gauge_callback(fsContext, PanelService.POST_INITIALIZE, 0)
 
 const drawRate = 30
 
 let runLifecycle = true
 
+/**
+ * Runs the life cycle loop for the gauge
+ * This only calls the PANEL_SERVICE_PRE_DRAW as of now as its the only function our wasm instance uses
+ * This will run until `runLifeCycle` is set to false
+ */
 async function lifeCycle() {
   while (runLifecycle) {
     await new Promise(resolve => setTimeout(resolve, 1000 / drawRate))
@@ -200,12 +263,13 @@ async function lifeCycle() {
 
     memoryBuffer.set(array, pointer)
 
-    instance.exports.navdata_interface_gauge_callback("", PanelService.PANEL_SERVICE_PRE_DRAW, pointer)
+    wasmInstance.exports.navdata_interface_gauge_callback(fsContext, PanelService.PRE_DRAW, pointer)
 
-    instance.exports.free(pointer)
+    wasmInstance.exports.free(pointer)
   }
 }
 
+// This will run once for each test file
 beforeAll(async () => {
   const navdataInterface = new NavigraphNavdataInterface()
 
@@ -215,11 +279,16 @@ beforeAll(async () => {
     throw new Error("Please specify the env var `NAVDATA_SIGNED_URL`")
   }
 
-  await navdataInterface.downloadNavdata(downloadUrl, DATABASE_PATH)
+  // Download navdata to a unique folder to prevent clashes
+  const path = v4()
+
+  await navdataInterface.downloadNavdata(downloadUrl, path)
+  await navdataInterface.setActiveDatabase(path)
 }, 10000)
 
 void lifeCycle()
 
+// Cancel the lifeCycle after all tests have completed
 afterAll(() => {
   runLifecycle = false
 })
