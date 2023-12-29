@@ -3,7 +3,7 @@ import { CancelToken } from "navigraph/auth"
 import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
 import "./NavigraphLogin.css"
-import { DownloadProgressPhase, NavigraphEventType, NavigraphNavdataInterface } from "@navigraph/navdata-sdk"
+import { DownloadProgressPhase, NavigraphEventType, NavigraphNavdataInterface } from "msfs-navdata-interface"
 import { Dropdown } from "./Dropdown"
 
 interface NavigraphLoginProps extends ComponentProps {
