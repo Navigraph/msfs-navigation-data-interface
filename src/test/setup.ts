@@ -166,8 +166,8 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
 
       const events = jsRegisteredEvents.filter(([name]) => name === eventName)
 
-      events.forEach(([, func]) => {
-        console.log(func)
+      events.forEach(data => {
+        const func = data[1] // For some reason destructuing the array in args causes a type error...
         func(readString(args))
       })
 
