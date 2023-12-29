@@ -4,7 +4,7 @@
     "format": "prettier --write .",
     "lint": "eslint --ext ts,tsx .",
     "build:wasm": ".\\scripts\\build.bat",
-    "build:wasm-workflow": "./scripts/build.sh",
+    "build:wasm-workflow": "./scripts/run_docker_cmd.sh ./scripts/build.sh",
     "jest": "jest",
     "test": ".\\scripts\\test.bat"
   },
