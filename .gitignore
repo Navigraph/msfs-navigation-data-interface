@@ -28,4 +28,4 @@ Cargo.lock
 *.local
 .DS_Store
 
-test_out/
+test_work/
