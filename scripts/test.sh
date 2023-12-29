@@ -1,6 +1,7 @@
 #!/bin/bash
 
-rm -r test_out
+rm -rf test_out
 mkdir test_out
 
+npm install
 npm run jest
