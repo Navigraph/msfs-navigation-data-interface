@@ -167,6 +167,7 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
       const events = jsRegisteredEvents.filter(([name]) => name === eventName)
 
       events.forEach(([, func]) => {
+        console.log(func)
         func(readString(args))
       })
 
