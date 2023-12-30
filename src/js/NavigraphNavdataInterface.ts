@@ -1,5 +1,3 @@
-/// <reference types="./commbus.d.ts" />
-
 import {
   Callback,
   CommBusMessage,

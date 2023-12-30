@@ -13,8 +13,9 @@ Here's an overview on the structure of this repository, which is designed to be 
   - `aircraft/` includes a base aircraft to test in the sim
   - `gauge/` includes a very simple TypeScript instrument to communicate with the WASM module
 - `src/`
-  - Contains the source for the navdata interface (and soon the JS library)
-  - `wasm_navdata_interface` includes the Rust source code for the WASM module
+  - `js` Includes source code for the JS interface for using the sdk
+  - `test` Includes code for testing the JS and Rust code using a Node runtime
+  - `wasm` includes the Rust source code for the WASM module which handles the database interface
 
 ## Including in Your Aircraft
 
@@ -44,7 +45,6 @@ Before building, make sure you have properly created and set an `.env` file in `
 ## Building the WASM Module Yourself
 
 1. [Download](https://www.docker.com/products/docker-desktop/) Docker Desktop
-2. Open the `src/wasm_navdata_interface` folder in a terminal
-3. Run `.\build.bat` (must be on Windows)
+2. Run `npm run build:wasm` (must be on Windows)
    - This will take a while to download and build the first time, but subsequent runs will be quicker
-4. The compiled WASM module will be copied to `src/wasm_navdata_interface/out` **and** `examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navdata_Interface_Aircraft/panel`
+3. The compiled WASM module will be copied to `out` **and** `examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navdata_Interface_Aircraft/panel`
