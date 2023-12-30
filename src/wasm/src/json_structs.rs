@@ -15,6 +15,8 @@ pub mod functions {
         ExecuteSQLQuery,
         #[serde(rename = "GetAirport")]
         GetAirport,
+        #[serde(rename = "GetAirportsInRange")]
+        GetAirportsInRange,
     }
 
     #[derive(serde::Serialize)]
@@ -90,6 +92,7 @@ pub mod events {
 
 /// Contains structs relating to parameters
 pub mod params {
+    use crate::query::math::{Coordinates, NauticalMiles};
 
     #[derive(serde::Deserialize)]
     pub struct DownloadNavdataParams {
@@ -119,8 +122,14 @@ pub mod params {
     }
 
     #[derive(serde::Deserialize)]
-    pub struct GetAirportData {
+    pub struct GetAirportParams {
         /// identifier of the airport
         pub ident: String,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct GetAirportsInRangeParams {
+        pub center: Coordinates,
+        pub range: NauticalMiles,
     }
 }

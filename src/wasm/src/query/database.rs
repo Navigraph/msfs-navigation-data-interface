@@ -12,7 +12,7 @@ use crate::{
 use rusqlite::params_from_iter;
 use rusqlite::{params, types::ValueRef, Connection, OpenFlags, Result, Row};
 
-use super::out_structs;
+use super::output::airport::Airport;
 
 pub struct Database {
     database: RefCell<Option<Connection>>,
@@ -119,7 +119,7 @@ impl Database {
         self: &Rc<Self>,
         task: Rc<RefCell<Task>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let params = task.borrow().parse_data_as::<params::GetAirportData>()?;
+        let params = task.borrow().parse_data_as::<params::GetAirportParams>()?;
 
         let borrowed_db = self.database.borrow();
         let conn = borrowed_db.as_ref().ok_or("No database open")?;
@@ -130,26 +130,51 @@ impl Database {
         let airport_data =
             Database::fetch_row::<sql_structs::Airports>(&mut stmt, &[&params.ident])?;
 
-        let airport = out_structs::Airport {
-            ident: airport_data.airport_identifier,
-            elevation: airport_data.elevation,
-            icao_code: airport_data.icao_code,
-            ifr_capability: airport_data.ifr_capability,
-            location: out_structs::Coordinates {
-                lat: airport_data.airport_ref_latitude,
-                long: airport_data.airport_ref_longitude,
-            },
-            longest_runway_surface_code: airport_data.longest_runway_surface_code,
-            name: airport_data.airport_name,
-            speed_limit: airport_data.speed_limit,
-            speed_limit_altitude: airport_data.speed_limit_altitude,
-            transition_altitude: airport_data.transition_altitude,
-            transition_level: airport_data.transition_level,
-            iata_ident: airport_data.iata_ata_designator,
-        };
-
         // Serialize the airport data
-        let json = serde_json::to_value(airport)?;
+        let json = serde_json::to_value(Airport::from(airport_data))?;
+
+        task.borrow_mut().status = TaskStatus::Success(Some(json));
+
+        Ok(())
+    }
+
+    pub fn get_airports_in_range(
+        self: &Rc<Self>,
+        task: Rc<RefCell<Task>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let params = task
+            .borrow()
+            .parse_data_as::<params::GetAirportsInRangeParams>()?;
+
+        let borrowed_db = self.database.borrow();
+        let conn = borrowed_db.as_ref().ok_or("No database open")?;
+
+        let mut stmt = conn.prepare(
+            "SELECT * FROM tbl_airports WHERE \
+            airport_ref_latitude BETWEEN (?1) AND (?2) AND \
+            airport_ref_longitude BETWEEN (?3) AND (?4)",
+        )?;
+
+        let (bottom_left, top_right) = params.center.distance_bounds(params.range);
+
+        let airports_data = Database::fetch_rows::<sql_structs::Airports>(
+            &mut stmt,
+            &[
+                &bottom_left.lat,
+                &top_right.lat,
+                &bottom_left.long,
+                &top_right.long,
+            ],
+        )?;
+
+        // Serialize the airport data and filter into a circle of range
+        let json = serde_json::to_value(
+            airports_data
+                .into_iter()
+                .map(Airport::from)
+                .filter(|airport| airport.location.distance_to(&params.center) <= params.range)
+                .collect::<Vec<_>>(),
+        )?;
 
         task.borrow_mut().status = TaskStatus::Success(Some(json));
 

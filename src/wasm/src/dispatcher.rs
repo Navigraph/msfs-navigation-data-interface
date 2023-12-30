@@ -136,6 +136,11 @@ impl<'a> Dispatcher<'a> {
                 functions::FunctionType::GetAirport => {
                     Dispatcher::execute_task(task.clone(), |t| self.database.get_airport(t))
                 }
+                functions::FunctionType::GetAirportsInRange => {
+                    Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
+                        self.database.get_airports_in_range(t)
+                    })
+                }
             }
         }
 

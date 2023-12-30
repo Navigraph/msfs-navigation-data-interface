@@ -8,7 +8,7 @@ import {
   NavigraphFunction,
   RawNavigraphEvent,
 } from "./NavdataInterfaceTypes"
-import { Airport } from "./types"
+import { Airport, Coordinates, NauticalMiles } from "./types"
 
 export class NavigraphNavdataInterface {
   private readonly listener: CommBusListener
@@ -85,6 +85,16 @@ export class NavigraphNavdataInterface {
    */
   public async getAirport(ident: string): Promise<Airport> {
     return await this.callWasmFunction("GetAirport", { ident })
+  }
+
+  /**
+   * Gets all airports within a given range of a given point
+   *
+   * @param ident - identifier of the airport to get
+   * @returns A promise that resolves with the airport data
+   */
+  public async getAirportsInRange(center: Coordinates, range: NauticalMiles): Promise<Airport[]> {
+    return await this.callWasmFunction("GetAirportsInRange", { center, range })
   }
 
   private recursiveToCamel(item: unknown): unknown {
