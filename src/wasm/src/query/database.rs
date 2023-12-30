@@ -12,6 +12,8 @@ use crate::{
 use rusqlite::params_from_iter;
 use rusqlite::{params, types::ValueRef, Connection, OpenFlags, Result, Row};
 
+use super::out_structs;
+
 pub struct Database {
     database: RefCell<Option<Connection>>,
 }
@@ -125,7 +127,26 @@ impl Database {
         let mut stmt =
             conn.prepare("SELECT * FROM tbl_airports WHERE airport_identifier = (?1)")?;
 
-        let airport = Database::fetch_row::<sql_structs::Airports>(&mut stmt, &[&params.icao])?;
+        let airport_data =
+            Database::fetch_row::<sql_structs::Airports>(&mut stmt, &[&params.ident])?;
+
+        let airport = out_structs::Airport {
+            ident: airport_data.airport_identifier,
+            elevation: airport_data.elevation,
+            icao_code: airport_data.icao_code,
+            ifr_capability: airport_data.ifr_capability,
+            location: out_structs::Coordinates {
+                lat: airport_data.airport_ref_latitude,
+                long: airport_data.airport_ref_longitude,
+            },
+            longest_runway_surface_code: airport_data.longest_runway_surface_code,
+            name: airport_data.airport_name,
+            speed_limit: airport_data.speed_limit,
+            speed_limit_altitude: airport_data.speed_limit_altitude,
+            transition_altitude: airport_data.transition_altitude,
+            transition_level: airport_data.transition_level,
+            iata_ident: airport_data.iata_ata_designator,
+        };
 
         // Serialize the airport data
         let json = serde_json::to_value(airport)?;

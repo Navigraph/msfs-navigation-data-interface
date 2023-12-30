@@ -1,3 +1,4 @@
+use crate::query::enums::{IfrCapability, RunwaySurfaceCode};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -37,25 +38,24 @@ pub struct AirportMsa {
     pub sector_altitude_5: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Airports {
-    pub area_code: Option<String>,
+    pub area_code: String,
     pub icao_code: String,
     pub airport_identifier: String,
     pub airport_identifier_3letter: Option<String>,
-    pub airport_name: Option<String>,
-    pub airport_ref_latitude: Option<f64>,
-    pub airport_ref_longitude: Option<f64>,
-    pub ifr_capability: Option<String>,
-    pub longest_runway_surface_code: Option<String>,
-    pub elevation: Option<f64>,
+    pub airport_name: String,
+    pub airport_ref_latitude: f64,
+    pub airport_ref_longitude: f64,
+    pub ifr_capability: IfrCapability,
+    pub longest_runway_surface_code: Option<RunwaySurfaceCode>,
+    pub elevation: f64,
     pub transition_altitude: Option<f64>,
     pub transition_level: Option<f64>,
     pub speed_limit: Option<f64>,
     pub speed_limit_altitude: Option<f64>,
     pub iata_ata_designator: Option<String>,
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
+    pub id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

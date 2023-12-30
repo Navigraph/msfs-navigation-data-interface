@@ -120,7 +120,7 @@ pub mod params {
 
     #[derive(serde::Deserialize)]
     pub struct GetAirportData {
-        /// ICAO code of the airport
-        pub icao: String,
+        /// identifier of the airport
+        pub ident: String,
     }
 }

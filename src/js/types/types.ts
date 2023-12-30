@@ -1,0 +1,10 @@
+export type Degrees = number
+
+export type Feet = number
+
+export type Knots = number
+
+export interface Coordinates {
+  lat: Degrees
+  long: Degrees
+}

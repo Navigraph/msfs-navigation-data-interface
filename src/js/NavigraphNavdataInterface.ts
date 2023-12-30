@@ -8,7 +8,7 @@ import {
   NavigraphFunction,
   RawNavigraphEvent,
 } from "./NavdataInterfaceTypes"
-import { Airport } from "./NavigraphDFDTypes"
+import { Airport } from "./types"
 
 export class NavigraphNavdataInterface {
   private readonly listener: CommBusListener
@@ -78,13 +78,27 @@ export class NavigraphNavdataInterface {
   }
 
   /**
-   * Gets the airport from the given ICAO code
+   * Gets the airport with the given identifier
    *
-   * @param icao - ICAO code of the airport to get
+   * @param ident - identifier of the airport to get
    * @returns A promise that resolves with the airport data
    */
-  public async getAirport(icao: string): Promise<Airport> {
-    return await this.callWasmFunction("GetAirport", { icao })
+  public async getAirport(ident: string): Promise<Airport> {
+    return await this.callWasmFunction("GetAirport", { ident })
+  }
+
+  private recursiveToCamel(item: unknown): unknown {
+    if (Array.isArray(item)) {
+      return item.map((el: unknown) => this.recursiveToCamel(el))
+    } else if (typeof item === "function" || item !== Object(item)) {
+      return item
+    }
+    return Object.fromEntries(
+      Object.entries(item as Record<string, unknown>).map(([key, value]: [string, unknown]) => [
+        key.replace(/([-_][a-z])/gi, c => c.toUpperCase().replace(/[-_]/g, "")),
+        this.recursiveToCamel(value),
+      ]),
+    )
   }
 
   /**
@@ -108,8 +122,8 @@ export class NavigraphNavdataInterface {
     return new Promise((resolve, reject) => {
       this.queue.push({
         id,
-        resolve: (response: unknown) => resolve(response as T),
-        reject: (error: Error) => reject(error),
+        resolve: (response: unknown) => resolve(this.recursiveToCamel(response) as T),
+        reject: (error: Error) => reject(this.recursiveToCamel(error)),
       })
     })
   }
