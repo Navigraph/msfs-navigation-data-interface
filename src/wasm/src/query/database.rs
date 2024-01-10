@@ -2,7 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use rusqlite::{params_from_iter, types::ValueRef, Connection, OpenFlags, Result};
 
-use super::output::{airport::Airport, airway::map_airways};
+use super::output::{airport::Airport, airway::map_airways, procedure::departure::map_departures};
 use crate::{
     dispatcher::{Task, TaskStatus},
     json_structs::params,
@@ -194,6 +194,27 @@ impl Database {
                 })
                 .collect::<Vec<_>>(),
         )?;
+
+        task.borrow_mut().status = TaskStatus::Success(Some(json));
+
+        Ok(())
+    }
+
+    pub fn get_departures(self: &Rc<Self>, task: Rc<RefCell<Task>>) -> Result<(), Box<dyn std::error::Error>> {
+        let params = task.borrow().parse_data_as::<params::GetDeparturesParams>()?;
+
+        let borrowed_db = self.database.borrow();
+        let conn = borrowed_db.as_ref().ok_or("No database open")?;
+
+        let mut departures_stmt = conn.prepare("SELECT * FROM tbl_sids WHERE airport_identifier = (?1)")?;
+
+        let mut runways_stmt = conn.prepare("SELECT * FROM tbl_runways WHERE airport_identifier = (?1)")?;
+
+        let departures_data =
+            Database::fetch_rows::<sql_structs::Procedures>(&mut departures_stmt, &[&params.airport_ident])?;
+        let runways_data = Database::fetch_rows::<sql_structs::Runways>(&mut runways_stmt, &[&params.airport_ident])?;
+
+        let json = serde_json::to_value(map_departures(departures_data, runways_data))?;
 
         task.borrow_mut().status = TaskStatus::Success(Some(json));
 

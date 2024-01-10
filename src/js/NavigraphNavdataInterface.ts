@@ -9,6 +9,7 @@ import {
   RawNavigraphEvent,
 } from "./NavdataInterfaceTypes"
 import { Airport, Airway, Coordinates, NauticalMiles } from "./types"
+import { Departure } from "./types/procedure"
 
 export class NavigraphNavdataInterface {
   private readonly listener: CommBusListener
@@ -91,6 +92,10 @@ export class NavigraphNavdataInterface {
 
   public async getAirwaysInRange(center: Coordinates, range: NauticalMiles): Promise<Airway[]> {
     return await this.callWasmFunction("GetAirwaysInRange", { center, range })
+  }
+
+  public async getDepartures(airportIdent: string): Promise<Departure[]> {
+    return await this.callWasmFunction("GetDepartures", { airport_ident: airportIdent })
   }
 
   private recursiveToCamel(item: unknown): unknown {

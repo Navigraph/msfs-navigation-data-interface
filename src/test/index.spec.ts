@@ -26,4 +26,10 @@ describe("test", () => {
 
     expect(airways.length).toBe(27)
   })
+
+  it("Get departures", async () => {
+    const departures = await navdataInterface.getDepartures("NZCH")
+
+    expect(departures.length).toBe(15)
+  })
 })

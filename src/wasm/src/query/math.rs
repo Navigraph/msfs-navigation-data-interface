@@ -3,6 +3,9 @@ use serde::{Deserialize, Serialize};
 pub type NauticalMiles = f64;
 pub type Degrees = f64;
 pub type Radians = f64;
+pub type Feet = f64;
+pub type Knots = f64;
+pub type Minutes = f64;
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 pub struct Coordinates {

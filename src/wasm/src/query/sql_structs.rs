@@ -1,6 +1,14 @@
 use serde::Deserialize;
 
-use super::enums::{AirwayDirection, AirwayLevel, AirwayRouteType};
+use super::enums::{
+    AirwayDirection,
+    AirwayLevel,
+    AirwayRouteType,
+    AltitudeDescriptor,
+    LegType,
+    SpeedDescriptor,
+    TurnDirection,
+};
 use crate::query::enums::{IfrCapability, RunwaySurfaceCode};
 
 #[derive(Deserialize, Debug)]
@@ -329,21 +337,21 @@ pub struct Holdings {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Iaps {
-    pub area_code: Option<String>,
-    pub airport_identifier: Option<String>,
-    pub procedure_identifier: Option<String>,
-    pub route_type: Option<String>,
+pub struct Procedures {
+    pub area_code: String,
+    pub airport_identifier: String,
+    pub procedure_identifier: String,
+    pub route_type: String,
     pub transition_identifier: Option<String>,
-    pub seqno: Option<f64>,
+    pub seqno: f64,
     pub waypoint_icao_code: Option<String>,
     pub waypoint_identifier: Option<String>,
     pub waypoint_latitude: Option<f64>,
     pub waypoint_longitude: Option<f64>,
     pub waypoint_description_code: Option<String>,
-    pub turn_direction: Option<String>,
+    pub turn_direction: Option<TurnDirection>,
     pub rnp: Option<f64>,
-    pub path_termination: Option<String>,
+    pub path_termination: LegType,
     pub recommanded_navaid: Option<String>,
     pub recommanded_navaid_latitude: Option<f64>,
     pub recommanded_navaid_longitude: Option<f64>,
@@ -353,20 +361,20 @@ pub struct Iaps {
     pub magnetic_course: Option<f64>,
     pub route_distance_holding_distance_time: Option<f64>,
     pub distance_time: Option<String>,
-    pub altitude_description: Option<String>,
+    pub altitude_description: Option<AltitudeDescriptor>,
     pub altitude1: Option<f64>,
     pub altitude2: Option<f64>,
     pub transition_altitude: Option<f64>,
-    pub speed_limit_description: Option<String>,
+    pub speed_limit_description: Option<SpeedDescriptor>,
     pub speed_limit: Option<f64>,
     pub vertical_angle: Option<f64>,
     pub center_waypoint: Option<String>,
     pub center_waypoint_latitude: Option<f64>,
     pub center_waypoint_longitude: Option<f64>,
     pub aircraft_category: Option<String>,
-    pub id: Option<String>,
-    pub recommanded_id: Option<String>,
-    pub center_id: Option<String>,
+    pub id: String,
+    pub recommanded_id: String,
+    pub center_id: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -479,47 +487,6 @@ pub struct Runways {
 
 #[derive(Deserialize, Debug)]
 pub struct Sids {
-    pub area_code: Option<String>,
-    pub airport_identifier: Option<String>,
-    pub procedure_identifier: Option<String>,
-    pub route_type: Option<String>,
-    pub transition_identifier: Option<String>,
-    pub seqno: Option<f64>,
-    pub waypoint_icao_code: Option<String>,
-    pub waypoint_identifier: Option<String>,
-    pub waypoint_latitude: Option<f64>,
-    pub waypoint_longitude: Option<f64>,
-    pub waypoint_description_code: Option<String>,
-    pub turn_direction: Option<String>,
-    pub rnp: Option<f64>,
-    pub path_termination: Option<String>,
-    pub recommanded_navaid: Option<String>,
-    pub recommanded_navaid_latitude: Option<f64>,
-    pub recommanded_navaid_longitude: Option<f64>,
-    pub arc_radius: Option<f64>,
-    pub theta: Option<f64>,
-    pub rho: Option<f64>,
-    pub magnetic_course: Option<f64>,
-    pub route_distance_holding_distance_time: Option<f64>,
-    pub distance_time: Option<String>,
-    pub altitude_description: Option<String>,
-    pub altitude1: Option<f64>,
-    pub altitude2: Option<f64>,
-    pub transition_altitude: Option<f64>,
-    pub speed_limit_description: Option<String>,
-    pub speed_limit: Option<f64>,
-    pub vertical_angle: Option<f64>,
-    pub center_waypoint: Option<String>,
-    pub center_waypoint_latitude: Option<f64>,
-    pub center_waypoint_longitude: Option<f64>,
-    pub aircraft_category: Option<String>,
-    pub id: Option<String>,
-    pub recommanded_id: Option<String>,
-    pub center_id: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct Stars {
     pub area_code: Option<String>,
     pub airport_identifier: Option<String>,
     pub procedure_identifier: Option<String>,

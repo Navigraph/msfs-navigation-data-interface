@@ -4,6 +4,7 @@ export type Feet = number
 
 export type Knots = number
 export type NauticalMiles = number
+export type Minutes = number
 
 export interface Coordinates {
   lat: Degrees

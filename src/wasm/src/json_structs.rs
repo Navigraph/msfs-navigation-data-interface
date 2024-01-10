@@ -20,6 +20,8 @@ pub mod functions {
         GetAirways,
         #[serde(rename = "GetAirwaysInRange")]
         GetAirwaysInRange,
+        #[serde(rename = "GetDepartures")]
+        GetDepartures,
     }
 
     #[derive(serde::Serialize)]
@@ -145,5 +147,10 @@ pub mod params {
     pub struct GetAirwaysInRangeParams {
         pub center: Coordinates,
         pub range: NauticalMiles,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct GetDeparturesParams {
+        pub airport_ident: String,
     }
 }

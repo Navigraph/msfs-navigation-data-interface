@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::query::math::Coordinates;
 
-#[derive(Serialize)]
+#[derive(Serialize, Copy, Clone)]
 pub enum FixType {
     #[serde(rename = "A")]
     Airport,
@@ -20,7 +20,7 @@ pub enum FixType {
     Waypoint,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct Fix {
     pub fix_type: FixType,
     pub ident: String,
