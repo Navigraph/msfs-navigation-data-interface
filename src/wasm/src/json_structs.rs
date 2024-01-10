@@ -115,6 +115,7 @@ pub mod params {
     pub struct ExecuteSQLQueryParams {
         /// SQL query to execute
         pub sql: String,
+        pub params: Vec<String>,
     }
 
     #[derive(serde::Deserialize)]

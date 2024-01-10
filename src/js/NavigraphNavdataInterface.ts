@@ -39,8 +39,8 @@ export class NavigraphNavdataInterface {
    * @param sql - SQL query to execute
    * @returns A promise that resolves with the result of the query
    */
-  public async executeSql(sql: string): Promise<unknown> {
-    return await this.callWasmFunction("ExecuteSQLQuery", { sql })
+  public async executeSql<T>(sql: string, params: string[]): Promise<T[]> {
+    return await this.callWasmFunction("ExecuteSQLQuery", { sql, params })
   }
 
   /**

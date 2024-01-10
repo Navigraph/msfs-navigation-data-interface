@@ -1,5 +1,6 @@
-use std::cell::RefCell;
+use std::ops::Deref;
 use std::rc::Rc;
+use std::{cell::RefCell, io::Read};
 
 use crate::{
     dispatcher::{Task, TaskStatus},
@@ -8,7 +9,8 @@ use crate::{
     util,
 };
 
-use rusqlite::{params, Connection, OpenFlags, Result};
+use rusqlite::params_from_iter;
+use rusqlite::{params, types::ValueRef, Connection, OpenFlags, Result, Row};
 
 pub struct Database {
     database: RefCell<Option<Connection>>,
@@ -74,14 +76,26 @@ impl Database {
                 .collect::<Vec<_>>();
 
             // Collect data to be returned
-            let data_iter = stmt.query_map(params![], |row| {
+            let data_iter = stmt.query_map(params_from_iter(params.params), |row| {
                 let mut map = serde_json::Map::new();
                 for (i, name) in names.iter().enumerate() {
-                    let value = row.get_ref(i)?.as_str().unwrap_or("");
-                    map.insert(
-                        name.to_string(),
-                        serde_json::Value::String(value.to_string()),
-                    );
+                    let value = match row.get_ref(i)? {
+                        ValueRef::Text(text) => Some(serde_json::Value::String(
+                            String::from_utf8(text.into()).unwrap(),
+                        )),
+                        ValueRef::Integer(int) => {
+                            Some(serde_json::Value::Number(serde_json::Number::from(int)))
+                        }
+                        ValueRef::Real(real) => Some(serde_json::Value::Number(
+                            serde_json::Number::from_f64(real).unwrap(),
+                        )),
+                        ValueRef::Null => None,
+                        ValueRef::Blob(_) => panic!("Unexpected value type Blob"),
+                    };
+
+                    if let Some(value) = value {
+                        map.insert(name.to_string(), value);
+                    }
                 }
                 Ok(serde_json::Value::Object(map))
             })?;
