@@ -1,18 +1,14 @@
-use std::ops::Deref;
-use std::rc::Rc;
-use std::{cell::RefCell, io::Read};
+use std::{cell::RefCell, rc::Rc};
 
+use rusqlite::{params_from_iter, types::ValueRef, Connection, OpenFlags, Result};
+
+use super::output::{airport::Airport, airway::map_airways};
 use crate::{
     dispatcher::{Task, TaskStatus},
     json_structs::params,
     query::sql_structs,
     util,
 };
-
-use rusqlite::params_from_iter;
-use rusqlite::{params, types::ValueRef, Connection, OpenFlags, Result, Row};
-
-use super::output::{airport::Airport, airway::map_airways};
 
 pub struct Database {
     database: RefCell<Option<Connection>>,
@@ -25,29 +21,22 @@ impl Database {
         }
     }
 
-    pub fn set_active_database(
-        self: &Rc<Self>,
-        task: Rc<RefCell<Task>>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn set_active_database(self: &Rc<Self>, task: Rc<RefCell<Task>>) -> Result<(), Box<dyn std::error::Error>> {
         {
-            let params = task
-                .borrow()
-                .parse_data_as::<params::SetActiveDatabaseParams>()?;
+            let params = task.borrow().parse_data_as::<params::SetActiveDatabaseParams>()?;
 
             let mut path = params.path;
 
             // Check if the path is a directory and if it is, search for a sqlite file
             let formatted_path = format!("\\work/{}", path);
-            if util::get_path_type(std::path::Path::new(&formatted_path))
-                == util::PathType::Directory
-            {
+            if util::get_path_type(std::path::Path::new(&formatted_path)) == util::PathType::Directory {
                 path = util::find_sqlite_file(&formatted_path)?;
             }
 
-            // We have to open with flags because the SQLITE_OPEN_CREATE flag with the default open causes the file to be overwritten
-            let flags = OpenFlags::SQLITE_OPEN_READ_WRITE
-                | OpenFlags::SQLITE_OPEN_URI
-                | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+            // We have to open with flags because the SQLITE_OPEN_CREATE flag with the default open causes the file to
+            // be overwritten
+            let flags =
+                OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
             let conn = Connection::open_with_flags(path, flags)?;
             self.database.replace(Some(conn));
         }
@@ -57,15 +46,10 @@ impl Database {
         Ok(())
     }
 
-    pub fn execute_sql_query(
-        self: &Rc<Self>,
-        task: Rc<RefCell<Task>>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn execute_sql_query(self: &Rc<Self>, task: Rc<RefCell<Task>>) -> Result<(), Box<dyn std::error::Error>> {
         let json = {
             // Parse SQL query
-            let params = task
-                .borrow()
-                .parse_data_as::<params::ExecuteSQLQueryParams>()?;
+            let params = task.borrow().parse_data_as::<params::ExecuteSQLQueryParams>()?;
 
             // Execute query
             let borrowed_db = self.database.borrow();
@@ -82,15 +66,13 @@ impl Database {
                 let mut map = serde_json::Map::new();
                 for (i, name) in names.iter().enumerate() {
                     let value = match row.get_ref(i)? {
-                        ValueRef::Text(text) => Some(serde_json::Value::String(
-                            String::from_utf8(text.into()).unwrap(),
-                        )),
-                        ValueRef::Integer(int) => {
-                            Some(serde_json::Value::Number(serde_json::Number::from(int)))
-                        }
-                        ValueRef::Real(real) => Some(serde_json::Value::Number(
-                            serde_json::Number::from_f64(real).unwrap(),
-                        )),
+                        ValueRef::Text(text) => {
+                            Some(serde_json::Value::String(String::from_utf8(text.into()).unwrap()))
+                        },
+                        ValueRef::Integer(int) => Some(serde_json::Value::Number(serde_json::Number::from(int))),
+                        ValueRef::Real(real) => {
+                            Some(serde_json::Value::Number(serde_json::Number::from_f64(real).unwrap()))
+                        },
                         ValueRef::Null => None,
                         ValueRef::Blob(_) => panic!("Unexpected value type Blob"),
                     };
@@ -115,20 +97,15 @@ impl Database {
         Ok(())
     }
 
-    pub fn get_airport(
-        self: &Rc<Self>,
-        task: Rc<RefCell<Task>>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn get_airport(self: &Rc<Self>, task: Rc<RefCell<Task>>) -> Result<(), Box<dyn std::error::Error>> {
         let params = task.borrow().parse_data_as::<params::GetAirportParams>()?;
 
         let borrowed_db = self.database.borrow();
         let conn = borrowed_db.as_ref().ok_or("No database open")?;
 
-        let mut stmt =
-            conn.prepare("SELECT * FROM tbl_airports WHERE airport_identifier = (?1)")?;
+        let mut stmt = conn.prepare("SELECT * FROM tbl_airports WHERE airport_identifier = (?1)")?;
 
-        let airport_data =
-            Database::fetch_row::<sql_structs::Airports>(&mut stmt, &[&params.ident])?;
+        let airport_data = Database::fetch_row::<sql_structs::Airports>(&mut stmt, &[&params.ident])?;
 
         // Serialize the airport data
         let json = serde_json::to_value(Airport::from(airport_data))?;
@@ -138,33 +115,22 @@ impl Database {
         Ok(())
     }
 
-    pub fn get_airports_in_range(
-        self: &Rc<Self>,
-        task: Rc<RefCell<Task>>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let params = task
-            .borrow()
-            .parse_data_as::<params::GetAirportsInRangeParams>()?;
+    pub fn get_airports_in_range(self: &Rc<Self>, task: Rc<RefCell<Task>>) -> Result<(), Box<dyn std::error::Error>> {
+        let params = task.borrow().parse_data_as::<params::GetAirportsInRangeParams>()?;
 
         let borrowed_db = self.database.borrow();
         let conn = borrowed_db.as_ref().ok_or("No database open")?;
 
         let mut stmt = conn.prepare(
-            "SELECT * FROM tbl_airports WHERE \
-            airport_ref_latitude BETWEEN (?1) AND (?2) AND \
-            airport_ref_longitude BETWEEN (?3) AND (?4)",
+            "SELECT * FROM tbl_airports WHERE airport_ref_latitude BETWEEN (?1) AND (?2) AND airport_ref_longitude \
+             BETWEEN (?3) AND (?4)",
         )?;
 
         let (bottom_left, top_right) = params.center.distance_bounds(params.range);
 
         let airports_data = Database::fetch_rows::<sql_structs::Airports>(
             &mut stmt,
-            &[
-                &bottom_left.lat,
-                &top_right.lat,
-                &bottom_left.long,
-                &top_right.long,
-            ],
+            &[&bottom_left.lat, &top_right.lat, &bottom_left.long, &top_right.long],
         )?;
 
         // Serialize the airport data and filter into a circle of range
@@ -181,20 +147,15 @@ impl Database {
         Ok(())
     }
 
-    pub fn get_airways(
-        self: &Rc<Self>,
-        task: Rc<RefCell<Task>>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn get_airways(self: &Rc<Self>, task: Rc<RefCell<Task>>) -> Result<(), Box<dyn std::error::Error>> {
         let params = task.borrow().parse_data_as::<params::GetAirwaysParams>()?;
 
         let borrowed_db = self.database.borrow();
         let conn = borrowed_db.as_ref().ok_or("No database open")?;
 
-        let mut stmt =
-            conn.prepare("SELECT * FROM tbl_enroute_airways WHERE route_identifier = (?1)")?;
+        let mut stmt = conn.prepare("SELECT * FROM tbl_enroute_airways WHERE route_identifier = (?1)")?;
 
-        let airways_data =
-            Database::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, &[&params.ident])?;
+        let airways_data = Database::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, &[&params.ident])?;
 
         let json = serde_json::to_value(map_airways(airways_data))?;
 
@@ -203,34 +164,23 @@ impl Database {
         Ok(())
     }
 
-    pub fn get_airways_in_range(
-        self: &Rc<Self>,
-        task: Rc<RefCell<Task>>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let params = task
-            .borrow()
-            .parse_data_as::<params::GetAirwaysInRangeParams>()?;
+    pub fn get_airways_in_range(self: &Rc<Self>, task: Rc<RefCell<Task>>) -> Result<(), Box<dyn std::error::Error>> {
+        let params = task.borrow().parse_data_as::<params::GetAirwaysInRangeParams>()?;
 
         let borrowed_db = self.database.borrow();
         let conn = borrowed_db.as_ref().ok_or("No database open")?;
 
         let mut stmt = conn.prepare(
-            "SELECT * FROM tbl_enroute_airways WHERE route_identifier IN \
-            (SELECT route_identifier FROM tbl_enroute_airways WHERE \
-            waypoint_latitude BETWEEN (?1) AND (?2) AND \
-            waypoint_longitude BETWEEN (?3) AND (?4))",
+            "SELECT * FROM tbl_enroute_airways WHERE route_identifier IN (SELECT route_identifier FROM \
+             tbl_enroute_airways WHERE waypoint_latitude BETWEEN (?1) AND (?2) AND waypoint_longitude BETWEEN (?3) \
+             AND (?4))",
         )?;
 
         let (bottom_left, top_right) = params.center.distance_bounds(params.range);
 
         let airways_data = Database::fetch_rows::<sql_structs::EnrouteAirways>(
             &mut stmt,
-            &[
-                &bottom_left.lat,
-                &top_right.lat,
-                &bottom_left.long,
-                &top_right.long,
-            ],
+            &[&bottom_left.lat, &top_right.lat, &bottom_left.long, &top_right.long],
         )?;
 
         let json = serde_json::to_value(
@@ -251,8 +201,7 @@ impl Database {
     }
 
     fn fetch_row<T>(
-        stmt: &mut rusqlite::Statement,
-        params: &[&dyn rusqlite::ToSql],
+        stmt: &mut rusqlite::Statement, params: &[&dyn rusqlite::ToSql],
     ) -> Result<T, Box<dyn std::error::Error>>
     where
         T: for<'r> serde::Deserialize<'r>,
@@ -263,8 +212,7 @@ impl Database {
     }
 
     fn fetch_rows<T>(
-        stmt: &mut rusqlite::Statement,
-        params: &[&dyn rusqlite::ToSql],
+        stmt: &mut rusqlite::Statement, params: &[&dyn rusqlite::ToSql],
     ) -> Result<Vec<T>, Box<dyn std::error::Error>>
     where
         T: for<'r> serde::Deserialize<'r>,
@@ -277,7 +225,5 @@ impl Database {
         Ok(data)
     }
 
-    pub fn close_connection(&self) {
-        self.database.replace(None);
-    }
+    pub fn close_connection(&self) { self.database.replace(None); }
 }

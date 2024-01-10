@@ -1,7 +1,7 @@
-use crate::query::enums::{IfrCapability, RunwaySurfaceCode};
 use serde::Deserialize;
 
 use super::enums::{AirwayDirection, AirwayLevel, AirwayRouteType};
+use crate::query::enums::{IfrCapability, RunwaySurfaceCode};
 
 #[derive(Deserialize, Debug)]
 pub struct AirportCommunication {

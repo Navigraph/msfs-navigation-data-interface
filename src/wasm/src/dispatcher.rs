@@ -1,12 +1,13 @@
 use std::{cell::RefCell, rc::Rc};
 
+use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
+
 use crate::{
     download::downloader::NavdataDownloader,
     json_structs::{events, functions},
     query::database::Database,
     util,
 };
-use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
 
 #[derive(PartialEq, Eq)]
 pub enum TaskStatus {
@@ -48,7 +49,8 @@ impl<'a> Dispatcher<'a> {
             commbus: CommBus::default(),
             downloader: Rc::new(NavdataDownloader::new()),
             database: Rc::new(Database::new()),
-            delta_time: std::time::Duration::from_secs(u64::MAX), // Initialize to max so that we send a heartbeat on the first update
+            delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
+                                                                   * the first update */
             queue: Rc::new(RefCell::new(Vec::new())),
         }
     }
@@ -57,21 +59,22 @@ impl<'a> Dispatcher<'a> {
         match event {
             MSFSEvent::PostInitialize => {
                 self.handle_initialized();
-            }
+            },
             MSFSEvent::PreDraw(data) => {
                 self.handle_update(data);
-            }
+            },
             MSFSEvent::PreKill => {
                 self.commbus.unregister_all();
-            }
+            },
 
-            _ => {}
+            _ => {},
         }
     }
 
     fn handle_initialized(&mut self) {
         {
-            // We need to clone twice because we need to move the queue into the closure and then clone it again whenever it gets called
+            // We need to clone twice because we need to move the queue into the closure and then clone it again
+            // whenever it gets called
             let captured_queue = Rc::clone(&self.queue);
             self.commbus
                 .register("NAVIGRAPH_CallFunction", move |args| {
@@ -113,42 +116,39 @@ impl<'a> Dispatcher<'a> {
 
             match function_type {
                 functions::FunctionType::DownloadNavdata => {
-                    // We can't use the execute_task function here because the download process doesn't finish in the function call, which
-                    // results in slightly "messier" code
+                    // We can't use the execute_task function here because the download process doesn't finish in the
+                    // function call, which results in slightly "messier" code
 
-                    // Close the database connection if it's open so we don't get any errors if we are replacing the database
+                    // Close the database connection if it's open so we don't get any errors if we are replacing the
+                    // database
                     self.database.close_connection();
 
                     // Now we can download the navdata
                     self.downloader.download(Rc::clone(task))
-                }
+                },
                 functions::FunctionType::SetDownloadOptions => {
-                    Dispatcher::execute_task(task.clone(), |t| {
-                        self.downloader.set_download_options(t)
-                    })
-                }
+                    Dispatcher::execute_task(task.clone(), |t| self.downloader.set_download_options(t))
+                },
                 functions::FunctionType::SetActiveDatabase => {
                     Dispatcher::execute_task(task.clone(), |t| self.database.set_active_database(t))
-                }
+                },
                 functions::FunctionType::ExecuteSQLQuery => {
                     Dispatcher::execute_task(task.clone(), |t| self.database.execute_sql_query(t))
-                }
+                },
                 functions::FunctionType::GetAirport => {
                     Dispatcher::execute_task(task.clone(), |t| self.database.get_airport(t))
-                }
+                },
                 functions::FunctionType::GetAirportsInRange => {
                     Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
                         self.database.get_airports_in_range(t)
                     })
-                }
+                },
                 functions::FunctionType::GetAirways => {
                     Dispatcher::execute_task(task.clone(), |t| self.database.get_airways(t))
-                }
+                },
                 functions::FunctionType::GetAirwaysInRange => {
-                    Dispatcher::execute_task(task.clone(), |t| {
-                        self.database.get_airways_in_range(t)
-                    })
-                }
+                    Dispatcher::execute_task(task.clone(), |t| self.database.get_airways_in_range(t))
+                },
             }
         }
 
@@ -166,12 +166,12 @@ impl<'a> Dispatcher<'a> {
                     status = functions::FunctionStatus::Success;
                     data = result.clone();
                     (status, data)
-                }
+                },
                 TaskStatus::Failure(ref error) => {
                     status = functions::FunctionStatus::Error;
                     data = Some(error.clone().into());
                     (status, data)
-                }
+                },
                 _ => unreachable!(), // This should never happen
             };
 
@@ -182,11 +182,7 @@ impl<'a> Dispatcher<'a> {
             };
 
             if let Ok(serialized_json) = serde_json::to_string(&json) {
-                CommBus::call(
-                    "NAVIGRAPH_FunctionResult",
-                    &serialized_json,
-                    CommBusBroadcastFlags::All,
-                );
+                CommBus::call("NAVIGRAPH_FunctionResult", &serialized_json, CommBusBroadcastFlags::All);
             }
             false
         });
@@ -202,14 +198,11 @@ impl<'a> Dispatcher<'a> {
             Err(e) => {
                 println!("Task failed: {}", e);
                 task.borrow_mut().status = TaskStatus::Failure(e.to_string());
-            }
+            },
         }
     }
 
-    fn add_to_queue(
-        queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
-        args: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn add_to_queue(queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>, args: &str) -> Result<(), Box<dyn std::error::Error>> {
         let args = util::trim_null_terminator(args);
         let json_result: functions::CallFunction = serde_json::from_str(args)?;
 
@@ -226,11 +219,7 @@ impl<'a> Dispatcher<'a> {
     pub fn send_event(event: events::EventType, data: Option<serde_json::Value>) {
         let json = events::Event { event, data };
         if let Ok(serialized_json) = serde_json::to_string(&json) {
-            CommBus::call(
-                "NAVIGRAPH_Event",
-                &serialized_json,
-                CommBusBroadcastFlags::All,
-            );
+            CommBus::call("NAVIGRAPH_Event", &serialized_json, CommBusBroadcastFlags::All);
         } else {
             println!("Failed to serialize event");
         }

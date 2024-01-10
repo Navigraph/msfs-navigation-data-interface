@@ -1,14 +1,12 @@
-use std::cell::RefCell;
-
-use std::io::Cursor;
-use std::path::PathBuf;
-use std::rc::Rc;
+use std::{cell::RefCell, io::Cursor, path::PathBuf, rc::Rc};
 
 use msfs::network::*;
 
-use crate::dispatcher::{Dispatcher, Task, TaskStatus};
-use crate::download::zip_handler::{BatchReturn, ZipFileHandler};
-use crate::json_structs::{events, params};
+use crate::{
+    dispatcher::{Dispatcher, Task, TaskStatus},
+    download::zip_handler::{BatchReturn, ZipFileHandler},
+    json_structs::{events, params},
+};
 
 pub struct DownloadOptions {
     batch_size: usize,
@@ -64,16 +62,15 @@ impl NavdataDownloader {
                     }
 
                     self.reset_download();
-                }
+                },
                 Ok(BatchReturn::MoreFilesToDelete) => {
-                    self.download_status
-                        .replace(DownloadStatus::CleaningDestination);
+                    self.download_status.replace(DownloadStatus::CleaningDestination);
 
                     let borrowed_zip_handler = self.zip_handler.borrow();
                     if let Some(zip_handler) = borrowed_zip_handler.as_ref() {
                         self.send_progress_update(Some(zip_handler.deleted), None, None);
                     }
-                }
+                },
                 Ok(BatchReturn::MoreFilesToUnzip) => {
                     self.download_status.replace(DownloadStatus::Extracting);
 
@@ -85,24 +82,19 @@ impl NavdataDownloader {
                             Some(zip_handler.current_file_index),
                         );
                     }
-                }
+                },
                 Err(e) => {
                     println!("[WASM] Failed to unzip: {}", e);
                     self.report_error(e.to_string());
                     self.reset_download();
-                }
+                },
             }
         }
     }
 
-    pub fn set_download_options(
-        self: &Rc<Self>,
-        task: Rc<RefCell<Task>>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn set_download_options(self: &Rc<Self>, task: Rc<RefCell<Task>>) -> Result<(), Box<dyn std::error::Error>> {
         {
-            let params = task
-                .borrow()
-                .parse_data_as::<params::SetDownloadOptionsParams>()?;
+            let params = task.borrow().parse_data_as::<params::SetDownloadOptionsParams>()?;
 
             // Set the options (only batch size for now)
             let mut options = self.options.borrow_mut();
@@ -126,18 +118,13 @@ impl NavdataDownloader {
         }
         self.task.borrow_mut().replace(task.clone());
 
-        let params = match task
-            .borrow()
-            .parse_data_as::<params::DownloadNavdataParams>()
-        {
+        let params = match task.borrow().parse_data_as::<params::DownloadNavdataParams>() {
             Ok(params) => params,
             Err(e) => {
-                self.download_status.replace(DownloadStatus::Failed(format!(
-                    "Failed to parse params: {}",
-                    e
-                )));
+                self.download_status
+                    .replace(DownloadStatus::Failed(format!("Failed to parse params: {}", e)));
                 return;
-            }
+            },
         };
 
         // Create the request
@@ -152,20 +139,14 @@ impl NavdataDownloader {
         {
             Some(_) => (),
             None => {
-                self.download_status.replace(DownloadStatus::Failed(
-                    "Failed to create request".to_string(),
-                ));
-            }
+                self.download_status
+                    .replace(DownloadStatus::Failed("Failed to create request".to_string()));
+            },
         }
     }
 
     /// Sends a status update to the client
-    fn send_progress_update(
-        &self,
-        deleted: Option<usize>,
-        total_to_unzip: Option<usize>,
-        unzipped: Option<usize>,
-    ) {
+    fn send_progress_update(&self, deleted: Option<usize>, total_to_unzip: Option<usize>, unzipped: Option<usize>) {
         let status = self.download_status.borrow();
         let phase: events::DownloadProgressPhase = match *status {
             DownloadStatus::Downloading => events::DownloadProgressPhase::Downloading,
@@ -184,7 +165,7 @@ impl NavdataDownloader {
             Err(e) => {
                 println!("[WASM] Failed to serialize download progress event: {}", e);
                 return;
-            }
+            },
         };
         Dispatcher::send_event(events::EventType::DownloadProgress, Some(serialized_data));
     }
@@ -228,10 +209,7 @@ impl NavdataDownloader {
         *zip_handler = Some(handler);
     }
 
-    pub fn unzip_batch(
-        &self,
-        batch_size: usize,
-    ) -> Result<BatchReturn, Box<dyn std::error::Error>> {
+    pub fn unzip_batch(&self, batch_size: usize) -> Result<BatchReturn, Box<dyn std::error::Error>> {
         let mut zip_handler = self.zip_handler.borrow_mut();
 
         let handler = zip_handler

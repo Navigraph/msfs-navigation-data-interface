@@ -1,7 +1,4 @@
-use std::fs;
-use std::io;
-use std::io::Read;
-use std::path::Path;
+use std::{fs, io, io::Read, path::Path};
 
 #[derive(PartialEq, Eq)]
 pub enum PathType {
@@ -10,7 +7,8 @@ pub enum PathType {
     DoesNotExist,
 }
 
-/// We aren't able to get file metadata in the sim so we can't use some of the standard library file system functions (like is_dir, exists, and some others)
+/// We aren't able to get file metadata in the sim so we can't use some of the standard library file system functions
+/// (like is_dir, exists, and some others)
 pub fn get_path_type(path: &Path) -> PathType {
     match fs::read_dir(path) {
         Ok(mut dir_res) => {
@@ -21,8 +19,8 @@ pub fn get_path_type(path: &Path) -> PathType {
                     return PathType::Directory;
                 }
             }
-        }
-        Err(_) => {}
+        },
+        Err(_) => {},
     };
 
     let file_res = fs::File::open(path);
@@ -33,9 +31,7 @@ pub fn get_path_type(path: &Path) -> PathType {
     PathType::DoesNotExist
 }
 
-pub fn path_exists(path: &Path) -> bool {
-    get_path_type(path) != PathType::DoesNotExist
-}
+pub fn path_exists(path: &Path) -> bool { get_path_type(path) != PathType::DoesNotExist }
 
 pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::Result<()> {
     // Make sure we are deleting a directory (and in turn that it exists)
@@ -75,15 +71,12 @@ pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::
     Ok(())
 }
 
-pub fn trim_null_terminator(s: &str) -> &str {
-    s.trim_end_matches(char::from(0))
-}
+pub fn trim_null_terminator(s: &str) -> &str { s.trim_end_matches(char::from(0)) }
 
 pub fn find_sqlite_file(path: &str) -> Result<String, Box<dyn std::error::Error>> {
     // From 1.3.1 of https://www.sqlite.org/fileformat.html
     let sqlite_header = [
-        0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x20, 0x33,
-        0x00,
+        0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x74, 0x20, 0x33, 0x00,
     ];
     // We are going to search this directory for a database
     for entry in std::fs::read_dir(path)? {

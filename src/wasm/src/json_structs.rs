@@ -2,7 +2,6 @@
 
 /// Contains structs relating to functions
 pub mod functions {
-
     #[derive(serde::Deserialize, Clone, Copy)]
     pub enum FunctionType {
         #[serde(rename = "DownloadNavdata")]
