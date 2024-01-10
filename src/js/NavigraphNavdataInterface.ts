@@ -89,6 +89,10 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetAirways", { ident })
   }
 
+  public async getAirwaysInRange(center: Coordinates, range: NauticalMiles): Promise<Airway[]> {
+    return await this.callWasmFunction("GetAirwaysInRange", { center, range })
+  }
+
   private recursiveToCamel(item: unknown): unknown {
     if (Array.isArray(item)) {
       return item.map((el: unknown) => this.recursiveToCamel(el))

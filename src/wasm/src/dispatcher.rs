@@ -144,6 +144,11 @@ impl<'a> Dispatcher<'a> {
                 functions::FunctionType::GetAirways => {
                     Dispatcher::execute_task(task.clone(), |t| self.database.get_airways(t))
                 }
+                functions::FunctionType::GetAirwaysInRange => {
+                    Dispatcher::execute_task(task.clone(), |t| {
+                        self.database.get_airways_in_range(t)
+                    })
+                }
             }
         }
 

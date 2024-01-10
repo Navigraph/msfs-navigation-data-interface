@@ -20,4 +20,10 @@ describe("test", () => {
 
     expect(airways.length).toBe(5)
   })
+
+  it("Get airways in range", async () => {
+    const airways = await navdataInterface.getAirwaysInRange({ lat: -43.4876, long: 172.5374 }, 10)
+
+    expect(airways.length).toBe(27)
+  })
 })

@@ -202,6 +202,54 @@ impl Database {
 
         Ok(())
     }
+
+    pub fn get_airways_in_range(
+        self: &Rc<Self>,
+        task: Rc<RefCell<Task>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let params = task
+            .borrow()
+            .parse_data_as::<params::GetAirwaysInRangeParams>()?;
+
+        let borrowed_db = self.database.borrow();
+        let conn = borrowed_db.as_ref().ok_or("No database open")?;
+
+        let mut stmt = conn.prepare(
+            "SELECT * FROM tbl_enroute_airways WHERE route_identifier IN \
+            (SELECT route_identifier FROM tbl_enroute_airways WHERE \
+            waypoint_latitude BETWEEN (?1) AND (?2) AND \
+            waypoint_longitude BETWEEN (?3) AND (?4))",
+        )?;
+
+        let (bottom_left, top_right) = params.center.distance_bounds(params.range);
+
+        let airways_data = Database::fetch_rows::<sql_structs::EnrouteAirways>(
+            &mut stmt,
+            &[
+                &bottom_left.lat,
+                &top_right.lat,
+                &bottom_left.long,
+                &top_right.long,
+            ],
+        )?;
+
+        let json = serde_json::to_value(
+            map_airways(airways_data)
+                .into_iter()
+                .filter(|airway| {
+                    airway
+                        .fixes
+                        .iter()
+                        .any(|fix| fix.location.distance_to(&params.center) <= params.range)
+                })
+                .collect::<Vec<_>>(),
+        )?;
+
+        task.borrow_mut().status = TaskStatus::Success(Some(json));
+
+        Ok(())
+    }
+
     fn fetch_row<T>(
         stmt: &mut rusqlite::Statement,
         params: &[&dyn rusqlite::ToSql],
