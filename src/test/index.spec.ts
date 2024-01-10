@@ -14,4 +14,10 @@ describe("test", () => {
 
     expect(airports.length).toBe(1686)
   })
+
+  it("Get airways", async () => {
+    const airways = await navdataInterface.getAirways("A1")
+
+    expect(airways.length).toBe(5)
+  })
 })

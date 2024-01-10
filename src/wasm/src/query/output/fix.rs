@@ -1,0 +1,60 @@
+use serde::Serialize;
+
+use crate::query::math::Coordinates;
+
+#[derive(Serialize)]
+pub enum FixType {
+    #[serde(rename = "A")]
+    Airport,
+    #[serde(rename = "N")]
+    NdbNavaid,
+    #[serde(rename = "R")]
+    RunwayThreshold,
+    #[serde(rename = "G")]
+    GlsNavaid,
+    #[serde(rename = "I")]
+    IlsNavaid,
+    #[serde(rename = "V")]
+    VhfNavaid,
+    #[serde(rename = "W")]
+    Waypoint,
+}
+
+#[derive(Serialize)]
+pub struct Fix {
+    pub fix_type: FixType,
+    pub ident: String,
+    pub icao_code: String,
+    pub location: Coordinates,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub airport_identifier: Option<String>,
+}
+
+pub fn map_fix(lat: f64, long: f64, id: String) -> Fix {
+    let table = id.split("|").nth(0).unwrap();
+    let id = id.split("|").nth(1).unwrap();
+    let (airport_identifier, icao_code, ident) = if table.starts_with("tbl_terminal") {
+        (Some(&id[0..4]), &id[4..6], &id[6..])
+    } else {
+        (None, &id[0..2], &id[2..])
+    };
+
+    let fix_type = match table {
+        "tbl_airports" => FixType::Airport,
+        "tbl_terminal_ndbnavaids" | "tbl_enroute_ndbnavaids" => FixType::NdbNavaid,
+        "tbl_runways" => FixType::RunwayThreshold,
+        "tbl_gls" => FixType::GlsNavaid,
+        "tbl_localizers_glideslopes" => FixType::IlsNavaid,
+        "tbl_vhfnavaids" => FixType::VhfNavaid,
+        "tbl_enroute_waypoints" | "tbl_terminal_waypoints" => FixType::Waypoint,
+        x => panic!("Unexpected table: '{x}'"),
+    };
+
+    Fix {
+        fix_type,
+        ident: ident.to_string(),
+        icao_code: icao_code.to_string(),
+        location: Coordinates { lat, long },
+        airport_identifier: airport_identifier.map(|s| s.to_string()),
+    }
+}

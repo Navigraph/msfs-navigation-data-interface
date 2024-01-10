@@ -29,6 +29,7 @@ export enum NavigraphFunction {
   ExecuteSQLQuery = "ExecuteSQLQuery",
   GetAirport = "GetAirport",
   GetAirportsInRange = "GetAirportsInRange",
+  GetAirways = "GetAirways",
 }
 
 export enum FunctionResultStatus {

@@ -141,6 +141,9 @@ impl<'a> Dispatcher<'a> {
                         self.database.get_airports_in_range(t)
                     })
                 }
+                functions::FunctionType::GetAirways => {
+                    Dispatcher::execute_task(task.clone(), |t| self.database.get_airways(t))
+                }
             }
         }
 

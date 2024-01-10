@@ -12,7 +12,7 @@ use crate::{
 use rusqlite::params_from_iter;
 use rusqlite::{params, types::ValueRef, Connection, OpenFlags, Result, Row};
 
-use super::output::airport::Airport;
+use super::output::{airport::Airport, airway::map_airways};
 
 pub struct Database {
     database: RefCell<Option<Connection>>,
@@ -181,6 +181,27 @@ impl Database {
         Ok(())
     }
 
+    pub fn get_airways(
+        self: &Rc<Self>,
+        task: Rc<RefCell<Task>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let params = task.borrow().parse_data_as::<params::GetAirwaysParams>()?;
+
+        let borrowed_db = self.database.borrow();
+        let conn = borrowed_db.as_ref().ok_or("No database open")?;
+
+        let mut stmt =
+            conn.prepare("SELECT * FROM tbl_enroute_airways WHERE route_identifier = (?1)")?;
+
+        let airways_data =
+            Database::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, &[&params.ident])?;
+
+        let json = serde_json::to_value(map_airways(airways_data))?;
+
+        task.borrow_mut().status = TaskStatus::Success(Some(json));
+
+        Ok(())
+    }
     fn fetch_row<T>(
         stmt: &mut rusqlite::Statement,
         params: &[&dyn rusqlite::ToSql],

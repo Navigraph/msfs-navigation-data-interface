@@ -1,7 +1,9 @@
 use crate::query::enums::{IfrCapability, RunwaySurfaceCode};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-#[derive(Serialize, Deserialize, Debug)]
+use super::enums::{AirwayDirection, AirwayLevel, AirwayRouteType};
+
+#[derive(Deserialize, Debug)]
 pub struct AirportCommunication {
     pub area_code: Option<String>,
     pub icao_code: Option<String>,
@@ -15,7 +17,7 @@ pub struct AirportCommunication {
     pub longitude: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct AirportMsa {
     pub area_code: Option<String>,
     pub icao_code: Option<String>,
@@ -58,7 +60,7 @@ pub struct Airports {
     pub id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct ControlledAirspace {
     pub area_code: Option<String>,
     pub icao_code: Option<String>,
@@ -83,7 +85,7 @@ pub struct ControlledAirspace {
     pub upper_limit: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct CruisingTables {
     pub cruise_table_identifier: Option<String>,
     pub seqno: Option<f64>,
@@ -104,7 +106,7 @@ pub struct CruisingTables {
     pub cruise_level_to4: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct EnrouteAirwayRestriction {
     pub area_code: Option<String>,
     pub route_identifier: Option<String>,
@@ -136,31 +138,30 @@ pub struct EnrouteAirwayRestriction {
     pub restriction_notes: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct EnrouteAirways {
-    pub area_code: Option<String>,
-    pub route_identifier: Option<String>,
-    pub seqno: Option<f64>,
-    pub icao_code: Option<String>,
-    pub waypoint_identifier: Option<String>,
-    pub waypoint_latitude: Option<f64>,
-    pub waypoint_longitude: Option<f64>,
-    pub waypoint_description_code: Option<String>,
-    pub route_type: Option<String>,
-    pub flightlevel: Option<String>,
-    pub direction_restriction: Option<String>,
+    pub area_code: String,
+    pub route_identifier: String,
+    pub seqno: f64,
+    pub icao_code: String,
+    pub waypoint_identifier: String,
+    pub waypoint_latitude: f64,
+    pub waypoint_longitude: f64,
+    pub waypoint_description_code: String,
+    pub route_type: AirwayRouteType,
+    pub flightlevel: AirwayLevel,
+    pub direction_restriction: Option<AirwayDirection>,
     pub crusing_table_identifier: Option<String>,
     pub minimum_altitude1: Option<f64>,
     pub minimum_altitude2: Option<f64>,
     pub maximum_altitude: Option<f64>,
-    pub outbound_course: Option<f64>,
-    pub inbound_course: Option<f64>,
-    pub inbound_distance: Option<f64>,
-    #[serde(skip_serializing)]
-    pub id: Option<String>,
+    pub outbound_course: f64,
+    pub inbound_course: f64,
+    pub inbound_distance: f64,
+    pub id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct EnrouteCommunication {
     pub area_code: Option<String>,
     pub fir_rdo_ident: Option<String>,
@@ -175,7 +176,7 @@ pub struct EnrouteCommunication {
     pub longitude: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct EnrouteNdbNavaids {
     pub area_code: Option<String>,
     pub icao_code: String,
@@ -186,11 +187,10 @@ pub struct EnrouteNdbNavaids {
     pub ndb_latitude: Option<f64>,
     pub ndb_longitude: Option<f64>,
     pub range: Option<f64>,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct EnrouteWaypoints {
     pub area_code: Option<String>,
     pub icao_code: String,
@@ -200,11 +200,10 @@ pub struct EnrouteWaypoints {
     pub waypoint_usage: Option<String>,
     pub waypoint_latitude: Option<f64>,
     pub waypoint_longitude: Option<f64>,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct FirUir {
     pub area_code: Option<String>,
     pub fir_uir_identifier: Option<String>,
@@ -229,7 +228,7 @@ pub struct FirUir {
     pub cruise_table_identifier: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Gate {
     pub area_code: Option<String>,
     pub airport_identifier: Option<String>,
@@ -240,7 +239,7 @@ pub struct Gate {
     pub name: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Gls {
     pub area_code: Option<String>,
     pub airport_identifier: Option<String>,
@@ -257,11 +256,11 @@ pub struct Gls {
     pub magnetic_variation: Option<f64>,
     pub station_elevation: Option<f64>,
     pub station_type: Option<String>,
-    #[serde(skip_serializing)]
+
     pub id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct GridMora {
     pub starting_latitude: Option<f64>,
     pub starting_longitude: Option<f64>,
@@ -297,7 +296,7 @@ pub struct GridMora {
     pub mora30: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Header {
     pub version: String,
     pub arincversion: String,
@@ -310,7 +309,7 @@ pub struct Header {
     pub parsed_at: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Holdings {
     pub area_code: Option<String>,
     pub region_code: Option<String>,
@@ -329,7 +328,7 @@ pub struct Holdings {
     pub holding_speed: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Iaps {
     pub area_code: Option<String>,
     pub airport_identifier: Option<String>,
@@ -365,15 +364,12 @@ pub struct Iaps {
     pub center_waypoint_latitude: Option<f64>,
     pub center_waypoint_longitude: Option<f64>,
     pub aircraft_category: Option<String>,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
     pub recommanded_id: Option<String>,
-    #[serde(skip_serializing)]
     pub center_id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct LocalizerMarker {
     pub area_code: String,
     pub icao_code: String,
@@ -384,11 +380,10 @@ pub struct LocalizerMarker {
     pub marker_type: String,
     pub marker_latitude: f64,
     pub marker_longitude: f64,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct LocalizersGlideslopes {
     pub area_code: Option<String>,
     pub icao_code: Option<String>,
@@ -406,11 +401,10 @@ pub struct LocalizersGlideslopes {
     pub gs_angle: Option<f64>,
     pub gs_elevation: Option<f64>,
     pub station_declination: Option<f64>,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Pathpoints {
     pub area_code: Option<String>,
     pub airport_identifier: Option<String>,
@@ -438,7 +432,7 @@ pub struct Pathpoints {
     pub gnss_channel_number: Option<f64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct RestrictiveAirspace {
     pub area_code: Option<String>,
     pub icao_code: Option<String>,
@@ -461,7 +455,7 @@ pub struct RestrictiveAirspace {
     pub upper_limit: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Runways {
     pub area_code: Option<String>,
     pub icao_code: Option<String>,
@@ -480,11 +474,10 @@ pub struct Runways {
     pub llz_identifier: Option<String>,
     pub llz_mls_gls_category: Option<String>,
     pub surface_code: Option<f64>,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Sids {
     pub area_code: Option<String>,
     pub airport_identifier: Option<String>,
@@ -520,15 +513,12 @@ pub struct Sids {
     pub center_waypoint_latitude: Option<f64>,
     pub center_waypoint_longitude: Option<f64>,
     pub aircraft_category: Option<String>,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
     pub recommanded_id: Option<String>,
-    #[serde(skip_serializing)]
     pub center_id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Stars {
     pub area_code: Option<String>,
     pub airport_identifier: Option<String>,
@@ -564,15 +554,12 @@ pub struct Stars {
     pub center_waypoint_latitude: Option<f64>,
     pub center_waypoint_longitude: Option<f64>,
     pub aircraft_category: Option<String>,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
-    #[serde(skip_serializing)]
     pub recommanded_id: Option<String>,
-    #[serde(skip_serializing)]
     pub center_id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct TerminalNdbNavaids {
     pub area_code: Option<String>,
     pub airport_identifier: String,
@@ -584,11 +571,10 @@ pub struct TerminalNdbNavaids {
     pub ndb_latitude: Option<f64>,
     pub ndb_longitude: Option<f64>,
     pub range: Option<f64>,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct TerminalWaypoints {
     pub area_code: Option<String>,
     pub region_code: String,
@@ -598,11 +584,10 @@ pub struct TerminalWaypoints {
     pub waypoint_type: Option<String>,
     pub waypoint_latitude: Option<f64>,
     pub waypoint_longitude: Option<f64>,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct VhfNavaids {
     pub area_code: Option<String>,
     pub airport_identifier: Option<String>,
@@ -621,6 +606,5 @@ pub struct VhfNavaids {
     pub range: Option<f64>,
     pub station_declination: Option<f64>,
     pub magnetic_variation: Option<f64>,
-    #[serde(skip_serializing)]
     pub id: Option<String>,
 }
