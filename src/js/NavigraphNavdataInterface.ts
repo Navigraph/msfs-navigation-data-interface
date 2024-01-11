@@ -104,7 +104,11 @@ export class NavigraphNavdataInterface {
     } else if (typeof item === "function" || item !== Object(item)) {
       return item
     }
-    return Object.fromEntries(
+
+    // Object.fromEntries is not supported in sim
+    const fromEntries = arr => Object.assign({}, ...Array.from(arr, ([k, v]) => ({[k]: v}) ));
+
+    return fromEntries(
       Object.entries(item as Record<string, unknown>).map(([key, value]: [string, unknown]) => [
         key.replace(/([-_][a-z])/gi, c => c.toUpperCase().replace(/[-_]/g, "")),
         this.recursiveToCamel(value),
