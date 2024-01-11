@@ -1,11 +1,11 @@
 use std::{cell::RefCell, rc::Rc};
 
 use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
+use navigation_database::database::Database;
 
 use crate::{
     download::downloader::NavdataDownloader,
-    json_structs::{events, functions},
-    query::database::Database,
+    json_structs::{events, functions, params},
     util,
 };
 
@@ -38,7 +38,7 @@ impl Task {
 pub struct Dispatcher<'a> {
     commbus: CommBus<'a>,
     downloader: Rc<NavdataDownloader>,
-    database: Rc<Database>,
+    database: Database,
     delta_time: std::time::Duration,
     queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
 }
@@ -48,7 +48,7 @@ impl<'a> Dispatcher<'a> {
         Dispatcher {
             commbus: CommBus::default(),
             downloader: Rc::new(NavdataDownloader::new()),
-            database: Rc::new(Database::new()),
+            database: Database::new(),
             delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
                                                                    * the first update */
             queue: Rc::new(RefCell::new(Vec::new())),
@@ -129,29 +129,64 @@ impl<'a> Dispatcher<'a> {
                 functions::FunctionType::SetDownloadOptions => {
                     Dispatcher::execute_task(task.clone(), |t| self.downloader.set_download_options(t))
                 },
-                functions::FunctionType::SetActiveDatabase => {
-                    Dispatcher::execute_task(task.clone(), |t| self.database.set_active_database(t))
-                },
-                functions::FunctionType::ExecuteSQLQuery => {
-                    Dispatcher::execute_task(task.clone(), |t| self.database.execute_sql_query(t))
-                },
-                functions::FunctionType::GetAirport => {
-                    Dispatcher::execute_task(task.clone(), |t| self.database.get_airport(t))
-                },
+                functions::FunctionType::SetActiveDatabase => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::SetActiveDatabaseParams>()?;
+                    self.database.set_active_database(params.path)?;
+
+                    task.borrow_mut().status = TaskStatus::Success(None);
+
+                    Ok(())
+                }),
+                functions::FunctionType::ExecuteSQLQuery => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::ExecuteSQLQueryParams>()?;
+                    let data = self.database.execute_sql_query(params.sql, params.params)?;
+
+                    task.borrow_mut().status = TaskStatus::Success(Some(data));
+
+                    Ok(())
+                }),
+                functions::FunctionType::GetAirport => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetAirportParams>()?;
+                    let airport = self.database.get_airport(params.ident)?;
+
+                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airport)?));
+
+                    Ok(())
+                }),
                 functions::FunctionType::GetAirportsInRange => {
                     Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
-                        self.database.get_airports_in_range(t)
+                        let params = t.borrow().parse_data_as::<params::GetAirportsInRangeParams>()?;
+                        let airports = self.database.get_airports_in_range(params.center, params.range)?;
+
+                        task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
+
+                        Ok(())
                     })
                 },
-                functions::FunctionType::GetAirways => {
-                    Dispatcher::execute_task(task.clone(), |t| self.database.get_airways(t))
-                },
-                functions::FunctionType::GetAirwaysInRange => {
-                    Dispatcher::execute_task(task.clone(), |t| self.database.get_airways_in_range(t))
-                },
-                functions::FunctionType::GetDepartures => {
-                    Dispatcher::execute_task(task.clone(), |t| self.database.get_departures(t))
-                },
+                functions::FunctionType::GetAirways => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetAirwaysParams>()?;
+                    let airports = self.database.get_airways(params.ident)?;
+
+                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
+
+                    Ok(())
+                }),
+                functions::FunctionType::GetAirwaysInRange => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetAirwaysInRangeParams>()?;
+                    let airways = self.database.get_airways_in_range(params.center, params.range)?;
+
+                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));
+
+                    Ok(())
+                }),
+                functions::FunctionType::GetDepartures => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetDeparturesParams>()?;
+                    let departures = self.database.get_departures(params.airport_ident)?;
+
+                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(departures)?));
+
+                    Ok(())
+                }),
             }
         }
 
@@ -221,6 +256,7 @@ impl<'a> Dispatcher<'a> {
 
     pub fn send_event(event: events::EventType, data: Option<serde_json::Value>) {
         let json = events::Event { event, data };
+        println!("Navigraph event");
         if let Ok(serialized_json) = serde_json::to_string(&json) {
             CommBus::call("NAVIGRAPH_Event", &serialized_json, CommBusBroadcastFlags::All);
         } else {

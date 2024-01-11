@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = ["src/wasm"]
+members = ["src/wasm", "src/database"]
 
 [profile.release]
 lto = true

@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use super::fix::{map_fix, Fix};
-use crate::query::{
+use crate::{
     enums::{AirwayDirection, AirwayLevel, AirwayRouteType},
     sql_structs,
 };

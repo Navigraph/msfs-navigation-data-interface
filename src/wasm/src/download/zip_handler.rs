@@ -29,6 +29,7 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
     pub fn new(zip_archive: zip::ZipArchive<R>, path_buf: PathBuf) -> Self {
         // To make accessing zip archive size easier, we just store it to the struct instead of calling it every time
         // (avoids ownership issues)
+
         let zip_file_count = zip_archive.len();
         Self {
             zip_archive: Some(zip_archive),

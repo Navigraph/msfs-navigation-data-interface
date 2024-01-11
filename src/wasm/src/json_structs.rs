@@ -97,7 +97,7 @@ pub mod events {
 
 /// Contains structs relating to parameters
 pub mod params {
-    use crate::query::math::{Coordinates, NauticalMiles};
+    use navigation_database::math::{Coordinates, NauticalMiles};
 
     #[derive(serde::Deserialize)]
     pub struct DownloadNavdataParams {

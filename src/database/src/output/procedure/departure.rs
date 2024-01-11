@@ -3,7 +3,7 @@ use std::collections::{hash_map::Entry, HashMap};
 use serde::Serialize;
 
 use super::{mut_find_or_insert, Transition};
-use crate::query::{output::procedure_leg::ProcedureLeg, sql_structs};
+use crate::{output::procedure_leg::ProcedureLeg, sql_structs};
 
 #[derive(Serialize)]
 pub struct Departure {

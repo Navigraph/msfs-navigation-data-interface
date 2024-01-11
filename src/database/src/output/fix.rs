@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::query::math::Coordinates;
+use crate::math::Coordinates;
 
 #[derive(Serialize, Copy, Clone)]
 pub enum FixType {

@@ -9,7 +9,7 @@ use super::enums::{
     SpeedDescriptor,
     TurnDirection,
 };
-use crate::query::enums::{IfrCapability, RunwaySurfaceCode};
+use crate::enums::{IfrCapability, RunwaySurfaceCode};
 
 #[derive(Deserialize, Debug)]
 pub struct AirportCommunication {

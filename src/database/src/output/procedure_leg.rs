@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use super::fix::{map_fix, Fix};
-use crate::query::{
+use crate::{
     enums::{AltitudeDescriptor, LegType, SpeedDescriptor, TurnDirection},
     math::{Degrees, Feet, Knots, Minutes, NauticalMiles},
     sql_structs,

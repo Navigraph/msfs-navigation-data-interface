@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::query::{
+use crate::{
     enums::{IfrCapability, RunwaySurfaceCode},
     math::Coordinates,
     sql_structs,
