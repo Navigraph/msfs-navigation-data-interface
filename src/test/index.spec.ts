@@ -34,9 +34,8 @@ describe("test", () => {
   })
 
   it("Get Arrivals", async () => {
-    const departures = await navdataInterface.get_arrivals_at_airport("NZCH")
+    const arrivals = await navdataInterface.get_arrivals_at_airport("NZCH")
 
-    console.log(departures)
-    // expect(departures.length).toBe(15)
+    expect(arrivals.length).toBe(45)
   })
 })
