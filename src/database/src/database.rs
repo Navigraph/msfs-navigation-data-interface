@@ -7,6 +7,7 @@ use crate::{
     math::{Coordinates, NauticalMiles},
     output::{
         airway::Airway,
+        database_info::DatabaseInfo,
         procedure::{
             arrival::{map_arrivals, Arrival},
             departure::Departure,
@@ -91,6 +92,16 @@ impl Database {
         let json = serde_json::Value::Array(data);
 
         Ok(json)
+    }
+
+    pub fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut stmt = conn.prepare("SELECT * FROM tbl_header")?;
+
+        let header_data = Database::fetch_row::<sql_structs::Header>(&mut stmt, params![])?;
+
+        Ok(DatabaseInfo::from(header_data))
     }
 
     pub fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn std::error::Error>> {

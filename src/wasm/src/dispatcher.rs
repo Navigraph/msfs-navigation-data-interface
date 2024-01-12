@@ -145,6 +145,13 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
+                functions::FunctionType::GetDatabaseInfo => Dispatcher::execute_task(task.clone(), |_t| {
+                    let info = self.database.get_database_info()?;
+
+                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(info)?));
+
+                    Ok(())
+                }),
                 functions::FunctionType::GetAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAirportParams>()?;
                     let airport = self.database.get_airport(params.ident)?;

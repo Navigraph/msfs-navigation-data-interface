@@ -78,6 +78,10 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("SetActiveDatabase", { path })
   }
 
+  public async get_database_info(ident: string): Promise<Airport> {
+    return await this.callWasmFunction("GetDatabaseInfo", { ident })
+  }
+
   public async get_airport(ident: string): Promise<Airport> {
     return await this.callWasmFunction("GetAirport", { ident })
   }

@@ -12,6 +12,8 @@ pub mod functions {
         SetActiveDatabase,
         #[serde(rename = "ExecuteSQLQuery")]
         ExecuteSQLQuery,
+        #[serde(rename = "GetDatabaseInfo")]
+        GetDatabaseInfo,
         #[serde(rename = "GetAirport")]
         GetAirport,
         #[serde(rename = "GetAirportsInRange")]

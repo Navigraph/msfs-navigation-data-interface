@@ -3,6 +3,16 @@ import { NavigraphNavdataInterface } from "../js"
 const navdataInterface = new NavigraphNavdataInterface()
 
 describe("test", () => {
+  it("Database info", async () => {
+    const info = await navdataInterface.get_database_info("KJFK")
+
+    expect(info).toStrictEqual({
+      airac_cycle: "2313",
+      effective_from_to: ["28-12-2023", "25-01-2024"],
+      previous_from_to: ["30-11-2023", "28-12-2023"],
+    })
+  })
+
   it("Fetch airport", async () => {
     const airport = await navdataInterface.get_airport("KJFK")
 

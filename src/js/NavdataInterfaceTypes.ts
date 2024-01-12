@@ -27,6 +27,7 @@ export enum NavigraphFunction {
   SetDownloadOptions = "SetDownloadOptions",
   SetActiveDatabase = "SetActiveDatabase",
   ExecuteSQLQuery = "ExecuteSQLQuery",
+  GetDatabaseInfo = "GetDatabaseInfo",
   GetAirport = "GetAirport",
   GetAirportsInRange = "GetAirportsInRange",
   GetAirways = "GetAirways",
