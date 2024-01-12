@@ -3,17 +3,17 @@ import { Fix } from "../fix"
 import { Degrees, NauticalMiles } from "../types"
 
 export interface FMLegData extends ProcedureLegBase {
-  legType: LegType.FM
+  leg_type: LegType.FM
 
   fix: Fix
 
-  recommendedNavaid: Fix
+  recommended_navaid: Fix
 
-  turnDirection?: TurnDirection
+  turn_direction?: TurnDirection
 
   theta: Degrees
 
   rho: NauticalMiles
 
-  magneticCourse: Degrees
+  magnetic_course: Degrees
 }

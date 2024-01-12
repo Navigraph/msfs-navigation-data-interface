@@ -3,19 +3,19 @@ import { Fix } from "../fix"
 import { Degrees, Minutes, NauticalMiles } from "../types"
 
 export interface HFLegData extends ProcedureLegBase {
-  legType: LegType.HF
+  leg_type: LegType.HF
 
   fix: Fix
 
-  turnDirection: TurnDirection
+  turn_direction: TurnDirection
 
   theta?: Degrees
 
   rho?: NauticalMiles
 
-  magneticCourse: Degrees
+  magnetic_course: Degrees
 
   length?: NauticalMiles
 
-  lengthTime?: Minutes
+  length_time?: Minutes
 }

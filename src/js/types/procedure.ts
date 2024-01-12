@@ -7,10 +7,10 @@ export interface Transition {
 
 export interface Departure {
   ident: string
-  runwayTransitions: Transition[]
-  commonLegs: ProcedureLeg[]
-  enrouteTransitions: Transition[]
-  engineOutLegs: ProcedureLeg[]
+  runway_transitions: Transition[]
+  common_legs: ProcedureLeg[]
+  enroute_transitions: Transition[]
+  engine_out_legs: ProcedureLeg[]
 
-  identicalRunwayTransitions: boolean
+  identical_runway_transitions: boolean
 }

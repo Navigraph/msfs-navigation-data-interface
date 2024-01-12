@@ -3,21 +3,21 @@ import { Fix } from "../fix"
 import { Degrees, Feet, Minutes, NauticalMiles } from "../types"
 
 export interface HALegData extends ProcedureLegBase {
-  legType: LegType.HA
+  leg_type: LegType.HA
 
   fix: Fix
 
-  turnDirection: TurnDirection
+  turn_direction: TurnDirection
 
   theta?: Degrees
 
   rho?: NauticalMiles
 
-  magneticCourse: Degrees
+  magnetic_course: Degrees
 
   length?: NauticalMiles
 
-  lengthTime?: Minutes
+  length_time?: Minutes
 
   altitude: {
     altitude1: Feet

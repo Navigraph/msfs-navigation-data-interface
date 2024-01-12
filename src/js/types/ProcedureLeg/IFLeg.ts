@@ -3,11 +3,11 @@ import { Fix } from "../fix"
 import { Degrees, NauticalMiles } from "../types"
 
 export interface IFLegData extends ProcedureLegBase {
-  legType: LegType.IF
+  leg_type: LegType.IF
 
   fix: Fix
 
-  recommendedNavaid?: Fix
+  recommended_navaid?: Fix
 
   theta?: Degrees
 

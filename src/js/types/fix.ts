@@ -1,19 +1,19 @@
 import { Coordinates } from "./types"
 
 export enum FixType {
-  Airport,
-  NdbNavaid,
-  RunwayThreshold,
-  GlsNavaid,
-  IlsNavaid,
-  VhfNavaid,
-  Waypoint,
+  Airport = "A",
+  NdbNavaid = "N",
+  RunwayThreshold = "R",
+  GlsNavaid = "G",
+  IlsNavaid = "I",
+  VhfNavaid = "V",
+  Waypoint = "W",
 }
 
 export interface Fix {
-  fixType: FixType
+  fix_type: FixType
   ident: string
-  icaoCode: string
+  icao_code: string
   location: Coordinates
-  airportIdentifier?: string
+  airport_ident?: string
 }

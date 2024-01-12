@@ -14,16 +14,15 @@ export enum RunwaySurfaceCode {
 
 export interface Airport {
   ident: string
-  icaoCode: string
+  icao_code: string
   location: Coordinates
-  areaCode: string
   name: string
-  ifrCapability: IfrCapability
-  longestRunwaySurfaceCode: RunwaySurfaceCode
+  ifr_capability: IfrCapability
+  longest_runway_surface_code: RunwaySurfaceCode
   elevation: Feet
-  transitionAltitude?: Feet
-  transitionLevel?: Feet
-  speedLimit?: Knots
-  speedLimitAltitude?: Feet
-  iataIdent?: string
+  transition_altitude?: Feet
+  transition_level?: Feet
+  speed_limit?: Knots
+  speed_limit_altitude?: Feet
+  iata_ident?: string
 }

@@ -6,13 +6,13 @@ use crate::{
     sql_structs,
 };
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize)]
 pub struct Airway {
     pub ident: String,
     pub fixes: Vec<Fix>,
     pub route_type: AirwayRouteType,
     pub level: AirwayLevel,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub direction: Option<AirwayDirection>,
 }
 

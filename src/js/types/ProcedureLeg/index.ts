@@ -103,7 +103,7 @@ export interface ProcedureLegBase {
 
   speed?: SpeedConstraint
 
-  verticalAngle?: Degrees
+  vertical_angle?: Degrees
 
   rnp?: NauticalMiles
 }

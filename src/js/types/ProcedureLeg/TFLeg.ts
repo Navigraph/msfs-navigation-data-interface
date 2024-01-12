@@ -3,21 +3,21 @@ import { Fix } from "../fix"
 import { Degrees, Minutes, NauticalMiles } from "../types"
 
 export interface TFLegData extends ProcedureLegBase {
-  legType: LegType.TF
+  leg_type: LegType.TF
 
   fix: Fix
 
-  turnDirection?: TurnDirection
+  turn_direction?: TurnDirection
 
-  recommendedNavaid?: Fix
+  recommended_navaid?: Fix
 
   theta?: Degrees
 
   rho?: NauticalMiles
 
-  magneticCourse?: Degrees
+  magnetic_course?: Degrees
 
   length?: NauticalMiles
 
-  lengthTime?: Minutes
+  length_time?: Minutes
 }

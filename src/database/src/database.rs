@@ -161,7 +161,9 @@ impl Database {
             .collect())
     }
 
-    pub fn get_departures(&self, airport_ident: String) -> Result<Vec<Departure>, Box<dyn std::error::Error>> {
+    pub fn get_departures_at_airport(
+        &self, airport_ident: String,
+    ) -> Result<Vec<Departure>, Box<dyn std::error::Error>> {
         let conn = self.get_database()?;
 
         let mut departures_stmt = conn.prepare("SELECT * FROM tbl_sids WHERE airport_identifier = (?1)")?;

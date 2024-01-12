@@ -3,21 +3,21 @@ import { Fix } from "../fix"
 import { Degrees, NauticalMiles } from "../types"
 
 export interface RFLegData extends ProcedureLegBase {
-  legType: LegType.RF
+  leg_type: LegType.RF
 
   fix: Fix
 
-  turnDirection: TurnDirection
+  turn_direction: TurnDirection
 
-  recommendedNavaid?: Fix
+  recommended_navaid?: Fix
 
   theta?: Degrees
 
-  magneticCourse?: Degrees
+  magnetic_course?: Degrees
 
   length: NauticalMiles
 
-  arcCenterFix: Fix
+  arc_center_fix: Fix
 
-  arcRadius: NauticalMiles
+  arc_radius: NauticalMiles
 }

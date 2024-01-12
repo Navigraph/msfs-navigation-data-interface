@@ -6,6 +6,7 @@ use crate::{
     sql_structs,
 };
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize)]
 pub struct Airport {
     pub ident: String,

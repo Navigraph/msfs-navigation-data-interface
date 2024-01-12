@@ -3,13 +3,13 @@ import { Fix } from "../fix"
 import { Degrees, NauticalMiles } from "../types"
 
 export interface DFLegData extends ProcedureLegBase {
-  legType: LegType.DF
+  leg_type: LegType.DF
 
   fix: Fix
 
-  turnDirection?: TurnDirection
+  turn_direction?: TurnDirection
 
-  recommendedNavaid?: Fix
+  recommended_navaid?: Fix
 
   theta?: Degrees
 

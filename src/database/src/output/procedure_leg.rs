@@ -7,6 +7,7 @@ use crate::{
     sql_structs,
 };
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize, Clone)]
 pub struct AltitudeContstraint {
     altitude1: Feet,
@@ -20,52 +21,39 @@ pub struct SpeedConstraint {
     descriptor: SpeedDescriptor,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize, Clone)]
 pub struct ProcedureLeg {
     overfly: bool,
 
     leg_type: LegType,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     altitude: Option<AltitudeContstraint>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     speed: Option<SpeedConstraint>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     vertical_angle: Option<Degrees>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     rnp: Option<NauticalMiles>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     fix: Option<Fix>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     recommended_navaid: Option<Fix>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     theta: Option<Degrees>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     rho: Option<NauticalMiles>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     magnetic_course: Option<Degrees>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     length: Option<NauticalMiles>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     length_time: Option<Minutes>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     turn_direction: Option<TurnDirection>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     arc_center_fix: Option<Fix>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
     arc_radius: Option<NauticalMiles>,
 }
 

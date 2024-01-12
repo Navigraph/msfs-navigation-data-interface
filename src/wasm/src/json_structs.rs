@@ -20,8 +20,8 @@ pub mod functions {
         GetAirways,
         #[serde(rename = "GetAirwaysInRange")]
         GetAirwaysInRange,
-        #[serde(rename = "GetDepartures")]
-        GetDepartures,
+        #[serde(rename = "GetDeparturesAtAirport")]
+        GetDeparturesAtAirport,
     }
 
     #[derive(serde::Serialize)]
@@ -150,7 +150,7 @@ pub mod params {
     }
 
     #[derive(serde::Deserialize)]
-    pub struct GetDeparturesParams {
+    pub struct GetDeparturesAtAirportParams {
         pub airport_ident: String,
     }
 }

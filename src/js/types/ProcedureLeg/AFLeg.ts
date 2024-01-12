@@ -3,17 +3,17 @@ import { Fix } from "../fix"
 import { Degrees, NauticalMiles } from "../types"
 
 export interface AFLegData extends ProcedureLegBase {
-  legType: LegType.AF
+  leg_type: LegType.AF
 
   fix: Fix
 
-  turnDirection: TurnDirection
+  turn_direction: TurnDirection
 
-  recommendedNavaid: Fix
+  recommended_navaid: Fix
 
   theta: Degrees
 
   rho: NauticalMiles
 
-  magneticCourse: Degrees
+  magnetic_course: Degrees
 }

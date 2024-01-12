@@ -23,7 +23,7 @@ export enum AirwayDirection {
 export interface Airway {
   ident: string
   fixes: Fix[]
-  routeType: AirwayRouteType
+  route_type: AirwayRouteType
   level: AirwayLevel
   direction?: AirwayDirection
 }

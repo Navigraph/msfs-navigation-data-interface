@@ -20,14 +20,14 @@ pub enum FixType {
     Waypoint,
 }
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize, Clone)]
 pub struct Fix {
     pub fix_type: FixType,
     pub ident: String,
     pub icao_code: String,
     pub location: Coordinates,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub airport_identifier: Option<String>,
+    pub airport_ident: Option<String>,
 }
 
 pub fn map_fix(lat: f64, long: f64, id: String) -> Fix {
@@ -55,6 +55,6 @@ pub fn map_fix(lat: f64, long: f64, id: String) -> Fix {
         ident: ident.to_string(),
         icao_code: icao_code.to_string(),
         location: Coordinates { lat, long },
-        airport_identifier: airport_identifier.map(|s| s.to_string()),
+        airport_ident: airport_identifier.map(|s| s.to_string()),
     }
 }

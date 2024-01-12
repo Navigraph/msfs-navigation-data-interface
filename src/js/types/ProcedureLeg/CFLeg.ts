@@ -3,19 +3,19 @@ import { Fix } from "../fix"
 import { Degrees, NauticalMiles } from "../types"
 
 export interface CFLegData extends ProcedureLegBase {
-  legType: LegType.CF
+  leg_type: LegType.CF
 
   fix: Fix
 
-  recommendedNavaid: Fix
+  recommended_navaid: Fix
 
-  turnDirection?: TurnDirection
+  turn_direction?: TurnDirection
 
   theta: Degrees
 
   rho: NauticalMiles
 
-  magneticCourse: Degrees
+  magnetic_course: Degrees
 
   length: NauticalMiles
 }

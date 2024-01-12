@@ -3,11 +3,11 @@ import { Fix } from "../fix"
 import { Degrees } from "../types"
 
 export interface XILegData extends ProcedureLegBase {
-  legType: LegType.CI | LegType.VI
+  leg_type: LegType.CI | LegType.VI
 
-  turnDirection?: TurnDirection
+  turn_direction?: TurnDirection
 
-  recommendedNavaid?: Fix
+  recommended_navaid?: Fix
 
-  magneticCourse: Degrees
+  magnetic_course: Degrees
 }

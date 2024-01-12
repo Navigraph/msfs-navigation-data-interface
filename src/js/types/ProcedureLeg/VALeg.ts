@@ -2,11 +2,11 @@ import { AltitudeDescriptor, LegType, ProcedureLegBase, TurnDirection } from "."
 import { Degrees, Feet } from "../types"
 
 export interface VALegData extends ProcedureLegBase {
-  legType: LegType.VA
+  leg_type: LegType.VA
 
-  turnDirection?: TurnDirection
+  turn_direction?: TurnDirection
 
-  magneticCourse: Degrees
+  magnetic_course: Degrees
 
   altitude: {
     altitude1: Feet

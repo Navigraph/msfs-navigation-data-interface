@@ -3,13 +3,13 @@ import { Fix } from "../fix"
 import { Degrees, NauticalMiles } from "../types"
 
 export interface XDLegData extends ProcedureLegBase {
-  legType: LegType.CD | LegType.VD
+  leg_type: LegType.CD | LegType.VD
 
-  turnDirection?: TurnDirection
+  turn_direction?: TurnDirection
 
-  recommendedNavaid: Fix
+  recommended_navaid: Fix
 
-  magneticCourse: Degrees
+  magnetic_course: Degrees
 
   length: NauticalMiles
 }

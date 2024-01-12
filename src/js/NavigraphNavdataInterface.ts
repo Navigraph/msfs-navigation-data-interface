@@ -40,7 +40,7 @@ export class NavigraphNavdataInterface {
    * @param sql - SQL query to execute
    * @returns A promise that resolves with the result of the query
    */
-  public async executeSql<T>(sql: string, params: string[]): Promise<T[]> {
+  public async execute_sql<T>(sql: string, params: string[]): Promise<T[]> {
     return await this.callWasmFunction("ExecuteSQLQuery", { sql, params })
   }
 
@@ -51,7 +51,7 @@ export class NavigraphNavdataInterface {
    * @param path - The path to download the navdata to
    * @returns A promise that resolves when the download is complete
    */
-  public async downloadNavdata(url: string, path: string): Promise<void> {
+  public async download_navdata(url: string, path: string): Promise<void> {
     return await this.callWasmFunction("DownloadNavdata", { url, path })
   }
 
@@ -61,8 +61,8 @@ export class NavigraphNavdataInterface {
    * @param batchSize - The number of files to delete or unzip each update (default: 10). This is a performance optimization to avoid blocking the main thread for too long.
    * @returns A promise that resolves when the function is complete
    */
-  public async setDownloadOptions(batchSize: number): Promise<void> {
-    return await this.callWasmFunction("SetDownloadOptions", batchSize)
+  public async set_download_options(batch_size: number): Promise<void> {
+    return await this.callWasmFunction("SetDownloadOptions", batch_size)
   }
 
   /**
@@ -74,46 +74,28 @@ export class NavigraphNavdataInterface {
    * @param path - The path to the folder that contains the DFD navdata
    * @returns A promise that resolves when the function is complete
    */
-  public async setActiveDatabase(path: string): Promise<void> {
+  public async set_active_database(path: string): Promise<void> {
     return await this.callWasmFunction("SetActiveDatabase", { path })
   }
 
-  public async getAirport(ident: string): Promise<Airport> {
+  public async get_airport(ident: string): Promise<Airport> {
     return await this.callWasmFunction("GetAirport", { ident })
   }
 
-  public async getAirportsInRange(center: Coordinates, range: NauticalMiles): Promise<Airport[]> {
+  public async get_airports_in_range(center: Coordinates, range: NauticalMiles): Promise<Airport[]> {
     return await this.callWasmFunction("GetAirportsInRange", { center, range })
   }
 
-  public async getAirways(ident: string): Promise<Airway[]> {
+  public async get_airways(ident: string): Promise<Airway[]> {
     return await this.callWasmFunction("GetAirways", { ident })
   }
 
-  public async getAirwaysInRange(center: Coordinates, range: NauticalMiles): Promise<Airway[]> {
+  public async get_airways_in_range(center: Coordinates, range: NauticalMiles): Promise<Airway[]> {
     return await this.callWasmFunction("GetAirwaysInRange", { center, range })
   }
 
-  public async getDepartures(airportIdent: string): Promise<Departure[]> {
-    return await this.callWasmFunction("GetDepartures", { airport_ident: airportIdent })
-  }
-
-  private recursiveToCamel(item: unknown): unknown {
-    if (Array.isArray(item)) {
-      return item.map((el: unknown) => this.recursiveToCamel(el))
-    } else if (typeof item === "function" || item !== Object(item)) {
-      return item
-    }
-
-    // Object.fromEntries is not supported in sim
-    const fromEntries = arr => Object.assign({}, ...Array.from(arr, ([k, v]) => ({[k]: v}) ));
-
-    return fromEntries(
-      Object.entries(item as Record<string, unknown>).map(([key, value]: [string, unknown]) => [
-        key.replace(/([-_][a-z])/gi, c => c.toUpperCase().replace(/[-_]/g, "")),
-        this.recursiveToCamel(value),
-      ]),
-    )
+  public async get_departures_at_airport(airport_ident: string): Promise<Departure[]> {
+    return await this.callWasmFunction("GetDeparturesAtAirport", { airport_ident })
   }
 
   /**
@@ -137,8 +119,8 @@ export class NavigraphNavdataInterface {
     return new Promise((resolve, reject) => {
       this.queue.push({
         id,
-        resolve: (response: unknown) => resolve(this.recursiveToCamel(response) as T),
-        reject: (error: Error) => reject(this.recursiveToCamel(error)),
+        resolve: (response: unknown) => resolve(response as T),
+        reject: (error: Error) => reject(error),
       })
     })
   }

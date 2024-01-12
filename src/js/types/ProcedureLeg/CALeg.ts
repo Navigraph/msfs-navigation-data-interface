@@ -2,11 +2,11 @@ import { AltitudeDescriptor, LegType, ProcedureLegBase, TurnDirection } from "."
 import { Degrees, Feet } from "../types"
 
 export interface CALegData extends ProcedureLegBase {
-  legType: LegType.CA
+  leg_type: LegType.CA
 
-  turnDirection?: TurnDirection
+  turn_direction?: TurnDirection
 
-  magneticCourse: Degrees
+  magnetic_course: Degrees
 
   altitude: {
     altitude1: Feet

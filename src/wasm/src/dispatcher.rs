@@ -179,9 +179,9 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetDepartures => Dispatcher::execute_task(task.clone(), |t| {
-                    let params = t.borrow().parse_data_as::<params::GetDeparturesParams>()?;
-                    let departures = self.database.get_departures(params.airport_ident)?;
+                functions::FunctionType::GetDeparturesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetDeparturesAtAirportParams>()?;
+                    let departures = self.database.get_departures_at_airport(params.airport_ident)?;
 
                     task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(departures)?));
 

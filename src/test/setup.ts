@@ -283,8 +283,8 @@ beforeAll(async () => {
   // Download navdata to a unique folder to prevent clashes
   const path = v4()
 
-  await navdataInterface.downloadNavdata(downloadUrl, path)
-  await navdataInterface.setActiveDatabase(path)
+  await navdataInterface.download_navdata(downloadUrl, path)
+  await navdataInterface.set_active_database(path)
 }, 10000)
 
 void lifeCycle()
