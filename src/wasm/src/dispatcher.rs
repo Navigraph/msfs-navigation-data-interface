@@ -133,7 +133,7 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::SetActiveDatabaseParams>()?;
                     self.database.set_active_database(params.path)?;
 
-                    task.borrow_mut().status = TaskStatus::Success(None);
+                    t.borrow_mut().status = TaskStatus::Success(None);
 
                     Ok(())
                 }),
@@ -141,14 +141,14 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::ExecuteSQLQueryParams>()?;
                     let data = self.database.execute_sql_query(params.sql, params.params)?;
 
-                    task.borrow_mut().status = TaskStatus::Success(Some(data));
+                    t.borrow_mut().status = TaskStatus::Success(Some(data));
 
                     Ok(())
                 }),
-                functions::FunctionType::GetDatabaseInfo => Dispatcher::execute_task(task.clone(), |_t| {
+                functions::FunctionType::GetDatabaseInfo => Dispatcher::execute_task(task.clone(), |t| {
                     let info = self.database.get_database_info()?;
 
-                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(info)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(info)?));
 
                     Ok(())
                 }),
@@ -156,7 +156,7 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::GetAirportParams>()?;
                     let airport = self.database.get_airport(params.ident)?;
 
-                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airport)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airport)?));
 
                     Ok(())
                 }),
@@ -165,7 +165,7 @@ impl<'a> Dispatcher<'a> {
                         let params = t.borrow().parse_data_as::<params::GetAirportsInRangeParams>()?;
                         let airports = self.database.get_airports_in_range(params.center, params.range)?;
 
-                        task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
+                        t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
 
                         Ok(())
                     })
@@ -174,7 +174,7 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::GetAirwaysParams>()?;
                     let airports = self.database.get_airways(params.ident)?;
 
-                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
 
                     Ok(())
                 }),
@@ -182,7 +182,7 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::GetAirwaysInRangeParams>()?;
                     let airways = self.database.get_airways_in_range(params.center, params.range)?;
 
-                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));
 
                     Ok(())
                 }),
@@ -190,7 +190,7 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::GetProceduresAtAirportParams>()?;
                     let departures = self.database.get_departures_at_airport(params.airport_ident)?;
 
-                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(departures)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(departures)?));
 
                     Ok(())
                 }),
@@ -198,7 +198,7 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::GetProceduresAtAirportParams>()?;
                     let arrivals = self.database.get_arrivals_at_airport(params.airport_ident)?;
 
-                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(arrivals)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(arrivals)?));
 
                     Ok(())
                 }),

@@ -4,35 +4,22 @@
 pub mod functions {
     #[derive(serde::Deserialize, Clone, Copy)]
     pub enum FunctionType {
-        #[serde(rename = "DownloadNavdata")]
         DownloadNavdata,
-        #[serde(rename = "SetDownloadOptions")]
         SetDownloadOptions,
-        #[serde(rename = "SetActiveDatabase")]
         SetActiveDatabase,
-        #[serde(rename = "ExecuteSQLQuery")]
         ExecuteSQLQuery,
-        #[serde(rename = "GetDatabaseInfo")]
         GetDatabaseInfo,
-        #[serde(rename = "GetAirport")]
         GetAirport,
-        #[serde(rename = "GetAirportsInRange")]
         GetAirportsInRange,
-        #[serde(rename = "GetAirways")]
         GetAirways,
-        #[serde(rename = "GetAirwaysInRange")]
         GetAirwaysInRange,
-        #[serde(rename = "GetDeparturesAtAirport")]
         GetDeparturesAtAirport,
-        #[serde(rename = "GetArrivalsAtAirport")]
         GetArrivalsAtAirport,
     }
 
     #[derive(serde::Serialize)]
     pub enum FunctionStatus {
-        #[serde(rename = "Error")]
         Error,
-        #[serde(rename = "Success")]
         Success,
     }
 
@@ -62,9 +49,7 @@ pub mod events {
 
     #[derive(serde::Serialize)]
     pub enum EventType {
-        #[serde(rename = "Heartbeat")]
         Heartbeat,
-        #[serde(rename = "DownloadProgress")]
         DownloadProgress,
     }
 
@@ -78,11 +63,8 @@ pub mod events {
 
     #[derive(serde::Serialize)]
     pub enum DownloadProgressPhase {
-        #[serde(rename = "Downloading")]
         Downloading,
-        #[serde(rename = "Cleaning")]
         Cleaning,
-        #[serde(rename = "Extracting")]
         Extracting,
     }
 
