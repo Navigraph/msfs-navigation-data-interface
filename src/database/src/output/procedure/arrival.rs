@@ -6,12 +6,11 @@ use super::{mut_find_or_insert, Transition};
 use crate::{output::procedure_leg::ProcedureLeg, sql_structs};
 
 #[derive(Serialize)]
-pub struct Departure {
+pub struct Arrival {
     ident: String,
-    runway_transitions: Vec<Transition>,
-    common_legs: Vec<ProcedureLeg>,
     enroute_transitions: Vec<Transition>,
-    engine_out_legs: Vec<ProcedureLeg>,
+    common_legs: Vec<ProcedureLeg>,
+    runway_transitions: Vec<Transition>,
 
     /// Indicates whether all the runway_transitions on this are encoded the same way, so runway selection does not
     /// need to occur before it can be used. This would usually be encoded in common legs however it must be in runway
@@ -19,17 +18,16 @@ pub struct Departure {
     identical_runway_transitions: bool,
 }
 
-pub fn map_departures(data: Vec<sql_structs::Procedures>, runways: Vec<sql_structs::Runways>) -> Vec<Departure> {
+pub fn map_arrivals(data: Vec<sql_structs::Procedures>, runways: Vec<sql_structs::Runways>) -> Vec<Arrival> {
     data.into_iter()
-        .fold(HashMap::new(), |mut departures, row| {
-            let departure = match departures.entry(row.procedure_identifier.clone()) {
+        .fold(HashMap::new(), |mut arrivals, row| {
+            let arrival = match arrivals.entry(row.procedure_identifier.clone()) {
                 Entry::Occupied(entry) => entry.into_mut(),
-                Entry::Vacant(entry) => entry.insert(Departure {
+                Entry::Vacant(entry) => entry.insert(Arrival {
                     ident: row.procedure_identifier.clone(),
-                    runway_transitions: Vec::new(),
-                    common_legs: Vec::new(),
                     enroute_transitions: Vec::new(),
-                    engine_out_legs: Vec::new(),
+                    common_legs: Vec::new(),
+                    runway_transitions: Vec::new(),
 
                     identical_runway_transitions: false,
                 }),
@@ -47,47 +45,24 @@ pub fn map_departures(data: Vec<sql_structs::Procedures>, runways: Vec<sql_struc
             // One consideration to make is whether we indicate that all the runway transitions are the same, so that
             // the procedure can be used without selecting a specific runway
             match route_type.as_str() {
-                "0" => departure.engine_out_legs.push(leg),
-                // These route types are for runway transitions
-                "1" | "4" | "F" | "T" => {
-                    let transition_identifier =
-                        transition_identifier.expect("Runway transition leg was found without a transition identifier");
+                // These route types are for enroute transitions
+                "1" | "4" | "7" | "F" => {
+                    let transition_identifier = transition_identifier
+                        .expect("Enroute transition leg was found without a transition identifier");
 
-                    // If transition identifier ends in B, it means this transition serves all runways with the same
-                    // number. To make this easier to use in an FMS, we duplicate the transitions for all runways which
-                    // it serves
-                    if transition_identifier.chars().nth(4) == Some('B') {
-                        let target_runways = runways
-                            .iter()
-                            .filter(|runway| runway.runway_identifier[0..4] == transition_identifier[0..4]);
+                    let transition = mut_find_or_insert(
+                        &mut arrival.enroute_transitions,
+                        |transition| transition.ident == transition_identifier,
+                        Transition {
+                            ident: transition_identifier.to_string(),
+                            legs: Vec::new(),
+                        },
+                    );
 
-                        for runway in target_runways {
-                            let transition = mut_find_or_insert(
-                                &mut departure.runway_transitions,
-                                |transition| transition.ident == runway.runway_identifier,
-                                Transition {
-                                    ident: runway.runway_identifier.clone(),
-                                    legs: Vec::new(),
-                                },
-                            );
-
-                            transition.legs.push(leg.clone());
-                        }
-                    } else {
-                        let transition = mut_find_or_insert(
-                            &mut departure.runway_transitions,
-                            |transition| transition.ident == transition_identifier,
-                            Transition {
-                                ident: transition_identifier.to_string(),
-                                legs: Vec::new(),
-                            },
-                        );
-
-                        transition.legs.push(leg.clone());
-                    }
+                    transition.legs.push(leg);
                 },
                 // These route types are for common legs
-                "2" | "5" | "M" => {
+                "2" | "5" | "8" | "M" => {
                     // Common legs can still have a transition identifier, meaning that this procedure is only for
                     // specific runways, but with the same legs for each runway.
                     //
@@ -98,11 +73,11 @@ pub fn map_departures(data: Vec<sql_structs::Procedures>, runways: Vec<sql_struc
                         // has exactly the same legs for each runway, so we insert a runway transition for every runway
                         // at the airport
                         if transition_identifier == "ALL" {
-                            departure.identical_runway_transitions = true;
+                            arrival.identical_runway_transitions = true;
 
                             for runway in runways.iter() {
                                 let transition = mut_find_or_insert(
-                                    &mut departure.runway_transitions,
+                                    &mut arrival.runway_transitions,
                                     |transition| transition.ident == runway.runway_identifier,
                                     Transition {
                                         ident: runway.runway_identifier.clone(),
@@ -114,7 +89,7 @@ pub fn map_departures(data: Vec<sql_structs::Procedures>, runways: Vec<sql_struc
                             }
                         // When the identifier ends with B, this procedure is for all runways with that number
                         } else if transition_identifier.chars().nth(4) == Some('B') {
-                            departure.identical_runway_transitions = true;
+                            arrival.identical_runway_transitions = true;
 
                             let target_runways = runways
                                 .iter()
@@ -122,7 +97,7 @@ pub fn map_departures(data: Vec<sql_structs::Procedures>, runways: Vec<sql_struc
 
                             for runway in target_runways {
                                 let transition = mut_find_or_insert(
-                                    &mut departure.runway_transitions,
+                                    &mut arrival.runway_transitions,
                                     |transition| transition.ident == runway.runway_identifier,
                                     Transition {
                                         ident: runway.runway_identifier.clone(),
@@ -136,7 +111,7 @@ pub fn map_departures(data: Vec<sql_structs::Procedures>, runways: Vec<sql_struc
                         // transition to indicate which runway this procedure is specifically for
                         } else {
                             let transition = mut_find_or_insert(
-                                &mut departure.runway_transitions,
+                                &mut arrival.runway_transitions,
                                 |transition| transition.ident == transition_identifier,
                                 Transition {
                                     ident: transition_identifier.to_string(),
@@ -149,29 +124,51 @@ pub fn map_departures(data: Vec<sql_structs::Procedures>, runways: Vec<sql_struc
                     // When there is no transiton identifier, that means there are seperate runway transitions, so these
                     // legs should actually be inserted as common legs
                     } else {
-                        departure.common_legs.push(leg);
+                        arrival.common_legs.push(leg);
                     }
                 },
-                // These route types are for enroute transitions
-                "3" | "6" | "S" | "V" => {
-                    let transition_identifier = transition_identifier
-                        .expect("Enroute transition leg was found without a transition identifier");
+                // These route types are for runway transitions
+                "3" | "6" | "9" | "S" => {
+                    let transition_identifier =
+                        transition_identifier.expect("Runway transition leg was found without a transition identifier");
 
-                    let transition = mut_find_or_insert(
-                        &mut departure.enroute_transitions,
-                        |transition| transition.ident == transition_identifier,
-                        Transition {
-                            ident: transition_identifier.to_string(),
-                            legs: Vec::new(),
-                        },
-                    );
+                    // If transition identifier ends in B, it means this transition serves all runways with the same
+                    // number. To make this easier to use in an FMS, we duplicate the transitions for all runways which
+                    // it serves
+                    if transition_identifier.chars().nth(4) == Some('B') {
+                        let target_runways = runways
+                            .iter()
+                            .filter(|runway| runway.runway_identifier[0..4] == transition_identifier[0..4]);
 
-                    transition.legs.push(leg);
+                        for runway in target_runways {
+                            let transition = mut_find_or_insert(
+                                &mut arrival.runway_transitions,
+                                |transition| transition.ident == runway.runway_identifier,
+                                Transition {
+                                    ident: runway.runway_identifier.clone(),
+                                    legs: Vec::new(),
+                                },
+                            );
+
+                            transition.legs.push(leg.clone());
+                        }
+                    } else {
+                        let transition = mut_find_or_insert(
+                            &mut arrival.runway_transitions,
+                            |transition| transition.ident == transition_identifier,
+                            Transition {
+                                ident: transition_identifier.to_string(),
+                                legs: Vec::new(),
+                            },
+                        );
+
+                        transition.legs.push(leg.clone());
+                    }
                 },
                 _ => unreachable!(),
             }
 
-            departures
+            arrivals
         })
         .into_values()
         .collect()

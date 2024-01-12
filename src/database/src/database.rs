@@ -5,7 +5,13 @@ use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags,
 use super::output::{airport::Airport, airway::map_airways, procedure::departure::map_departures};
 use crate::{
     math::{Coordinates, NauticalMiles},
-    output::{airway::Airway, procedure::departure::Departure},
+    output::{
+        airway::Airway,
+        procedure::{
+            arrival::{map_arrivals, Arrival},
+            departure::Departure,
+        },
+    },
     sql_structs,
     util,
 };
@@ -175,6 +181,20 @@ impl Database {
         let runways_data = Database::fetch_rows::<sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
 
         Ok(map_departures(departures_data, runways_data))
+    }
+
+    pub fn get_arrivals_at_airport(&self, airport_ident: String) -> Result<Vec<Arrival>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut arrivals_stmt = conn.prepare("SELECT * FROM tbl_stars WHERE airport_identifier = (?1)")?;
+
+        let mut runways_stmt = conn.prepare("SELECT * FROM tbl_runways WHERE airport_identifier = (?1)")?;
+
+        let arrivals_data =
+            Database::fetch_rows::<sql_structs::Procedures>(&mut arrivals_stmt, params![airport_ident])?;
+        let runways_data = Database::fetch_rows::<sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
+
+        Ok(map_arrivals(arrivals_data, runways_data))
     }
 
     fn fetch_row<T>(

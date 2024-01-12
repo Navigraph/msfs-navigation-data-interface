@@ -32,4 +32,11 @@ describe("test", () => {
 
     expect(departures.length).toBe(15)
   })
+
+  it("Get Arrivals", async () => {
+    const departures = await navdataInterface.get_arrivals_at_airport("NZCH")
+
+    console.log(departures)
+    // expect(departures.length).toBe(15)
+  })
 })

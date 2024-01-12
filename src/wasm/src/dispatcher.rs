@@ -180,10 +180,18 @@ impl<'a> Dispatcher<'a> {
                     Ok(())
                 }),
                 functions::FunctionType::GetDeparturesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
-                    let params = t.borrow().parse_data_as::<params::GetDeparturesAtAirportParams>()?;
+                    let params = t.borrow().parse_data_as::<params::GetProceduresAtAirportParams>()?;
                     let departures = self.database.get_departures_at_airport(params.airport_ident)?;
 
                     task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(departures)?));
+
+                    Ok(())
+                }),
+                functions::FunctionType::GetArrivalsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetProceduresAtAirportParams>()?;
+                    let arrivals = self.database.get_arrivals_at_airport(params.airport_ident)?;
+
+                    task.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(arrivals)?));
 
                     Ok(())
                 }),

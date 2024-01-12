@@ -2,6 +2,7 @@ use serde::Serialize;
 
 use super::procedure_leg::ProcedureLeg;
 
+pub mod arrival;
 pub mod departure;
 
 #[derive(Serialize)]

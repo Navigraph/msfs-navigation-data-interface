@@ -14,3 +14,12 @@ export interface Departure {
 
   identical_runway_transitions: boolean
 }
+
+export interface Arrival {
+  ident: string
+  enroute_transitions: Transition[]
+  common_legs: ProcedureLeg[]
+  runway_transitions: Transition[]
+
+  identical_runway_transitions: boolean
+}

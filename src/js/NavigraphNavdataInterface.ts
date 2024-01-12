@@ -9,7 +9,7 @@ import {
   RawNavigraphEvent,
 } from "./NavdataInterfaceTypes"
 import { Airport, Airway, Coordinates, NauticalMiles } from "./types"
-import { Departure } from "./types/procedure"
+import { Arrival, Departure } from "./types/procedure"
 
 export class NavigraphNavdataInterface {
   private readonly listener: CommBusListener
@@ -96,6 +96,10 @@ export class NavigraphNavdataInterface {
 
   public async get_departures_at_airport(airport_ident: string): Promise<Departure[]> {
     return await this.callWasmFunction("GetDeparturesAtAirport", { airport_ident })
+  }
+
+  public async get_arrivals_at_airport(airport_ident: string): Promise<Arrival[]> {
+    return await this.callWasmFunction("GetArrivalsAtAirport", { airport_ident })
   }
 
   /**
