@@ -13,6 +13,7 @@ use crate::{
             arrival::{map_arrivals, Arrival},
             departure::Departure,
         },
+        runway::RunwayThreshold,
         vhf_navaid::VhfNavaid,
         waypoint::Waypoint,
     },
@@ -199,6 +200,18 @@ impl Database {
                     .any(|fix| fix.location.distance_to(&center) <= range)
             })
             .collect())
+    }
+
+    pub fn get_runways_at_airport(
+        &self, airport_ident: String,
+    ) -> Result<Vec<RunwayThreshold>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut stmt = conn.prepare("SELECT * FROM tbl_runways WHERE airport_identifier = (?1)")?;
+
+        let runways_data = Database::fetch_rows::<sql_structs::Runways>(&mut stmt, params![airport_ident])?;
+
+        Ok(runways_data.into_iter().map(Into::into).collect())
     }
 
     pub fn get_departures_at_airport(

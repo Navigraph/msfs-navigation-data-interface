@@ -18,6 +18,7 @@ pub mod functions {
         GetAirportsInRange,
         GetAirwaysInRange,
         // Airport related queries
+        GetRunwaysAtAirport,
         GetDeparturesAtAirport,
         GetArrivalsAtAirport,
         GetApproachesAtAirport,
@@ -142,7 +143,7 @@ pub mod params {
     }
 
     #[derive(serde::Deserialize)]
-    pub struct GetProceduresAtAirportParams {
+    pub struct GetAtAirportParams {
         pub airport_ident: String,
     }
 }

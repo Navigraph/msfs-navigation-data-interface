@@ -107,6 +107,10 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetAirwaysInRange", { center, range })
   }
 
+  public async get_runways_at_airport(airport_ident: string): Promise<Waypoint[]> {
+    return await this.callWasmFunction("GetRunwaysAtAirport", { airport_ident })
+  }
+
   public async get_departures_at_airport(airport_ident: string): Promise<Departure[]> {
     return await this.callWasmFunction("GetDeparturesAtAirport", { airport_ident })
   }

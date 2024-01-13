@@ -10,6 +10,7 @@ import {
 } from "../js"
 import { AltitudeDescriptor, LegType } from "../js/types/ProcedureLeg"
 import { IFLegData } from "../js/types/ProcedureLeg/IFLeg"
+import { RunwayThreshold } from "../js/types/runway_threshold"
 import { VhfNavaid } from "../js/types/vhfnavaid"
 import { Waypoint } from "../js/types/waypoint"
 
@@ -115,6 +116,29 @@ describe("test", () => {
     const airways = await navdataInterface.get_airways_in_range({ lat: -43.4876, long: 172.5374 }, 10)
 
     expect(airways.length).toBe(27)
+  })
+
+  it("Get runways at airport", async () => {
+    const runways = await navdataInterface.get_runways_at_airport("NZCH")
+
+    expect(runways.length).toBe(4)
+
+    const target_runway = runways[0]
+
+    expect(target_runway).toStrictEqual({
+      icao_code: "NZ",
+      ident: "RW02",
+      elevation: 123,
+      gradient: -0.278,
+      length: 10787,
+      width: 148,
+      location: {
+        lat: -43.49763056,
+        long: 172.52211389,
+      },
+      magnetic_bearing: 16,
+      true_bearing: 39.995,
+    } satisfies RunwayThreshold)
   })
 
   it("Get departures", async () => {
