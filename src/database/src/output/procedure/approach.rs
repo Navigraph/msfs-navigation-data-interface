@@ -43,8 +43,7 @@ pub fn map_approaches(data: Vec<sql_structs::Procedures>) -> Vec<Approach> {
                         legs: Vec::new(),
                         missed_legs: Vec::new(),
                         runway_ident: split_approach_ident(row.procedure_identifier.clone())
-                            .map(|(_, runway_ident, _)| runway_ident)
-                            .map(|x| format!("RW{}", x)),
+                            .map(|(_, runway_ident, _)| format!("RW{}", runway_ident)),
                         approach_type: ApproachType::Fms, /* Set to an arbitrary value, will be overwritten once we
                                                            * find a row with a valid approach type (the first row in
                                                            * an approach will usually be a transition so it can not

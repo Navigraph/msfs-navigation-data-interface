@@ -33,11 +33,12 @@ pub struct Fix {
 pub fn map_fix(lat: f64, long: f64, id: String) -> Fix {
     let table = id.split("|").nth(0).unwrap();
     let id = id.split("|").nth(1).unwrap();
-    let (airport_identifier, icao_code, ident) = if table.starts_with("tbl_terminal") {
-        (Some(&id[0..4]), &id[4..6], &id[6..])
-    } else {
-        (None, &id[0..2], &id[2..])
-    };
+    let (airport_identifier, icao_code, ident) =
+        if table.starts_with("tbl_terminal") || table == "tbl_localizers_glideslopes" || table == "tbl_gls" {
+            (Some(&id[0..4]), &id[4..6], &id[6..])
+        } else {
+            (None, &id[0..2], &id[2..])
+        };
 
     let fix_type = match table {
         "tbl_airports" => FixType::Airport,
