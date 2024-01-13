@@ -9,6 +9,7 @@ use crate::{
         airway::Airway,
         database_info::DatabaseInfo,
         procedure::{
+            approach::{map_approaches, Approach},
             arrival::{map_arrivals, Arrival},
             departure::Departure,
         },
@@ -206,6 +207,19 @@ impl Database {
         let runways_data = Database::fetch_rows::<sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
 
         Ok(map_arrivals(arrivals_data, runways_data))
+    }
+
+    pub fn get_approaches_at_airport(
+        &self, airport_ident: String,
+    ) -> Result<Vec<Approach>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut approachs_stmt = conn.prepare("SELECT * FROM tbl_iaps WHERE airport_identifier = (?1)")?;
+
+        let approaches_data =
+            Database::fetch_rows::<sql_structs::Procedures>(&mut approachs_stmt, params![airport_ident])?;
+
+        Ok(map_approaches(approaches_data))
     }
 
     fn fetch_row<T>(

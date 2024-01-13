@@ -202,6 +202,14 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
+                functions::FunctionType::GetApproachesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetProceduresAtAirportParams>()?;
+                    let arrivals = self.database.get_approaches_at_airport(params.airport_ident)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(arrivals)?));
+
+                    Ok(())
+                }),
             }
         }
 

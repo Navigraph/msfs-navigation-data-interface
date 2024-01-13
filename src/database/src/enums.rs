@@ -126,3 +126,45 @@ pub enum LegType {
     HF,
     HM,
 }
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum ApproachType {
+    #[serde(rename = "B")]
+    LocBackcourse,
+    #[serde(rename = "D")]
+    VorDme,
+    #[serde(rename = "F")]
+    Fms,
+    #[serde(rename = "G")]
+    Igs,
+    #[serde(rename = "I")]
+    Ils,
+    #[serde(rename = "J")]
+    Gls,
+    #[serde(rename = "L")]
+    Loc,
+    #[serde(rename = "M")]
+    Mls,
+    #[serde(rename = "N")]
+    Ndb,
+    #[serde(rename = "P")]
+    Gps,
+    #[serde(rename = "Q")]
+    NdbDme,
+    #[serde(rename = "R")]
+    Rnav,
+    #[serde(rename = "S")]
+    Vortac,
+    #[serde(rename = "T")]
+    Tacan,
+    #[serde(rename = "U")]
+    Sdf,
+    #[serde(rename = "V")]
+    Vor,
+    #[serde(rename = "W")]
+    MlsTypeA,
+    #[serde(rename = "X")]
+    Lda,
+    #[serde(rename = "Y")]
+    MlsTypeBC,
+}

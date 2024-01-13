@@ -23,3 +23,35 @@ export interface Arrival {
 
   identical_runway_transitions: boolean
 }
+
+export enum ApproachType {
+  LocBackcourse = "B",
+  VorDme = "D",
+  Fms = "F",
+  Igs = "G",
+  Ils = "I",
+  Gls = "J",
+  Loc = "L",
+  Mls = "M",
+  Ndb = "N",
+  Gps = "P",
+  NdbDme = "Q",
+  Rnav = "R",
+  Vortac = "S",
+  Tacan = "T",
+  Sdf = "U",
+  Vor = "V",
+  MlsTypeA = "W",
+  Lda = "X",
+  MlsTypeBC = "Y",
+}
+
+export interface Approach {
+  ident: string
+  transitions: Transition[]
+  legs: ProcedureLeg[]
+  missed_legs: ProcedureLeg[]
+
+  runway_ident: string
+  approach_type: ApproachType
+}

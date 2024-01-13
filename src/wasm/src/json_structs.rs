@@ -15,6 +15,7 @@ pub mod functions {
         GetAirwaysInRange,
         GetDeparturesAtAirport,
         GetArrivalsAtAirport,
+        GetApproachesAtAirport,
     }
 
     #[derive(serde::Serialize)]

@@ -48,4 +48,10 @@ describe("test", () => {
 
     expect(arrivals.length).toBe(45)
   })
+
+  it("Get Approaches", async () => {
+    const approaches = await navdataInterface.get_approaches_at_airport("NZAA")
+
+    expect(approaches.length).toBe(26)
+  })
 })

@@ -3,6 +3,7 @@ use serde::Serialize;
 use super::procedure_leg::ProcedureLeg;
 use crate::sql_structs;
 
+pub mod approach;
 pub mod arrival;
 pub mod departure;
 

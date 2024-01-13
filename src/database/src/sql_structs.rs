@@ -465,24 +465,24 @@ pub struct RestrictiveAirspace {
 
 #[derive(Deserialize, Debug)]
 pub struct Runways {
-    pub area_code: Option<String>,
-    pub icao_code: Option<String>,
+    pub area_code: String,
+    pub icao_code: String,
     pub airport_identifier: String,
     pub runway_identifier: String,
-    pub runway_latitude: Option<f64>,
-    pub runway_longitude: Option<f64>,
-    pub runway_gradient: Option<f64>,
-    pub runway_magnetic_bearing: Option<f64>,
-    pub runway_true_bearing: Option<f64>,
-    pub landing_threshold_elevation: Option<f64>,
-    pub displaced_threshold_distance: Option<f64>,
-    pub threshold_crossing_height: Option<f64>,
-    pub runway_length: Option<f64>,
-    pub runway_width: Option<f64>,
+    pub runway_latitude: f64,
+    pub runway_longitude: f64,
+    pub runway_gradient: f64,
+    pub runway_magnetic_bearing: f64,
+    pub runway_true_bearing: f64,
+    pub landing_threshold_elevation: f64,
+    pub displaced_threshold_distance: f64,
+    pub threshold_crossing_height: f64,
+    pub runway_length: f64,
+    pub runway_width: f64,
     pub llz_identifier: Option<String>,
     pub llz_mls_gls_category: Option<String>,
-    pub surface_code: Option<f64>,
-    pub id: Option<String>,
+    pub surface_code: f64,
+    pub id: String,
 }
 
 #[derive(Deserialize, Debug)]
