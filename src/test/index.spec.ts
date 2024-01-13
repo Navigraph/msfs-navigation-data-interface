@@ -1,4 +1,15 @@
-import { NavigraphNavdataInterface } from "../js"
+import {
+  Airport,
+  AirwayLevel,
+  AirwayRouteType,
+  Fix,
+  FixType,
+  IfrCapability,
+  NavigraphNavdataInterface,
+  RunwaySurfaceCode,
+} from "../js"
+import { AltitudeDescriptor, LegType } from "../js/types/ProcedureLeg"
+import { IFLegData } from "../js/types/ProcedureLeg/IFLeg"
 
 const navdataInterface = new NavigraphNavdataInterface()
 
@@ -16,7 +27,23 @@ describe("test", () => {
   it("Fetch airport", async () => {
     const airport = await navdataInterface.get_airport("KJFK")
 
-    expect(airport.ident).toBe("KJFK")
+    expect(airport).toStrictEqual({
+      ident: "KJFK",
+      icao_code: "K6",
+      location: {
+        lat: 40.63992778,
+        long: -73.77869167,
+      },
+      name: "KENNEDY INTL",
+      ifr_capability: IfrCapability.Yes,
+      longest_runway_surface_code: RunwaySurfaceCode.Hard,
+      elevation: 13,
+      transition_altitude: 18000,
+      transition_level: 18000,
+      speed_limit: 250,
+      speed_limit_altitude: 10000,
+      iata_ident: "JFK",
+    } satisfies Airport)
   })
 
   it("Get airports in range", async () => {
@@ -28,7 +55,23 @@ describe("test", () => {
   it("Get airways", async () => {
     const airways = await navdataInterface.get_airways("A1")
 
+    const target_airway = airways[0]
+
     expect(airways.length).toBe(5)
+    expect(airways[0].direction).toBeUndefined()
+    expect(target_airway.fixes.length).toBe(52)
+    expect(target_airway.ident).toBe("A1")
+    expect(target_airway.level).toBe(AirwayLevel.Both)
+    expect(target_airway.route_type).toBe(AirwayRouteType.OfficialDesignatedAirwaysExpectRnavAirways)
+    expect(target_airway.fixes[0]).toStrictEqual({
+      fix_type: FixType.VhfNavaid,
+      ident: "KEC",
+      icao_code: "RJ",
+      location: {
+        lat: 33.44774167,
+        long: 135.79449444,
+      },
+    } satisfies Fix)
   })
 
   it("Get airways in range", async () => {
@@ -38,20 +81,91 @@ describe("test", () => {
   })
 
   it("Get departures", async () => {
-    const departures = await navdataInterface.get_departures_at_airport("NZCH")
+    const departures = await navdataInterface.get_departures_at_airport("KLAX")
 
-    expect(departures.length).toBe(15)
+    expect(departures.length).toBe(22)
+
+    const target_departure = departures.find(departure => departure.ident === "PNDAH2")
+
+    expect(target_departure.ident).toBe("PNDAH2")
+    expect(target_departure.runway_transitions.length).toBe(4)
+    expect(target_departure.enroute_transitions.length).toBe(2)
+    expect(target_departure.common_legs.length).toBe(4)
+    expect(target_departure.runway_transitions[0].ident).toBe("RW24L")
+    expect(target_departure.runway_transitions[0].legs.length).toBe(6)
+    expect(target_departure.enroute_transitions[0].ident).toBe("OTAYY")
+    expect(target_departure.enroute_transitions[0].legs.length).toBe(2)
   })
 
   it("Get Arrivals", async () => {
-    const arrivals = await navdataInterface.get_arrivals_at_airport("NZCH")
+    const arrivals = await navdataInterface.get_arrivals_at_airport("KLAX")
 
-    expect(arrivals.length).toBe(45)
+    expect(arrivals.length).toBe(24)
+
+    const target_arrival = arrivals.find(arrival => arrival.ident === "BRUEN2")
+
+    expect(target_arrival.ident).toBe("BRUEN2")
+    expect(target_arrival.enroute_transitions.length).toBe(4)
+    expect(target_arrival.runway_transitions.length).toBe(4)
+    expect(target_arrival.common_legs.length).toBe(7)
+    expect(target_arrival.enroute_transitions[0].ident).toBe("ESTWD")
+    expect(target_arrival.enroute_transitions[0].legs.length).toBe(5)
+    expect(target_arrival.runway_transitions[0].ident).toBe("RW06L")
+    expect(target_arrival.runway_transitions[0].legs.length).toBe(8)
   })
 
   it("Get Approaches", async () => {
-    const approaches = await navdataInterface.get_approaches_at_airport("NZAA")
+    const approaches = await navdataInterface.get_approaches_at_airport("KLAX")
 
-    expect(approaches.length).toBe(26)
+    expect(approaches.length).toBe(24)
+
+    const target_approach = approaches.find(approach => approach.ident === "I06L")
+
+    expect(target_approach.ident).toBe("I06L")
+    expect(target_approach.legs.length).toBe(3)
+    expect(target_approach.missed_legs.length).toBe(3)
+    expect(target_approach.transitions.length).toBe(3)
+    expect(target_approach.transitions[0].ident).toBe("CLVVR")
+    expect(target_approach.transitions[0].legs.length).toBe(2)
+  })
+
+  it("Check procedure leg types", async () => {
+    // This airport has the most different leg types
+    const approaches = await navdataInterface.get_approaches_at_airport("GCLP")
+
+    const approach1 = approaches.find(approach => approach.ident == "L21RZ")
+
+    const IF = approach1.legs[0]
+
+    expect(IF).toStrictEqual<IFLegData>({
+      leg_type: LegType.IF,
+      overfly: false,
+      fix: {
+        airport_ident: "GCLP",
+        fix_type: FixType.Waypoint,
+        ident: "CF21R",
+        icao_code: "GC",
+        location: {
+          lat: 28.116,
+          long: -15.30502778,
+        },
+      },
+      theta: 25.4,
+      rho: 12.9,
+      altitude: {
+        altitude1: 2500,
+        descriptor: AltitudeDescriptor.AtOrAboveAlt1,
+      },
+      recommended_navaid: {
+        airport_ident: "GCLP",
+        fix_type: FixType.IlsNavaid,
+        ident: "RLP",
+        icao_code: "GC",
+        location: {
+          lat: 27.91594444,
+          long: -15.39363889,
+        },
+      },
+    })
   })
 })
