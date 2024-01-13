@@ -176,9 +176,17 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
+                functions::FunctionType::GetAirways => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
+                    let airways = self.database.get_airways(params.ident)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));
+
+                    Ok(())
+                }),
                 functions::FunctionType::GetAirportsInRange => {
                     Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
-                        let params = t.borrow().parse_data_as::<params::GetAirportsInRangeParams>()?;
+                        let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
                         let airports = self.database.get_airports_in_range(params.center, params.range)?;
 
                         t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
@@ -186,16 +194,28 @@ impl<'a> Dispatcher<'a> {
                         Ok(())
                     })
                 },
-                functions::FunctionType::GetAirways => Dispatcher::execute_task(task.clone(), |t| {
-                    let params = t.borrow().parse_data_as::<params::GetAirwaysParams>()?;
-                    let airways = self.database.get_airways(params.ident)?;
+                functions::FunctionType::GetWaypointsInRange => {
+                    Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
+                        let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                        let waypoints = self.database.get_waypoints_in_range(params.center, params.range)?;
 
-                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));
+                        t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(waypoints)?));
 
-                    Ok(())
-                }),
+                        Ok(())
+                    })
+                },
+                functions::FunctionType::GetVhfNavaidsInRange => {
+                    Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
+                        let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                        let navaids = self.database.get_vhf_navaids_in_range(params.center, params.range)?;
+
+                        t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
+
+                        Ok(())
+                    })
+                },
                 functions::FunctionType::GetAirwaysInRange => Dispatcher::execute_task(task.clone(), |t| {
-                    let params = t.borrow().parse_data_as::<params::GetAirwaysInRangeParams>()?;
+                    let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
                     let airways = self.database.get_airways_in_range(params.center, params.range)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));

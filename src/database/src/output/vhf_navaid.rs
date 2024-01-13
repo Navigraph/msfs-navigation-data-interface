@@ -8,14 +8,14 @@ use crate::{
 #[serde_with::skip_serializing_none]
 #[derive(Serialize)]
 pub struct VhfNavaid {
-    area_code: String,
-    airport_ident: Option<String>,
-    icao_code: String,
-    ident: String,
-    name: String,
-    frequency: MegaHertz,
-    location: Coordinates,
-    station_declination: Option<Degrees>,
+    pub area_code: String,
+    pub airport_ident: Option<String>,
+    pub icao_code: String,
+    pub ident: String,
+    pub name: String,
+    pub frequency: MegaHertz,
+    pub location: Coordinates,
+    pub station_declination: Option<Degrees>,
 }
 
 impl From<sql_structs::VhfNavaids> for VhfNavaid {

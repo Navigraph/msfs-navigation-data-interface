@@ -90,6 +90,18 @@ describe("test", () => {
     expect(airports.length).toBe(1686)
   })
 
+  it("Get waypoints in range", async () => {
+    const waypoints = await navdataInterface.get_waypoints_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+
+    expect(waypoints.length).toBe(126)
+  })
+
+  it("Get vhf navaids in range", async () => {
+    const vhf_navaids = await navdataInterface.get_vhf_navaids_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+
+    expect(vhf_navaids.length).toBe(3)
+  })
+
   it("Get airways", async () => {
     const airways = await navdataInterface.get_airways("A1")
 

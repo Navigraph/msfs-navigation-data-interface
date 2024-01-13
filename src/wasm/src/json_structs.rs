@@ -16,6 +16,8 @@ pub mod functions {
         GetAirways,
         // Range realted queries
         GetAirportsInRange,
+        GetWaypointsInRange,
+        GetVhfNavaidsInRange,
         GetAirwaysInRange,
         // Airport related queries
         GetRunwaysAtAirport,
@@ -126,18 +128,7 @@ pub mod params {
     }
 
     #[derive(serde::Deserialize)]
-    pub struct GetAirportsInRangeParams {
-        pub center: Coordinates,
-        pub range: NauticalMiles,
-    }
-
-    #[derive(serde::Deserialize)]
-    pub struct GetAirwaysParams {
-        pub ident: String,
-    }
-
-    #[derive(serde::Deserialize)]
-    pub struct GetAirwaysInRangeParams {
+    pub struct GetInRangeParams {
         pub center: Coordinates,
         pub range: NauticalMiles,
     }

@@ -174,6 +174,52 @@ impl Database {
             .collect())
     }
 
+    pub fn get_waypoints_in_range(
+        &self, center: Coordinates, range: NauticalMiles,
+    ) -> Result<Vec<Waypoint>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let (where_string, params) = Self::range_query_where(center, range, "waypoint");
+
+        let mut enroute_stmt =
+            conn.prepare(format!("SELECT * FROM tbl_enroute_waypoints WHERE {where_string}").as_str())?;
+        let mut terminal_stmt =
+            conn.prepare(format!("SELECT * FROM tbl_terminal_waypoints WHERE {where_string}").as_str())?;
+
+        let enroute_data =
+            Database::fetch_rows::<sql_structs::Waypoints>(&mut enroute_stmt, params_from_iter(params.clone()))?;
+        let terminal_data =
+            Database::fetch_rows::<sql_structs::Waypoints>(&mut terminal_stmt, params_from_iter(params))?;
+
+        // Filter into a circle of range
+        Ok(enroute_data
+            .into_iter()
+            .chain(terminal_data.into_iter())
+            .map(Waypoint::from)
+            .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
+            .collect())
+    }
+
+    pub fn get_vhf_navaids_in_range(
+        &self, center: Coordinates, range: NauticalMiles,
+    ) -> Result<Vec<VhfNavaid>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let (where_string, params) = Self::range_query_where(center, range, "vor");
+
+        let mut stmt = conn.prepare(format!("SELECT * FROM tbl_vhfnavaids WHERE {where_string}").as_str())?;
+
+        let navaids_data =
+            Database::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, params_from_iter(params.clone()))?;
+
+        // Filter into a circle of range
+        Ok(navaids_data
+            .into_iter()
+            .map(VhfNavaid::from)
+            .filter(|navaid| navaid.location.distance_to(&center) <= range)
+            .collect())
+    }
+
     pub fn get_airways_in_range(
         &self, center: Coordinates, range: NauticalMiles,
     ) -> Result<Vec<Airway>, Box<dyn std::error::Error>> {
