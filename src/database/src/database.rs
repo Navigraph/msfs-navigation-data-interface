@@ -144,31 +144,6 @@ impl Database {
         Ok(navaids_data.into_iter().map(VhfNavaid::from).collect())
     }
 
-    pub fn get_airports_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
-    ) -> Result<Vec<Airport>, Box<dyn std::error::Error>> {
-        let conn = self.get_database()?;
-
-        let mut stmt = conn.prepare(
-            "SELECT * FROM tbl_airports WHERE airport_ref_latitude BETWEEN (?1) AND (?2) AND airport_ref_longitude \
-             BETWEEN (?3) AND (?4)",
-        )?;
-
-        let (bottom_left, top_right) = center.distance_bounds(range);
-
-        let airports_data = Database::fetch_rows::<sql_structs::Airports>(
-            &mut stmt,
-            &[&bottom_left.lat, &top_right.lat, &bottom_left.long, &top_right.long],
-        )?;
-
-        // Filter into a circle of range
-        Ok(airports_data
-            .into_iter()
-            .map(Airport::from)
-            .filter(|airport| airport.location.distance_to(&center) <= range)
-            .collect())
-    }
-
     pub fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn std::error::Error>> {
         let conn = self.get_database()?;
 
@@ -179,23 +154,41 @@ impl Database {
         Ok(map_airways(airways_data))
     }
 
+    pub fn get_airports_in_range(
+        &self, center: Coordinates, range: NauticalMiles,
+    ) -> Result<Vec<Airport>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let (where_string, params) = Self::range_query_where(center, range, "airport_ref");
+
+        let mut stmt = conn.prepare(format!("SELECT * FROM tbl_airports WHERE {where_string}").as_str())?;
+
+        let airports_data = Database::fetch_rows::<sql_structs::Airports>(&mut stmt, params_from_iter(params))?;
+
+        // Filter into a circle of range
+        Ok(airports_data
+            .into_iter()
+            .map(Airport::from)
+            .filter(|airport| airport.location.distance_to(&center) <= range)
+            .collect())
+    }
+
     pub fn get_airways_in_range(
         &self, center: Coordinates, range: NauticalMiles,
     ) -> Result<Vec<Airway>, Box<dyn std::error::Error>> {
         let conn = self.get_database()?;
 
+        let (where_string, params) = Self::range_query_where(center, range, "waypoint");
+
         let mut stmt = conn.prepare(
-            "SELECT * FROM tbl_enroute_airways WHERE route_identifier IN (SELECT route_identifier FROM \
-             tbl_enroute_airways WHERE waypoint_latitude BETWEEN (?1) AND (?2) AND waypoint_longitude BETWEEN (?3) \
-             AND (?4))",
+            format!(
+                "SELECT * FROM tbl_enroute_airways WHERE route_identifier IN (SELECT route_identifier FROM \
+                 tbl_enroute_airways WHERE {where_string})"
+            )
+            .as_str(),
         )?;
 
-        let (bottom_left, top_right) = center.distance_bounds(range);
-
-        let airways_data = Database::fetch_rows::<sql_structs::EnrouteAirways>(
-            &mut stmt,
-            params![bottom_left.lat, top_right.lat, bottom_left.long, top_right.long],
-        )?;
+        let airways_data = Database::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, params_from_iter(params))?;
 
         Ok(map_airways(airways_data)
             .into_iter()
@@ -251,8 +244,37 @@ impl Database {
         Ok(map_approaches(approaches_data))
     }
 
+    fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str) -> (String, Vec<f64>) {
+        let (bottom_left, top_right) = center.distance_bounds(range);
+
+        if bottom_left.long > top_right.long {
+            (
+                format!(
+                    "{prefix}_latitude BETWEEN (?1) AND (?2) AND ({prefix}_longitude >= (?3) OR {prefix}_longitude <= \
+                     (?4))"
+                ),
+                vec![bottom_left.lat, top_right.lat, bottom_left.long, top_right.long],
+            )
+        } else if bottom_left.lat.max(top_right.lat) > 80.0 {
+            (
+                format!("{prefix}_latitude >= (?1)"),
+                vec![bottom_left.lat.min(top_right.lat)],
+            )
+        } else if bottom_left.lat.min(top_right.lat) < -80.0 {
+            (
+                format!("{prefix}_latitude <= (?1)"),
+                vec![bottom_left.lat.max(top_right.lat)],
+            )
+        } else {
+            (
+                format!("{prefix}_latitude BETWEEN (?1) AND (?2) AND {prefix}_longitude BETWEEN (?3) AND (?4)"),
+                vec![bottom_left.lat, top_right.lat, bottom_left.long, top_right.long],
+            )
+        }
+    }
+
     fn fetch_row<T>(
-        stmt: &mut rusqlite::Statement, params: &[&dyn rusqlite::ToSql],
+        stmt: &mut rusqlite::Statement, params: impl rusqlite::Params,
     ) -> Result<T, Box<dyn std::error::Error>>
     where
         T: for<'r> serde::Deserialize<'r>,
@@ -263,7 +285,7 @@ impl Database {
     }
 
     fn fetch_rows<T>(
-        stmt: &mut rusqlite::Statement, params: &[&dyn rusqlite::ToSql],
+        stmt: &mut rusqlite::Statement, params: impl rusqlite::Params,
     ) -> Result<Vec<T>, Box<dyn std::error::Error>>
     where
         T: for<'r> serde::Deserialize<'r>,
