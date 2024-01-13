@@ -13,6 +13,8 @@ use crate::{
             arrival::{map_arrivals, Arrival},
             departure::Departure,
         },
+        vhf_navaid::VhfNavaid,
+        waypoint::Waypoint,
     },
     sql_structs,
     util,
@@ -113,6 +115,33 @@ impl Database {
         let airport_data = Database::fetch_row::<sql_structs::Airports>(&mut stmt, params![ident])?;
 
         Ok(Airport::from(airport_data))
+    }
+
+    pub fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut enroute_stmt = conn.prepare("SELECT * FROM tbl_enroute_waypoints WHERE waypoint_identifier = (?1)")?;
+        let mut terminal_stmt =
+            conn.prepare("SELECT * FROM tbl_terminal_waypoints WHERE waypoint_identifier = (?1)")?;
+
+        let enroute_data = Database::fetch_rows::<sql_structs::Waypoints>(&mut enroute_stmt, params![ident])?;
+        let terminal_data = Database::fetch_rows::<sql_structs::Waypoints>(&mut terminal_stmt, params![ident])?;
+
+        Ok(enroute_data
+            .into_iter()
+            .chain(terminal_data.into_iter())
+            .map(Waypoint::from)
+            .collect())
+    }
+
+    pub fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut stmt = conn.prepare("SELECT * FROM tbl_vhfnavaids WHERE vor_identifier = (?1)")?;
+
+        let navaids_data = Database::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, params![ident])?;
+
+        Ok(navaids_data.into_iter().map(VhfNavaid::from).collect())
     }
 
     pub fn get_airports_in_range(

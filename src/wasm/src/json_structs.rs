@@ -9,10 +9,15 @@ pub mod functions {
         SetActiveDatabase,
         ExecuteSQLQuery,
         GetDatabaseInfo,
+        // Ident related queries
         GetAirport,
-        GetAirportsInRange,
+        GetWaypoints,
+        GetVhfNavaids,
         GetAirways,
+        // Range realted queries
+        GetAirportsInRange,
         GetAirwaysInRange,
+        // Airport related queries
         GetDeparturesAtAirport,
         GetArrivalsAtAirport,
         GetApproachesAtAirport,
@@ -114,8 +119,8 @@ pub mod params {
     }
 
     #[derive(serde::Deserialize)]
-    pub struct GetAirportParams {
-        /// identifier of the airport
+    pub struct GetByIdentParas {
+        /// identifier of the item
         pub ident: String,
     }
 

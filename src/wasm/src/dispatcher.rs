@@ -153,10 +153,26 @@ impl<'a> Dispatcher<'a> {
                     Ok(())
                 }),
                 functions::FunctionType::GetAirport => Dispatcher::execute_task(task.clone(), |t| {
-                    let params = t.borrow().parse_data_as::<params::GetAirportParams>()?;
+                    let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
                     let airport = self.database.get_airport(params.ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airport)?));
+
+                    Ok(())
+                }),
+                functions::FunctionType::GetWaypoints => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
+                    let waypoints = self.database.get_waypoints(params.ident)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(waypoints)?));
+
+                    Ok(())
+                }),
+                functions::FunctionType::GetVhfNavaids => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
+                    let vhf_navaids = self.database.get_vhf_navaids(params.ident)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(vhf_navaids)?));
 
                     Ok(())
                 }),
@@ -172,9 +188,9 @@ impl<'a> Dispatcher<'a> {
                 },
                 functions::FunctionType::GetAirways => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAirwaysParams>()?;
-                    let airports = self.database.get_airways(params.ident)?;
+                    let airways = self.database.get_airways(params.ident)?;
 
-                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));
 
                     Ok(())
                 }),

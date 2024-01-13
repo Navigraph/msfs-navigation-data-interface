@@ -199,19 +199,6 @@ pub struct EnrouteNdbNavaids {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct EnrouteWaypoints {
-    pub area_code: Option<String>,
-    pub icao_code: String,
-    pub waypoint_identifier: String,
-    pub waypoint_name: Option<String>,
-    pub waypoint_type: Option<String>,
-    pub waypoint_usage: Option<String>,
-    pub waypoint_latitude: Option<f64>,
-    pub waypoint_longitude: Option<f64>,
-    pub id: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
 pub struct FirUir {
     pub area_code: Option<String>,
     pub fir_uir_identifier: Option<String>,
@@ -542,36 +529,37 @@ pub struct TerminalNdbNavaids {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct TerminalWaypoints {
-    pub area_code: Option<String>,
-    pub region_code: String,
+pub struct Waypoints {
+    pub area_code: String,
+    pub region_code: Option<String>,
     pub icao_code: String,
     pub waypoint_identifier: String,
-    pub waypoint_name: Option<String>,
-    pub waypoint_type: Option<String>,
-    pub waypoint_latitude: Option<f64>,
-    pub waypoint_longitude: Option<f64>,
-    pub id: Option<String>,
+    pub waypoint_name: String,
+    pub waypoint_type: String,
+    pub waypoint_usage: Option<String>,
+    pub waypoint_latitude: f64,
+    pub waypoint_longitude: f64,
+    pub id: String,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct VhfNavaids {
-    pub area_code: Option<String>,
+    pub area_code: String,
     pub airport_identifier: Option<String>,
     pub icao_code: String,
     pub vor_identifier: String,
-    pub vor_name: Option<String>,
-    pub vor_frequency: Option<f64>,
-    pub navaid_class: Option<String>,
-    pub vor_latitude: Option<f64>,
-    pub vor_longitude: Option<f64>,
+    pub vor_name: String,
+    pub vor_frequency: f64,
+    pub navaid_class: String,
+    pub vor_latitude: f64,
+    pub vor_longitude: f64,
     pub dme_ident: Option<String>,
     pub dme_latitude: Option<f64>,
     pub dme_longitude: Option<f64>,
     pub dme_elevation: Option<f64>,
     pub ilsdme_bias: Option<f64>,
-    pub range: Option<f64>,
+    pub range: f64,
     pub station_declination: Option<f64>,
-    pub magnetic_variation: Option<f64>,
-    pub id: Option<String>,
+    pub magnetic_variation: f64,
+    pub id: String,
 }

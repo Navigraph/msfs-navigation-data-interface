@@ -10,6 +10,8 @@ import {
 } from "../js"
 import { AltitudeDescriptor, LegType } from "../js/types/ProcedureLeg"
 import { IFLegData } from "../js/types/ProcedureLeg/IFLeg"
+import { VhfNavaid } from "../js/types/vhfnavaid"
+import { Waypoint } from "../js/types/waypoint"
 
 const navdataInterface = new NavigraphNavdataInterface()
 
@@ -44,6 +46,41 @@ describe("test", () => {
       speed_limit_altitude: 10000,
       iata_ident: "JFK",
     } satisfies Airport)
+  })
+
+  it("Get waypoints", async () => {
+    const waypoints = await navdataInterface.get_waypoints("GLENN")
+
+    expect(waypoints.length).toBe(3)
+
+    expect(waypoints[0]).toStrictEqual({
+      area_code: "SPA",
+      icao_code: "NZ",
+      ident: "GLENN",
+      location: {
+        lat: -42.88116389,
+        long: 172.83973889,
+      },
+      name: "GLENN",
+    } satisfies Waypoint)
+  })
+
+  it("Get vhf navaids", async () => {
+    const navaids = await navdataInterface.get_vhf_navaids("CH")
+
+    expect(navaids.length).toBe(3)
+
+    expect(navaids[0]).toStrictEqual({
+      area_code: "EUR",
+      icao_code: "EK",
+      ident: "CH",
+      location: {
+        lat: 55.59326389,
+        long: 12.60829167,
+      },
+      frequency: 110.5,
+      name: "KASTRUP",
+    } satisfies VhfNavaid)
   })
 
   it("Get airports in range", async () => {

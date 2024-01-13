@@ -10,6 +10,7 @@ import {
 } from "./NavdataInterfaceTypes"
 import { Airport, Airway, Coordinates, NauticalMiles } from "./types"
 import { Approach, Arrival, Departure } from "./types/procedure"
+import { Waypoint } from "./types/waypoint"
 
 export class NavigraphNavdataInterface {
   private readonly listener: CommBusListener
@@ -84,6 +85,14 @@ export class NavigraphNavdataInterface {
 
   public async get_airport(ident: string): Promise<Airport> {
     return await this.callWasmFunction("GetAirport", { ident })
+  }
+
+  public async get_waypoints(ident: string): Promise<Waypoint[]> {
+    return await this.callWasmFunction("GetWaypoints", { ident })
+  }
+
+  public async get_vhf_navaids(ident: string): Promise<Waypoint[]> {
+    return await this.callWasmFunction("GetVhfNavaids", { ident })
   }
 
   public async get_airports_in_range(center: Coordinates, range: NauticalMiles): Promise<Airport[]> {
