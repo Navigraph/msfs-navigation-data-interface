@@ -192,6 +192,16 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
+                functions::FunctionType::GetAirwaysAtFix => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetAtFixParams>()?;
+                    let airways = self
+                        .database
+                        .get_airways_at_fix(params.fix_ident, params.fix_icao_code)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));
+
+                    Ok(())
+                }),
                 functions::FunctionType::GetAirportsInRange => {
                     Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
                         let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;

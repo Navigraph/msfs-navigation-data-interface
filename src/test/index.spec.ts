@@ -149,6 +149,12 @@ describe("test", () => {
     } satisfies Fix)
   })
 
+  it("Get airways at fix", async () => {
+    const airways = await navdataInterface.get_airways_at_fix("ODOWD", "NZ")
+
+    expect(airways.length).toBe(4)
+  })
+
   it("Get airways in range", async () => {
     const airways = await navdataInterface.get_airways_in_range({ lat: -43.4876, long: 172.5374 }, 10)
 

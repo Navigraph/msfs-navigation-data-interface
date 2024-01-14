@@ -104,6 +104,10 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetAirways", { ident })
   }
 
+  public async get_airways_at_fix(fix_ident: string, fix_icao_code: string): Promise<Airway[]> {
+    return await this.callWasmFunction("GetAirwaysAtFix", { fix_ident, fix_icao_code })
+  }
+
   public async get_airports_in_range(center: Coordinates, range: NauticalMiles): Promise<Airport[]> {
     return await this.callWasmFunction("GetAirportsInRange", { center, range })
   }

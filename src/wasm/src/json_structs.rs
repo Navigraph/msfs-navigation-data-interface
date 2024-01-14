@@ -15,6 +15,9 @@ pub mod functions {
         GetVhfNavaids,
         GetNdbNavaids,
         GetAirways,
+
+        GetAirwaysAtFix,
+
         // Range realted queries
         GetAirportsInRange,
         GetWaypointsInRange,
@@ -129,6 +132,14 @@ pub mod params {
     pub struct GetByIdentParas {
         /// identifier of the item
         pub ident: String,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct GetAtFixParams {
+        /// identifier of the fix
+        pub fix_ident: String,
+        /// icao_code of the fix
+        pub fix_icao_code: String,
     }
 
     #[derive(serde::Deserialize)]

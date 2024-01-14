@@ -172,6 +172,29 @@ impl Database {
         Ok(map_airways(airways_data))
     }
 
+    pub fn get_airways_at_fix(
+        &self, fix_ident: String, fix_icao_code: String,
+    ) -> Result<Vec<Airway>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut stmt: rusqlite::Statement<'_> = conn.prepare(
+            "SELECT * FROM tbl_enroute_airways WHERE route_identifier IN (SELECT route_identifier FROM \
+             tbl_enroute_airways WHERE waypoint_identifier = (?1) AND icao_code = (?2))",
+        )?;
+        let all_airways =
+            Database::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, params![fix_ident, fix_icao_code])?;
+
+        Ok(map_airways(all_airways)
+            .into_iter()
+            .filter(|airway| {
+                airway
+                    .fixes
+                    .iter()
+                    .any(|fix| fix.ident == fix_ident && fix.icao_code == fix_icao_code)
+            })
+            .collect())
+    }
+
     pub fn get_airports_in_range(
         &self, center: Coordinates, range: NauticalMiles,
     ) -> Result<Vec<Airport>, Box<dyn std::error::Error>> {
