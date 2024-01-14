@@ -140,6 +140,14 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetApproachesAtAirport", { airport_ident })
   }
 
+  public async get_waypoints_at_airport(airport_ident: string): Promise<Approach[]> {
+    return await this.callWasmFunction("GetWaypointsAtAirport", { airport_ident })
+  }
+
+  public async get_ndb_navaids_at_airport(airport_ident: string): Promise<Approach[]> {
+    return await this.callWasmFunction("GetNdbNavaidsAtAirport", { airport_ident })
+  }
+
   /**
    * Call a function in the WASM module
    *

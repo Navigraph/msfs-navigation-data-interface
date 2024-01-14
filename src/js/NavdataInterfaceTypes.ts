@@ -42,6 +42,8 @@ export enum NavigraphFunction {
   GetDeparturesAtAirport = "GetDeparturesAtAirport",
   GetArrivalsAtAirport = "GetArrivalsAtAirport",
   GetApproachesAtAirport = "GetApproachesAtAirport",
+  GetWaypointsAtAirport = "GetWaypointsAtAirport",
+  GetNdbNavaidsAtAirport = "GetNdbNavaidsAtAirport",
 }
 
 export enum FunctionResultStatus {

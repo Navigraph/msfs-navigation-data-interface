@@ -272,6 +272,22 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
+                functions::FunctionType::GetWaypointsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
+                    let waypoints = self.database.get_waypoints_at_airport(params.airport_ident)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(waypoints)?));
+
+                    Ok(())
+                }),
+                functions::FunctionType::GetNdbNavaidsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
+                    let navaids = self.database.get_ndb_navaids_at_airport(params.airport_ident)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
+
+                    Ok(())
+                }),
             }
         }
 

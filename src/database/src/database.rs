@@ -346,6 +346,28 @@ impl Database {
         Ok(map_approaches(approaches_data))
     }
 
+    pub fn get_waypoints_at_airport(&self, airport_ident: String) -> Result<Vec<Waypoint>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut stmt = conn.prepare("SELECT * FROM tbl_terminal_waypoints WHERE region_code = (?1)")?;
+
+        let waypoints_data = Database::fetch_rows::<sql_structs::Waypoints>(&mut stmt, params![airport_ident])?;
+
+        Ok(waypoints_data.into_iter().map(Waypoint::from).collect())
+    }
+
+    pub fn get_ndb_navaids_at_airport(
+        &self, airport_ident: String,
+    ) -> Result<Vec<NdbNavaid>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut stmt = conn.prepare("SELECT * FROM tbl_terminal_ndbnavaids WHERE airport_identifier = (?1)")?;
+
+        let waypoints_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut stmt, params![airport_ident])?;
+
+        Ok(waypoints_data.into_iter().map(NdbNavaid::from).collect())
+    }
+
     fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str) -> (String, Vec<f64>) {
         let (bottom_left, top_right) = center.distance_bounds(range);
 

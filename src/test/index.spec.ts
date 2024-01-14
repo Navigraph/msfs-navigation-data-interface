@@ -227,6 +227,18 @@ describe("test", () => {
     expect(target_approach.transitions[0].legs.length).toBe(2)
   })
 
+  it("Get waypoints at airport", async () => {
+    const waypoints = await navdataInterface.get_waypoints_at_airport("NZCH")
+
+    expect(waypoints.length).toBe(200)
+  })
+
+  it("Get ndb navaids at airport", async () => {
+    const navaids = await navdataInterface.get_ndb_navaids_at_airport("EDDM")
+
+    expect(navaids.length).toBe(4)
+  })
+
   it("Check procedure leg types", async () => {
     // This airport has the most different leg types
     const approaches = await navdataInterface.get_approaches_at_airport("GCLP")
