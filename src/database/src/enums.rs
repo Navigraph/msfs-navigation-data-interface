@@ -168,3 +168,51 @@ pub enum ApproachType {
     #[serde(rename = "Y")]
     MlsTypeBC,
 }
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum ControlledAirspaceType {
+    #[serde(rename = "A")]
+    ClassC,
+    #[serde(rename = "C")]
+    ControlArea,
+    #[serde(rename = "K")]
+    TmaOrTca,
+    #[serde(rename = "M")]
+    IcaoTerminalControlArea,
+    #[serde(rename = "Q")]
+    MilitaryControlZone,
+    #[serde(rename = "R")]
+    RadarZone,
+    #[serde(rename = "T")]
+    ClassB,
+    #[serde(rename = "W")]
+    TerminalControlArea,
+    #[serde(rename = "X")]
+    TerminalArea,
+    #[serde(rename = "Y")]
+    TerminalRadarServiceArea,
+    #[serde(rename = "Z")]
+    ClassD,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum RestrictiveAirspaceType {
+    #[serde(rename = "A")]
+    Alert,
+    #[serde(rename = "C")]
+    Caution,
+    #[serde(rename = "D")]
+    Danger,
+    #[serde(rename = "M")]
+    Military,
+    #[serde(rename = "P")]
+    Prohibited,
+    #[serde(rename = "R")]
+    Restricted,
+    #[serde(rename = "T")]
+    Training,
+    #[serde(rename = "W")]
+    Warning,
+    #[serde(rename = "U")]
+    Unknown,
+}

@@ -1,4 +1,5 @@
 pub mod airport;
+pub mod airspace;
 pub mod airway;
 pub mod database_info;
 pub mod fix;

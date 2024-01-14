@@ -9,6 +9,7 @@ import {
   RawNavigraphEvent,
 } from "./NavdataInterfaceTypes"
 import { Airport, Airway, Coordinates, NauticalMiles } from "./types"
+import { ControlledAirspace, RestrictiveAirspace } from "./types/airspace"
 import { Approach, Arrival, Departure } from "./types/procedure"
 import { VhfNavaid } from "./types/vhfnavaid"
 import { Waypoint } from "./types/waypoint"
@@ -126,6 +127,20 @@ export class NavigraphNavdataInterface {
 
   public async get_airways_in_range(center: Coordinates, range: NauticalMiles): Promise<Airway[]> {
     return await this.callWasmFunction("GetAirwaysInRange", { center, range })
+  }
+
+  public async get_controlled_airspaces_in_range(
+    center: Coordinates,
+    range: NauticalMiles,
+  ): Promise<ControlledAirspace[]> {
+    return await this.callWasmFunction("GetControlledAirspacesInRange", { center, range })
+  }
+
+  public async get_restrictive_airspaces_in_range(
+    center: Coordinates,
+    range: NauticalMiles,
+  ): Promise<RestrictiveAirspace[]> {
+    return await this.callWasmFunction("GetRestrictiveAirspacesInRange", { center, range })
   }
 
   public async get_runways_at_airport(airport_ident: string): Promise<Waypoint[]> {

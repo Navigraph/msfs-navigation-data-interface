@@ -39,6 +39,8 @@ export enum NavigraphFunction {
   GetVhfNavaidsInRange = "GetVhfNavaidsInRange",
   GetNdbNavaidsInRange = "GetNdbNavaidsInRange",
   GetAirwaysInRange = "GetAirwaysInRange",
+  GetControlledAirspacesInRange = "GetControlledAirspacesInRange",
+  GetRestrictiveAirspacesInRange = "GetRestrictiveAirspacesInRange",
   GetRunwaysAtAirport = "GetRunwaysAtAirport",
   GetDeparturesAtAirport = "GetDeparturesAtAirport",
   GetArrivalsAtAirport = "GetArrivalsAtAirport",

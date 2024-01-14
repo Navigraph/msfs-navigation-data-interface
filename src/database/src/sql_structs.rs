@@ -9,7 +9,7 @@ use super::enums::{
     SpeedDescriptor,
     TurnDirection,
 };
-use crate::enums::{IfrCapability, RunwaySurfaceCode};
+use crate::enums::{ControlledAirspaceType, IfrCapability, RestrictiveAirspaceType, RunwaySurfaceCode};
 
 #[derive(Deserialize, Debug)]
 pub struct AirportCommunication {
@@ -70,17 +70,17 @@ pub struct Airports {
 
 #[derive(Deserialize, Debug)]
 pub struct ControlledAirspace {
-    pub area_code: Option<String>,
-    pub icao_code: Option<String>,
-    pub airspace_center: Option<String>,
+    pub area_code: String,
+    pub icao_code: String,
+    pub airspace_center: String,
     pub controlled_airspace_name: Option<String>,
-    pub airspace_type: Option<String>,
+    pub airspace_type: ControlledAirspaceType,
     pub airspace_classification: Option<String>,
     pub multiple_code: Option<String>,
     pub time_code: Option<String>,
-    pub seqno: Option<f64>,
+    pub seqno: f64,
     pub flightlevel: Option<String>,
-    pub boundary_via: Option<String>,
+    pub boundary_via: String,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,
     pub arc_origin_latitude: Option<f64>,
@@ -415,14 +415,14 @@ pub struct Pathpoints {
 
 #[derive(Deserialize, Debug)]
 pub struct RestrictiveAirspace {
-    pub area_code: Option<String>,
-    pub icao_code: Option<String>,
-    pub restrictive_airspace_designation: Option<String>,
+    pub area_code: String,
+    pub icao_code: String,
+    pub restrictive_airspace_designation: String,
     pub restrictive_airspace_name: Option<String>,
-    pub restrictive_type: Option<String>,
+    pub restrictive_type: RestrictiveAirspaceType,
     pub multiple_code: Option<String>,
-    pub seqno: Option<f64>,
-    pub boundary_via: Option<String>,
+    pub seqno: f64,
+    pub boundary_via: String,
     pub flightlevel: Option<String>,
     pub latitude: Option<f64>,
     pub longitude: Option<f64>,

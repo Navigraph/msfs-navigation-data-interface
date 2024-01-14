@@ -24,6 +24,8 @@ pub mod functions {
         GetVhfNavaidsInRange,
         GetNdbNavaidsInRange,
         GetAirwaysInRange,
+        GetControlledAirspacesInRange,
+        GetRestrictiveAirspacesInRange,
         // Airport related queries
         GetRunwaysAtAirport,
         GetDeparturesAtAirport,

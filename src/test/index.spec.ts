@@ -8,8 +8,9 @@ import {
   NavigraphNavdataInterface,
   RunwaySurfaceCode,
 } from "../js"
+import { ControlledAirspaceType, Path, PathType, RestrictiveAirspaceType } from "../js/types/airspace"
 import { NdbNavaid } from "../js/types/ndb_navaid"
-import { AltitudeDescriptor, LegType } from "../js/types/ProcedureLeg"
+import { AltitudeDescriptor, LegType, TurnDirection } from "../js/types/ProcedureLeg"
 import { IFLegData } from "../js/types/ProcedureLeg/IFLeg"
 import { RunwayThreshold } from "../js/types/runway_threshold"
 import { VhfNavaid } from "../js/types/vhfnavaid"
@@ -126,6 +127,68 @@ describe("test", () => {
     const ndb_navaids = await navdataInterface.get_ndb_navaids_in_range({ lat: -45.9282, long: 170.1981 }, 5)
 
     expect(ndb_navaids.length).toBe(1)
+  })
+
+  it("Get controlled airspaces in range", async () => {
+    const airspaces = await navdataInterface.get_controlled_airspaces_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+
+    expect(airspaces.length).toBe(17)
+
+    const target_airspace = airspaces[1]
+
+    expect(target_airspace.airspace_center).toBe("NZCH")
+    expect(target_airspace.airspace_type).toBe(ControlledAirspaceType.TmaOrTca)
+    expect(target_airspace.area_code).toBe("SPA")
+    expect(target_airspace.icao_code).toBe("NZ")
+    expect(target_airspace.name).toBe("CHRISTCHURCH CTA/C")
+    expect(target_airspace.boundary_paths.length).toBe(11)
+
+    expect(target_airspace.boundary_paths[0]).toStrictEqual({
+      location: {
+        lat: -39.03916667,
+        long: 173.54138889,
+      },
+      path_type: PathType.GreatCircle,
+    } satisfies Path)
+
+    expect(target_airspace.boundary_paths[1]).toStrictEqual({
+      location: {
+        lat: -40.77753611,
+        long: 172.74154167,
+      },
+      arc: {
+        bearing: 288.9,
+        direction: TurnDirection.Left,
+        distance: 100,
+        origin: {
+          lat: -41.33722778,
+          long: 174.81696111,
+        },
+      },
+      path_type: PathType.Arc,
+    } satisfies Path)
+  })
+
+  it("Get restrictive airspaces in range", async () => {
+    const airspaces = await navdataInterface.get_restrictive_airspaces_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+
+    expect(airspaces.length).toBe(5)
+
+    const target_airspace = airspaces[0]
+
+    expect(target_airspace.area_code).toBe("SPA")
+    expect(target_airspace.icao_code).toBe("NZ")
+    expect(target_airspace.name).toBe("WEST MELTON, CANTERBURY")
+    expect(target_airspace.airspace_type).toBe(RestrictiveAirspaceType.Danger)
+    expect(target_airspace.designation).toBe("827")
+    expect(target_airspace.boundary_paths.length).toBe(8)
+    expect(target_airspace.boundary_paths[0]).toStrictEqual({
+      location: {
+        lat: -43.46666667,
+        long: 172.36977778,
+      },
+      path_type: PathType.GreatCircle,
+    } satisfies Path)
   })
 
   it("Get airways", async () => {

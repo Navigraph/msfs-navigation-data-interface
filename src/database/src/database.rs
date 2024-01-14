@@ -6,6 +6,7 @@ use super::output::{airport::Airport, airway::map_airways, procedure::departure:
 use crate::{
     math::{Coordinates, NauticalMiles},
     output::{
+        airspace::{map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace, RestrictiveAirspace},
         airway::Airway,
         database_info::DatabaseInfo,
         ndb_navaid::NdbNavaid,
@@ -18,7 +19,7 @@ use crate::{
         vhf_navaid::VhfNavaid,
         waypoint::Waypoint,
     },
-    sql_structs,
+    sql_structs::{self},
     util,
 };
 
@@ -200,11 +201,11 @@ impl Database {
     ) -> Result<Vec<Airport>, Box<dyn std::error::Error>> {
         let conn = self.get_database()?;
 
-        let (where_string, params) = Self::range_query_where(center, range, "airport_ref");
+        let where_string = Self::range_query_where(center, range, "airport_ref");
 
         let mut stmt = conn.prepare(format!("SELECT * FROM tbl_airports WHERE {where_string}").as_str())?;
 
-        let airports_data = Database::fetch_rows::<sql_structs::Airports>(&mut stmt, params_from_iter(params))?;
+        let airports_data = Database::fetch_rows::<sql_structs::Airports>(&mut stmt, [])?;
 
         // Filter into a circle of range
         Ok(airports_data
@@ -219,17 +220,15 @@ impl Database {
     ) -> Result<Vec<Waypoint>, Box<dyn std::error::Error>> {
         let conn = self.get_database()?;
 
-        let (where_string, params) = Self::range_query_where(center, range, "waypoint");
+        let where_string = Self::range_query_where(center, range, "waypoint");
 
         let mut enroute_stmt =
             conn.prepare(format!("SELECT * FROM tbl_enroute_waypoints WHERE {where_string}").as_str())?;
         let mut terminal_stmt =
             conn.prepare(format!("SELECT * FROM tbl_terminal_waypoints WHERE {where_string}").as_str())?;
 
-        let enroute_data =
-            Database::fetch_rows::<sql_structs::Waypoints>(&mut enroute_stmt, params_from_iter(params.clone()))?;
-        let terminal_data =
-            Database::fetch_rows::<sql_structs::Waypoints>(&mut terminal_stmt, params_from_iter(params))?;
+        let enroute_data = Database::fetch_rows::<sql_structs::Waypoints>(&mut enroute_stmt, [])?;
+        let terminal_data = Database::fetch_rows::<sql_structs::Waypoints>(&mut terminal_stmt, [])?;
 
         // Filter into a circle of range
         Ok(enroute_data
@@ -245,17 +244,15 @@ impl Database {
     ) -> Result<Vec<NdbNavaid>, Box<dyn std::error::Error>> {
         let conn = self.get_database()?;
 
-        let (where_string, params) = Self::range_query_where(center, range, "ndb");
+        let where_string = Self::range_query_where(center, range, "ndb");
 
         let mut enroute_stmt =
             conn.prepare(format!("SELECT * FROM tbl_enroute_ndbnavaids WHERE {where_string}").as_str())?;
         let mut terminal_stmt =
             conn.prepare(format!("SELECT * FROM tbl_terminal_ndbnavaids WHERE {where_string}").as_str())?;
 
-        let enroute_data =
-            Database::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, params_from_iter(params.clone()))?;
-        let terminal_data =
-            Database::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, params_from_iter(params))?;
+        let enroute_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, [])?;
+        let terminal_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, [])?;
 
         // Filter into a circle of range
         Ok(enroute_data
@@ -271,12 +268,11 @@ impl Database {
     ) -> Result<Vec<VhfNavaid>, Box<dyn std::error::Error>> {
         let conn = self.get_database()?;
 
-        let (where_string, params) = Self::range_query_where(center, range, "vor");
+        let where_string = Self::range_query_where(center, range, "vor");
 
         let mut stmt = conn.prepare(format!("SELECT * FROM tbl_vhfnavaids WHERE {where_string}").as_str())?;
 
-        let navaids_data =
-            Database::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, params_from_iter(params.clone()))?;
+        let navaids_data = Database::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, [])?;
 
         // Filter into a circle of range
         Ok(navaids_data
@@ -291,7 +287,7 @@ impl Database {
     ) -> Result<Vec<Airway>, Box<dyn std::error::Error>> {
         let conn = self.get_database()?;
 
-        let (where_string, params) = Self::range_query_where(center, range, "waypoint");
+        let where_string = Self::range_query_where(center, range, "waypoint");
 
         let mut stmt = conn.prepare(
             format!(
@@ -301,7 +297,7 @@ impl Database {
             .as_str(),
         )?;
 
-        let airways_data = Database::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, params_from_iter(params))?;
+        let airways_data = Database::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, [])?;
 
         Ok(map_airways(airways_data)
             .into_iter()
@@ -312,6 +308,55 @@ impl Database {
                     .any(|fix| fix.location.distance_to(&center) <= range)
             })
             .collect())
+    }
+
+    pub fn get_controlled_airspaces_in_range(
+        &self, center: Coordinates, range: NauticalMiles,
+    ) -> Result<Vec<ControlledAirspace>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let where_string = Self::range_query_where(center, range, "");
+        let arc_where_string = Self::range_query_where(center, range, "arc_origin");
+
+        let range_query = format!(
+            "SELECT airspace_center, multiple_code FROM tbl_controlled_airspace WHERE {where_string} OR \
+             {arc_where_string}"
+        );
+
+        let mut stmt = conn.prepare(
+            format!("SELECT * FROM tbl_controlled_airspace WHERE (airspace_center, multiple_code) IN ({range_query})")
+                .as_str(),
+        )?;
+
+        let airspaces_data = Database::fetch_rows::<sql_structs::ControlledAirspace>(&mut stmt, [])?;
+
+        Ok(map_controlled_airspaces(airspaces_data))
+    }
+
+    pub fn get_restrictive_airspaces_in_range(
+        &self, center: Coordinates, range: NauticalMiles,
+    ) -> Result<Vec<RestrictiveAirspace>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let where_string = Self::range_query_where(center, range, "");
+        let arc_where_string = Self::range_query_where(center, range, "arc_origin");
+
+        let range_query: String = format!(
+            "SELECT restrictive_airspace_designation, icao_code FROM tbl_restrictive_airspace WHERE {where_string} OR \
+             {arc_where_string}"
+        );
+
+        let mut stmt = conn.prepare(
+            format!(
+                "SELECT * FROM tbl_restrictive_airspace WHERE (restrictive_airspace_designation, icao_code) IN \
+                 ({range_query})"
+            )
+            .as_str(),
+        )?;
+
+        let airspaces_data = Database::fetch_rows::<sql_structs::RestrictiveAirspace>(&mut stmt, [])?;
+
+        Ok(map_restrictive_airspaces(airspaces_data))
     }
 
     pub fn get_runways_at_airport(
@@ -391,31 +436,28 @@ impl Database {
         Ok(waypoints_data.into_iter().map(NdbNavaid::from).collect())
     }
 
-    fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str) -> (String, Vec<f64>) {
+    fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str) -> String {
         let (bottom_left, top_right) = center.distance_bounds(range);
 
+        let prefix = if prefix.is_empty() {
+            String::new()
+        } else {
+            format!("{prefix}_")
+        };
+
         if bottom_left.long > top_right.long {
-            (
-                format!(
-                    "{prefix}_latitude BETWEEN (?1) AND (?2) AND ({prefix}_longitude >= (?3) OR {prefix}_longitude <= \
-                     (?4))"
-                ),
-                vec![bottom_left.lat, top_right.lat, bottom_left.long, top_right.long],
+            format!(
+                "{prefix}latitude BETWEEN {} AND {} AND ({prefix}longitude >= {} OR {prefix}longitude <= {})",
+                bottom_left.lat, top_right.lat, bottom_left.long, top_right.long
             )
         } else if bottom_left.lat.max(top_right.lat) > 80.0 {
-            (
-                format!("{prefix}_latitude >= (?1)"),
-                vec![bottom_left.lat.min(top_right.lat)],
-            )
+            format!("{prefix}latitude >= {}", bottom_left.lat.min(top_right.lat))
         } else if bottom_left.lat.min(top_right.lat) < -80.0 {
-            (
-                format!("{prefix}_latitude <= (?1)"),
-                vec![bottom_left.lat.max(top_right.lat)],
-            )
+            format!("{prefix}latitude <= {}", bottom_left.lat.max(top_right.lat))
         } else {
-            (
-                format!("{prefix}_latitude BETWEEN (?1) AND (?2) AND {prefix}_longitude BETWEEN (?3) AND (?4)"),
-                vec![bottom_left.lat, top_right.lat, bottom_left.long, top_right.long],
+            format!(
+                "{prefix}latitude BETWEEN {} AND {} AND {prefix}longitude BETWEEN {} AND {}",
+                bottom_left.lat, top_right.lat, bottom_left.long, top_right.long
             )
         }
     }

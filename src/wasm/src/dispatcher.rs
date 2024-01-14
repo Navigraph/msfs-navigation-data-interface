@@ -250,6 +250,28 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
+                functions::FunctionType::GetControlledAirspacesInRange => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                    let airspaces = self
+                        .database
+                        .get_controlled_airspaces_in_range(params.center, params.range)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airspaces)?));
+
+                    Ok(())
+                }),
+                functions::FunctionType::GetRestrictiveAirspacesInRange => {
+                    Dispatcher::execute_task(task.clone(), |t| {
+                        let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                        let airspaces = self
+                            .database
+                            .get_restrictive_airspaces_in_range(params.center, params.range)?;
+
+                        t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airspaces)?));
+
+                        Ok(())
+                    })
+                },
                 functions::FunctionType::GetRunwaysAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let runways = self.database.get_runways_at_airport(params.airport_ident)?;
