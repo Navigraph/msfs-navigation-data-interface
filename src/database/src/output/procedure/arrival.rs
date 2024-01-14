@@ -6,14 +6,44 @@ use super::{apply_common_leg, apply_enroute_transition_leg, apply_runway_transit
 use crate::{output::procedure_leg::ProcedureLeg, sql_structs};
 
 #[derive(Serialize)]
+/// Represents an arrival procedure (STAR) for an airport.
+///
+/// # Example
+/// Basic querying:
+/// ```rs
+/// let database = Database::new();
+/// let approaches: Vec<Approach> = database.get_arrivals_at_airport("KJFK");
+/// ```
 pub struct Arrival {
+    /// The `ident` uniquely identifies this arrival within the airport which it serves.
+    ///
+    /// While arrival identifiers may seem unique everywhere, it is possible for two airports to share a arrival or
+    /// have a arrival of the same name like Approaches
     ident: String,
+    /// A list of the transitions which are available for this arrival.
     enroute_transitions: Vec<Transition>,
+    /// A list of legs which apply to all runways which this arrival serves.
+    ///
+    /// Keep in mind it is not common for this field to have any values as most arrivals consist only serve a single
+    /// runway, and will hence have a single runway transition and no `common_legs`
     common_legs: Vec<ProcedureLeg>,
+    /// A list of runway transitions which are part of this Arrival.
+    ///
+    /// This field can be used to determine which runways this arrival serves, and is garunteed to always have at
+    /// least one value.
     runway_transitions: Vec<Transition>,
 }
 
-pub fn map_arrivals(data: Vec<sql_structs::Procedures>, runways: Vec<sql_structs::Runways>) -> Vec<Arrival> {
+/// Maps a list of arrival rows from the sqlite database into `Arrival` structs, by condensing them using
+/// `procedure_identifier` and `transition_identifier`
+///
+/// This function requires complete data for a single airport and the same ordering as the database provides by default.
+///
+/// The recommended SQL query to load the neccesary data for this function is:
+/// ```sql
+/// SELECT * FROM tbl_stars WHERE airport_identifier = (?1)
+/// ```
+pub(crate) fn map_arrivals(data: Vec<sql_structs::Procedures>, runways: Vec<sql_structs::Runways>) -> Vec<Arrival> {
     data.into_iter()
         .fold(HashMap::new(), |mut arrivals, row| {
             let arrival = match arrivals.entry(row.procedure_identifier.clone()) {

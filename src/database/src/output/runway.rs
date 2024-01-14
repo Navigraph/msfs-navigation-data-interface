@@ -7,14 +7,25 @@ use crate::{
 
 #[derive(Serialize, Clone)]
 pub struct RunwayThreshold {
+    /// The identifier of this runway, such as `RW18L` or `RW36R`
     pub ident: String,
+    /// The icao prefix of the region that this runway is in.
     pub icao_code: String,
+    /// The length of this runway in feet
     pub length: Feet,
+    /// The width of this runway in feet
     pub width: Feet,
+    /// The true bearing of this runway in degrees
     pub true_bearing: Degrees,
+    /// The magnetic bearing of this runway in degrees.
+    ///
+    /// This field is rounded to the nearest degree
     pub magnetic_bearing: Degrees,
+    /// The gradient of this runway in degrees
     pub gradient: Degrees,
+    /// The geographic location of the landing threshold of this runway
     pub location: Coordinates,
+    /// The elevation of the landing threshold of this runway in feet
     pub elevation: Feet,
 }
 

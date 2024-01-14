@@ -7,14 +7,36 @@ use crate::{output::procedure_leg::ProcedureLeg, sql_structs};
 
 #[derive(Serialize)]
 pub struct Departure {
+    /// The `ident` uniquely identifies this arrival within the airport which it serves.
+    ///
+    /// While departure identifiers may seem unique everywhere, it is possible for two airports to share a departure or
+    /// have a departure of the same name like Approaches
     ident: String,
+    /// A list of runway transitions which are part of this departure.
+    ///
+    /// This field can be used to determine which runways this departure serves, and is garunteed to always have at
+    /// least one value.
     runway_transitions: Vec<Transition>,
+    /// A list of legs which apply to all runways which this departure serves.
+    ///
+    /// Keep in mind it is not common for this field to have any values as most departure consist only serve a single
+    /// runway, and will hence have a single runway transition and no `common_legs`
     common_legs: Vec<ProcedureLeg>,
+    /// A list of the transitions which are available for this arrival.
     enroute_transitions: Vec<Transition>,
     engine_out_legs: Vec<ProcedureLeg>,
 }
 
-pub fn map_departures(data: Vec<sql_structs::Procedures>, runways: Vec<sql_structs::Runways>) -> Vec<Departure> {
+/// Maps a list of departure rows from the sqlite database into `Departure` structs, by condensing them using
+/// `procedure_identifier` and `transition_identifier`
+///
+/// This function requires complete data for a single airport and the same ordering as the database provides by default.
+///
+/// The recommended SQL query to load the neccesary data for this function is:
+/// ```sql
+/// SELECT * FROM tbl_sids WHERE airport_identifier = (?1)
+/// ```
+pub(crate) fn map_departures(data: Vec<sql_structs::Procedures>, runways: Vec<sql_structs::Runways>) -> Vec<Departure> {
     data.into_iter()
         .fold(HashMap::new(), |mut departures, row| {
             let departure = match departures.entry(row.procedure_identifier.clone()) {

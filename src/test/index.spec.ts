@@ -32,6 +32,7 @@ describe("test", () => {
     const airport = await navdataInterface.get_airport("KJFK")
 
     expect(airport).toStrictEqual({
+      area_code: "USA",
       ident: "KJFK",
       icao_code: "K6",
       location: {

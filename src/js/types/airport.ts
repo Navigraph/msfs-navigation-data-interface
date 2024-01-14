@@ -13,6 +13,7 @@ export enum RunwaySurfaceCode {
 }
 
 export interface Airport {
+  area_code: string
   ident: string
   icao_code: string
   location: Coordinates

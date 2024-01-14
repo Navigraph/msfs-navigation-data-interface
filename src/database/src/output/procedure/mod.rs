@@ -13,6 +13,8 @@ pub struct Transition {
     legs: Vec<ProcedureLeg>,
 }
 
+/// A helper function which returns a mutable reference to an item in a vector if it can be found using the `condition`,
+/// or inserts a new item `val` into the vector and returns a mutable reference to it.
 fn mut_find_or_insert<T, P: FnMut(&T) -> bool>(vec: &mut Vec<T>, condition: P, val: T) -> &mut T {
     if let Some(index) = vec.iter().position(condition) {
         &mut vec[index]

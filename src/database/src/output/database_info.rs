@@ -6,11 +6,19 @@ use crate::sql_structs;
 
 #[derive(Serialize)]
 pub struct DatabaseInfo {
+    /// The AIRAC cycle that this database is.
+    ///
+    /// e.g. `2313` or `2107`
     airac_cycle: String,
+    /// The effective date range of this AIRAC cycle.
     effective_from_to: (String, String),
+    /// The effective date range of the previous AIRAC cycle
     previous_from_to: (String, String),
 }
 
+/// Converts a string of the format `DDMMDDMMYY` into a tuple of two strings of the format `DD-MM-YYYY`.
+///
+/// If the previous month is greater than the current month, the previous year is decremented by 1.
 fn parse_from_to(data: String) -> Result<(String, String), <u32 as FromStr>::Err> {
     let from_day = data[0..2].parse::<u32>()?;
     let from_month = data[2..4].parse::<u32>()?;
@@ -25,6 +33,7 @@ fn parse_from_to(data: String) -> Result<(String, String), <u32 as FromStr>::Err
         format!("{to_day:0>2}-{to_month:0>2}-20{to_year:0>2}"),
     ))
 }
+
 impl From<sql_structs::Header> for DatabaseInfo {
     fn from(header: sql_structs::Header) -> Self {
         Self {
