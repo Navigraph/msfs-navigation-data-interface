@@ -13,11 +13,13 @@ pub mod functions {
         GetAirport,
         GetWaypoints,
         GetVhfNavaids,
+        GetNdbNavaids,
         GetAirways,
         // Range realted queries
         GetAirportsInRange,
         GetWaypointsInRange,
         GetVhfNavaidsInRange,
+        GetNdbNavaidsInRange,
         GetAirwaysInRange,
         // Airport related queries
         GetRunwaysAtAirport,

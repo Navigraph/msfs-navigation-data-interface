@@ -8,6 +8,7 @@ use crate::{
     output::{
         airway::Airway,
         database_info::DatabaseInfo,
+        ndb_navaid::NdbNavaid,
         procedure::{
             approach::{map_approaches, Approach},
             arrival::{map_arrivals, Arrival},
@@ -145,6 +146,22 @@ impl Database {
         Ok(navaids_data.into_iter().map(VhfNavaid::from).collect())
     }
 
+    pub fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut enroute_stmt = conn.prepare("SELECT * FROM tbl_enroute_ndbnavaids WHERE ndb_identifier = (?1)")?;
+        let mut terminal_stmt = conn.prepare("SELECT * FROM tbl_terminal_ndbnavaids WHERE ndb_identifier = (?1)")?;
+
+        let enroute_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, params![ident])?;
+        let terminal_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, params![ident])?;
+
+        Ok(enroute_data
+            .into_iter()
+            .chain(terminal_data.into_iter())
+            .map(NdbNavaid::from)
+            .collect())
+    }
+
     pub fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn std::error::Error>> {
         let conn = self.get_database()?;
 
@@ -196,6 +213,32 @@ impl Database {
             .into_iter()
             .chain(terminal_data.into_iter())
             .map(Waypoint::from)
+            .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
+            .collect())
+    }
+
+    pub fn get_ndb_navaids_in_range(
+        &self, center: Coordinates, range: NauticalMiles,
+    ) -> Result<Vec<NdbNavaid>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let (where_string, params) = Self::range_query_where(center, range, "ndb");
+
+        let mut enroute_stmt =
+            conn.prepare(format!("SELECT * FROM tbl_enroute_ndbnavaids WHERE {where_string}").as_str())?;
+        let mut terminal_stmt =
+            conn.prepare(format!("SELECT * FROM tbl_terminal_ndbnavaids WHERE {where_string}").as_str())?;
+
+        let enroute_data =
+            Database::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, params_from_iter(params.clone()))?;
+        let terminal_data =
+            Database::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, params_from_iter(params))?;
+
+        // Filter into a circle of range
+        Ok(enroute_data
+            .into_iter()
+            .chain(terminal_data.into_iter())
+            .map(NdbNavaid::from)
             .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
             .collect())
     }

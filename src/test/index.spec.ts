@@ -8,6 +8,7 @@ import {
   NavigraphNavdataInterface,
   RunwaySurfaceCode,
 } from "../js"
+import { NdbNavaid } from "../js/types/ndb_navaid"
 import { AltitudeDescriptor, LegType } from "../js/types/ProcedureLeg"
 import { IFLegData } from "../js/types/ProcedureLeg/IFLeg"
 import { RunwayThreshold } from "../js/types/runway_threshold"
@@ -84,6 +85,24 @@ describe("test", () => {
     } satisfies VhfNavaid)
   })
 
+  it("Get ndb navaids", async () => {
+    const navaids = await navdataInterface.get_ndb_navaids("CH")
+
+    expect(navaids.length).toBe(4)
+
+    expect(navaids[0]).toStrictEqual({
+      area_code: "AFR",
+      icao_code: "FQ",
+      ident: "CH",
+      location: {
+        lat: -19.10385,
+        long: 33.43294722,
+      },
+      frequency: 282,
+      name: "CHIMOIO",
+    } satisfies NdbNavaid)
+  })
+
   it("Get airports in range", async () => {
     const airports = await navdataInterface.get_airports_in_range({ lat: 51.468, long: -0.4551 }, 640)
 
@@ -100,6 +119,12 @@ describe("test", () => {
     const vhf_navaids = await navdataInterface.get_vhf_navaids_in_range({ lat: -43.4876, long: 172.5374 }, 10)
 
     expect(vhf_navaids.length).toBe(3)
+  })
+
+  it("Get ndb navaids in range", async () => {
+    const ndb_navaids = await navdataInterface.get_ndb_navaids_in_range({ lat: -45.9282, long: 170.1981 }, 5)
+
+    expect(ndb_navaids.length).toBe(1)
   })
 
   it("Get airways", async () => {

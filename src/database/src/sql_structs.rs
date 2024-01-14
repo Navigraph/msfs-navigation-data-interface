@@ -185,20 +185,6 @@ pub struct EnrouteCommunication {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct EnrouteNdbNavaids {
-    pub area_code: Option<String>,
-    pub icao_code: String,
-    pub ndb_identifier: String,
-    pub ndb_name: Option<String>,
-    pub ndb_frequency: Option<f64>,
-    pub navaid_class: Option<String>,
-    pub ndb_latitude: Option<f64>,
-    pub ndb_longitude: Option<f64>,
-    pub range: Option<f64>,
-    pub id: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
 pub struct FirUir {
     pub area_code: Option<String>,
     pub fir_uir_identifier: Option<String>,
@@ -514,18 +500,18 @@ pub struct Sids {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct TerminalNdbNavaids {
-    pub area_code: Option<String>,
-    pub airport_identifier: String,
+pub struct NdbNavaids {
+    pub area_code: String,
+    pub airport_identifier: Option<String>,
     pub icao_code: String,
     pub ndb_identifier: String,
-    pub ndb_name: Option<String>,
-    pub ndb_frequency: Option<f64>,
-    pub navaid_class: Option<String>,
-    pub ndb_latitude: Option<f64>,
-    pub ndb_longitude: Option<f64>,
-    pub range: Option<f64>,
-    pub id: Option<String>,
+    pub ndb_name: String,
+    pub ndb_frequency: f64,
+    pub navaid_class: String,
+    pub ndb_latitude: f64,
+    pub ndb_longitude: f64,
+    pub range: f64,
+    pub id: String,
 }
 
 #[derive(Deserialize, Debug)]

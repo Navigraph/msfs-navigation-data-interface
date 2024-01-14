@@ -176,6 +176,14 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
+                functions::FunctionType::GetNdbNavaids => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
+                    let ndb_navaids = self.database.get_ndb_navaids(params.ident)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(ndb_navaids)?));
+
+                    Ok(())
+                }),
                 functions::FunctionType::GetAirways => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
                     let airways = self.database.get_airways(params.ident)?;
@@ -208,6 +216,16 @@ impl<'a> Dispatcher<'a> {
                     Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
                         let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
                         let navaids = self.database.get_vhf_navaids_in_range(params.center, params.range)?;
+
+                        t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
+
+                        Ok(())
+                    })
+                },
+                functions::FunctionType::GetNdbNavaidsInRange => {
+                    Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
+                        let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                        let navaids = self.database.get_ndb_navaids_in_range(params.center, params.range)?;
 
                         t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
 

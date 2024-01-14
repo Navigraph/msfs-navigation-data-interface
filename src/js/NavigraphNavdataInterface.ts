@@ -96,6 +96,10 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetVhfNavaids", { ident })
   }
 
+  public async get_ndb_navaids(ident: string): Promise<Waypoint[]> {
+    return await this.callWasmFunction("GetNdbNavaids", { ident })
+  }
+
   public async get_airways(ident: string): Promise<Airway[]> {
     return await this.callWasmFunction("GetAirways", { ident })
   }
@@ -110,6 +114,10 @@ export class NavigraphNavdataInterface {
 
   public async get_vhf_navaids_in_range(center: Coordinates, range: NauticalMiles): Promise<VhfNavaid[]> {
     return await this.callWasmFunction("GetVhfNavaidsInRange", { center, range })
+  }
+
+  public async get_ndb_navaids_in_range(center: Coordinates, range: NauticalMiles): Promise<Waypoint[]> {
+    return await this.callWasmFunction("GetNdbNavaidsInRange", { center, range })
   }
 
   public async get_airways_in_range(center: Coordinates, range: NauticalMiles): Promise<Airway[]> {
