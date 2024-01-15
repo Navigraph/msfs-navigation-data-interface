@@ -11,6 +11,7 @@ import {
 import { Airport, Airway, Coordinates, NauticalMiles } from "./types"
 import { ControlledAirspace, RestrictiveAirspace } from "./types/airspace"
 import { DatabaseInfo } from "./types/database_info"
+import { Gate } from "./types/gate"
 import { Approach, Arrival, Departure } from "./types/procedure"
 import { VhfNavaid } from "./types/vhfnavaid"
 import { Waypoint } from "./types/waypoint"
@@ -166,6 +167,10 @@ export class NavigraphNavdataInterface {
 
   public async get_ndb_navaids_at_airport(airport_ident: string): Promise<Approach[]> {
     return await this.callWasmFunction("GetNdbNavaidsAtAirport", { airport_ident })
+  }
+
+  public async get_gates_at_airport(airport_ident: string): Promise<Gate[]> {
+    return await this.callWasmFunction("GetGatesAtAirport", { airport_ident })
   }
 
   /**

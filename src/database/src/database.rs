@@ -9,6 +9,7 @@ use crate::{
         airspace::{map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace, RestrictiveAirspace},
         airway::Airway,
         database_info::DatabaseInfo,
+        gate::Gate,
         ndb_navaid::NdbNavaid,
         procedure::{
             approach::{map_approaches, Approach},
@@ -434,6 +435,16 @@ impl Database {
         let waypoints_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut stmt, params![airport_ident])?;
 
         Ok(waypoints_data.into_iter().map(NdbNavaid::from).collect())
+    }
+
+    pub fn get_gates_at_airport(&self, airport_ident: String) -> Result<Vec<Gate>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut stmt = conn.prepare("SELECT * FROM tbl_gate WHERE airport_identifier = (?1)")?;
+
+        let gates_data = Database::fetch_rows::<sql_structs::Gate>(&mut stmt, params![airport_ident])?;
+
+        Ok(gates_data.into_iter().map(Gate::from).collect())
     }
 
     fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str) -> String {

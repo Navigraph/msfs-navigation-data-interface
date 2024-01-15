@@ -211,13 +211,13 @@ pub struct FirUir {
 
 #[derive(Deserialize, Debug)]
 pub struct Gate {
-    pub area_code: Option<String>,
-    pub airport_identifier: Option<String>,
-    pub icao_code: Option<String>,
-    pub gate_identifier: Option<String>,
-    pub gate_latitude: Option<f64>,
-    pub gate_longitude: Option<f64>,
-    pub name: Option<String>,
+    pub area_code: String,
+    pub airport_identifier: String,
+    pub icao_code: String,
+    pub gate_identifier: String,
+    pub gate_latitude: f64,
+    pub gate_longitude: f64,
+    pub name: String,
 }
 
 #[derive(Deserialize, Debug)]

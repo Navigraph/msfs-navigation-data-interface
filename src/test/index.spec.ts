@@ -10,6 +10,7 @@ import {
 } from "../js"
 import { ControlledAirspaceType, Path, PathType, RestrictiveAirspaceType } from "../js/types/airspace"
 import { DatabaseInfo } from "../js/types/database_info"
+import { Gate } from "../js/types/gate"
 import { NdbNavaid } from "../js/types/ndb_navaid"
 import { ApproachType } from "../js/types/procedure"
 import { AltitudeDescriptor, LegType, TurnDirection } from "../js/types/ProcedureLeg"
@@ -351,5 +352,22 @@ describe("test", () => {
         },
       },
     })
+  })
+
+  it("Get gates at airport", async () => {
+    const gates = await navdataInterface.get_gates_at_airport("NZCH")
+
+    expect(gates.length).toBe(48)
+
+    expect(gates[0]).toStrictEqual({
+      area_code: "SPA",
+      icao_code: "NZ",
+      ident: "10",
+      location: {
+        lat: -43.49016944,
+        long: 172.53940833,
+      },
+      name: "10",
+    } satisfies Gate)
   })
 })
