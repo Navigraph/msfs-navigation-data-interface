@@ -9,6 +9,7 @@ import {
   RunwaySurfaceCode,
 } from "../js"
 import { ControlledAirspaceType, Path, PathType, RestrictiveAirspaceType } from "../js/types/airspace"
+import { DatabaseInfo } from "../js/types/database_info"
 import { NdbNavaid } from "../js/types/ndb_navaid"
 import { AltitudeDescriptor, LegType, TurnDirection } from "../js/types/ProcedureLeg"
 import { IFLegData } from "../js/types/ProcedureLeg/IFLeg"
@@ -26,7 +27,7 @@ describe("test", () => {
       airac_cycle: "2313",
       effective_from_to: ["28-12-2023", "25-01-2024"],
       previous_from_to: ["30-11-2023", "28-12-2023"],
-    })
+    } satisfies DatabaseInfo)
   })
 
   it("Fetch airport", async () => {

@@ -10,6 +10,7 @@ import {
 } from "./NavdataInterfaceTypes"
 import { Airport, Airway, Coordinates, NauticalMiles } from "./types"
 import { ControlledAirspace, RestrictiveAirspace } from "./types/airspace"
+import { DatabaseInfo } from "./types/database_info"
 import { Approach, Arrival, Departure } from "./types/procedure"
 import { VhfNavaid } from "./types/vhfnavaid"
 import { Waypoint } from "./types/waypoint"
@@ -81,7 +82,7 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("SetActiveDatabase", { path })
   }
 
-  public async get_database_info(ident: string): Promise<Airport> {
+  public async get_database_info(ident: string): Promise<DatabaseInfo> {
     return await this.callWasmFunction("GetDatabaseInfo", { ident })
   }
 
