@@ -11,6 +11,7 @@ import {
 import { ControlledAirspaceType, Path, PathType, RestrictiveAirspaceType } from "../js/types/airspace"
 import { DatabaseInfo } from "../js/types/database_info"
 import { NdbNavaid } from "../js/types/ndb_navaid"
+import { ApproachType } from "../js/types/procedure"
 import { AltitudeDescriptor, LegType, TurnDirection } from "../js/types/ProcedureLeg"
 import { IFLegData } from "../js/types/ProcedureLeg/IFLeg"
 import { RunwayThreshold } from "../js/types/runway_threshold"
@@ -293,6 +294,8 @@ describe("test", () => {
     expect(target_approach.ident).toBe("I06L")
     expect(target_approach.legs.length).toBe(3)
     expect(target_approach.missed_legs.length).toBe(3)
+    expect(target_approach.runway_ident).toBe("RW06L")
+    expect(target_approach.approach_type).toBe(ApproachType.Ils)
     expect(target_approach.transitions.length).toBe(3)
     expect(target_approach.transitions[0].ident).toBe("CLVVR")
     expect(target_approach.transitions[0].legs.length).toBe(2)

@@ -126,7 +126,7 @@ pub(crate) fn map_approaches(data: Vec<sql_structs::Procedures>) -> Vec<Approach
                     if missed_started || x == "Z" {
                         approach.missed_legs.push(leg);
                     } else {
-                        approach.approach_type = serde_json::from_str(format!(r#""{}""#, route_type).as_str()).unwrap();
+                        approach.approach_type = serde_json::from_value(serde_json::Value::String(route_type)).unwrap();
 
                         approach.legs.push(leg)
                     }
