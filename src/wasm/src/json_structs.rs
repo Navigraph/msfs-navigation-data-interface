@@ -9,6 +9,7 @@ pub mod functions {
         SetActiveDatabase,
         ExecuteSQLQuery,
         GetDatabaseInfo,
+
         // Ident related queries
         GetAirport,
         GetWaypoints,
@@ -27,6 +28,7 @@ pub mod functions {
         GetControlledAirspacesInRange,
         GetRestrictiveAirspacesInRange,
         GetCommunicationsInRange,
+
         // Airport related queries
         GetRunwaysAtAirport,
         GetDeparturesAtAirport,
@@ -36,6 +38,7 @@ pub mod functions {
         GetNdbNavaidsAtAirport,
         GetGatesAtAirport,
         GetCommunicationsAtAirport,
+        GetGlsNavaidsAtAirport,
     }
 
     #[derive(serde::Serialize)]

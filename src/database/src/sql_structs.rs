@@ -229,23 +229,24 @@ pub struct Gate {
 
 #[derive(Deserialize, Debug)]
 pub struct Gls {
-    pub area_code: Option<String>,
-    pub airport_identifier: Option<String>,
-    pub icao_code: Option<String>,
-    pub gls_ref_path_identifier: Option<String>,
-    pub gls_category: Option<String>,
-    pub gls_channel: Option<f64>,
-    pub runway_identifier: Option<String>,
-    pub gls_approach_bearing: Option<f64>,
-    pub station_latitude: Option<f64>,
-    pub station_longitude: Option<f64>,
-    pub gls_station_ident: Option<String>,
-    pub gls_approach_slope: Option<f64>,
-    pub magnetic_variation: Option<f64>,
-    pub station_elevation: Option<f64>,
+    pub area_code: String,
+    pub airport_identifier: String,
+    pub icao_code: String,
+    pub gls_ref_path_identifier: String,
+    pub gls_category: String,
+    pub gls_channel: f64,
+    pub runway_identifier: String,
+    pub gls_approach_bearing: f64,
+    pub station_latitude: f64,
+    pub station_longitude: f64,
+    pub gls_station_ident: String,
+    pub gls_approach_slope: f64,
+    /// Yes its spelt wrong in the database
+    pub magentic_variation: f64,
+    pub station_elevation: f64,
     pub station_type: Option<String>,
 
-    pub id: Option<String>,
+    pub id: String,
 }
 
 #[derive(Deserialize, Debug)]

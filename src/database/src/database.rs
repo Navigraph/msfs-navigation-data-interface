@@ -11,6 +11,7 @@ use crate::{
         communication::Communication,
         database_info::DatabaseInfo,
         gate::Gate,
+        gls_navaid::GlsNavaid,
         ndb_navaid::NdbNavaid,
         procedure::{
             approach::{map_approaches, Approach},
@@ -482,6 +483,18 @@ impl Database {
         let gates_data = Database::fetch_rows::<sql_structs::AirportCommunication>(&mut stmt, params![airport_ident])?;
 
         Ok(gates_data.into_iter().map(Communication::from).collect())
+    }
+
+    pub fn get_gls_navaids_at_airport(
+        &self, airport_ident: String,
+    ) -> Result<Vec<GlsNavaid>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut stmt = conn.prepare("SELECT * FROM tbl_gls WHERE airport_identifier = (?1)")?;
+
+        let gates_data = Database::fetch_rows::<sql_structs::Gls>(&mut stmt, params![airport_ident])?;
+
+        Ok(gates_data.into_iter().map(GlsNavaid::from).collect())
     }
 
     fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str) -> String {

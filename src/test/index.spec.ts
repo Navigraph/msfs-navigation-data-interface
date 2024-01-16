@@ -12,6 +12,7 @@ import { ControlledAirspaceType, Path, PathType, RestrictiveAirspaceType } from 
 import { Communication, CommunicationType, FrequencyUnits } from "../js/types/communication"
 import { DatabaseInfo } from "../js/types/database_info"
 import { Gate } from "../js/types/gate"
+import { GlsNavaid } from "../js/types/gls_navaid"
 import { NdbNavaid } from "../js/types/ndb_navaid"
 import { ApproachType } from "../js/types/procedure"
 import { AltitudeDescriptor, LegType, TurnDirection } from "../js/types/ProcedureLeg"
@@ -395,5 +396,29 @@ describe("test", () => {
         long: 172.53444444,
       },
     } satisfies Communication)
+  })
+
+  it("Get GlsNavaids at airport", async () => {
+    const communications = await navdataInterface.get_gls_navaids_at_airport("YSSY")
+
+    expect(communications.length).toBe(6)
+
+    expect(communications[0]).toStrictEqual({
+      area_code: "SPA",
+      airport_ident: "YSSY",
+      icao_code: "YM",
+      ident: "G07A",
+      category: "1",
+      channel: 22790,
+      runway_ident: "RW07",
+      approach_angle: 3,
+      elevation: 21,
+      location: {
+        lat: -33.96333333,
+        long: 151.18477778,
+      },
+      magnetic_approach_bearing: 62,
+      magnetic_variation: 13,
+    } satisfies GlsNavaid)
   })
 })

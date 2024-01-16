@@ -5,6 +5,7 @@ pub mod communication;
 pub mod database_info;
 pub mod fix;
 pub mod gate;
+pub mod gls_navaid;
 pub mod ndb_navaid;
 pub mod procedure;
 pub mod procedure_leg;

@@ -50,6 +50,7 @@ export enum NavigraphFunction {
   GetNdbNavaidsAtAirport = "GetNdbNavaidsAtAirport",
   GetGatesAtAirport = "GetGatesAtAirport",
   GetCommunicationsAtAirport = "GetCommunicationsAtAirport",
+  GetGlsNavaidsAtAirport = "GetGlsNavaidsAtAirport",
 }
 
 export enum FunctionResultStatus {
