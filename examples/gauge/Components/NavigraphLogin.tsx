@@ -31,7 +31,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
     this.navdataInterface.onReady(() => {
       this.navdataInterface
-        .setActiveDatabase("avionics_v2")
+        .set_active_database("avionics_v2")
         .then(() => {
           console.info("WASM set active database")
         })
@@ -98,7 +98,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
     this.executeButtonRef.instance.addEventListener("click", () => {
       console.time("query")
       this.navdataInterface
-        .getAirport(this.inputRef.instance.value)
+        .get_airport(this.inputRef.instance.value)
         .then(airport => {
           console.log(airport)
           console.timeEnd("query")
@@ -163,11 +163,11 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       if (!this.navdataInterface.getIsInitialized()) throw new Error("Navdata interface not initialized")
 
       // Download navdata to work dir
-      await this.navdataInterface.downloadNavdata(pkg.file.url, pkg.format)
+      await this.navdataInterface.download_navdata(pkg.file.url, pkg.format)
       this.displayMessage("Navdata downloaded")
 
       // Set active database to recently downloaded package
-      await this.navdataInterface.setActiveDatabase(pkg.format)
+      await this.navdataInterface.set_active_database(pkg.format)
       console.info("WASM set active database")
     } catch (err) {
       if (err instanceof Error) this.displayError(err.message)
