@@ -4,41 +4,67 @@
 pub mod functions {
     #[derive(serde::Deserialize, Clone, Copy)]
     pub enum FunctionType {
+        /// `DownloadNavdataParams`
         DownloadNavdata,
+        /// `SetDownloadOptionsParams`
         SetDownloadOptions,
+        /// `SetActiveDatabaseParams`
         SetActiveDatabase,
+        /// `ExecuteSQLQueryParams`
         ExecuteSQLQuery,
+
+        /// no Params
         GetDatabaseInfo,
 
-        // Ident related queries
+        /// `GetByIdentParams`
         GetAirport,
+        /// `GetByIdentParams`
         GetWaypoints,
+        /// `GetByIdentParams`
         GetVhfNavaids,
+        /// `GetByIdentParams`
         GetNdbNavaids,
+        /// `GetByIdentParams`
         GetAirways,
-
+        /// `GetByIdentParams`
         GetAirwaysAtFix,
 
-        // Range realted queries
+        /// `GetInRangeParams`
         GetAirportsInRange,
+        /// `GetInRangeParams`
         GetWaypointsInRange,
+        /// `GetInRangeParams`
         GetVhfNavaidsInRange,
+        /// `GetInRangeParams`
         GetNdbNavaidsInRange,
+        /// `GetInRangeParams`
         GetAirwaysInRange,
+        /// `GetInRangeParams`
         GetControlledAirspacesInRange,
+        /// `GetInRangeParams`
         GetRestrictiveAirspacesInRange,
+        /// `GetInRangeParams`
         GetCommunicationsInRange,
 
-        // Airport related queries
+        /// `GetAtAirportParams`
         GetRunwaysAtAirport,
+        /// `GetAtAirportParams`
         GetDeparturesAtAirport,
+        /// `GetAtAirportParams`
         GetArrivalsAtAirport,
+        /// `GetAtAirportParams`
         GetApproachesAtAirport,
+        /// `GetAtAirportParams`
         GetWaypointsAtAirport,
+        /// `GetAtAirportParams`
         GetNdbNavaidsAtAirport,
+        /// `GetAtAirportParams`
         GetGatesAtAirport,
+        /// `GetAtAirportParams`
         GetCommunicationsAtAirport,
+        /// `GetAtAirportParams`
         GetGlsNavaidsAtAirport,
+        /// `GetAtAirportParams`
         GetPathPointsAtAirport,
     }
 
