@@ -13,9 +13,10 @@ Here's an overview on the structure of this repository, which is designed to be 
   - `aircraft/` includes a base aircraft to test in the sim
   - `gauge/` includes a very simple TypeScript instrument to communicate with the WASM module
 - `src/`
+  - `database` Includes rust source code for interfacing with a DFD sqlite file (not WASM specific)
   - `js` Includes source code for the JS interface for using the sdk
   - `test` Includes code for testing the JS and Rust code using a Node runtime
-  - `wasm` includes the Rust source code for the WASM module which handles the database interface
+  - `wasm` includes the Rust source code for the WASM module which handles the downloading of the databse file, and interfacing with the database implementation
 
 ## Including in Your Aircraft
 
