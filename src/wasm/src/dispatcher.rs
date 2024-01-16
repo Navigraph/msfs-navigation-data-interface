@@ -352,6 +352,14 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
+                functions::FunctionType::GetPathPointsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
+                    let pathpoints = self.database.get_path_points_at_airport(params.airport_ident)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(pathpoints)?));
+
+                    Ok(())
+                }),
             }
         }
 

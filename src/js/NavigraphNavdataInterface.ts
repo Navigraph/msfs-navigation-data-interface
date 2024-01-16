@@ -186,6 +186,10 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetGlsNavaidsAtAirport", { airport_ident })
   }
 
+  public async get_path_points_at_airport(airport_ident: string): Promise<Communication[]> {
+    return await this.callWasmFunction("GetPathPointsAtAirport", { airport_ident })
+  }
+
   /**
    * Call a function in the WASM module
    *

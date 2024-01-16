@@ -13,6 +13,7 @@ use crate::{
         gate::Gate,
         gls_navaid::GlsNavaid,
         ndb_navaid::NdbNavaid,
+        path_point::PathPoint,
         procedure::{
             approach::{map_approaches, Approach},
             arrival::{map_arrivals, Arrival},
@@ -495,6 +496,18 @@ impl Database {
         let gates_data = Database::fetch_rows::<sql_structs::Gls>(&mut stmt, params![airport_ident])?;
 
         Ok(gates_data.into_iter().map(GlsNavaid::from).collect())
+    }
+
+    pub fn get_path_points_at_airport(
+        &self, airport_ident: String,
+    ) -> Result<Vec<PathPoint>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut stmt = conn.prepare("SELECT * FROM tbl_pathpoints WHERE airport_identifier = (?1)")?;
+
+        let gates_data = Database::fetch_rows::<sql_structs::Pathpoints>(&mut stmt, params![airport_ident])?;
+
+        Ok(gates_data.into_iter().map(PathPoint::from).collect())
     }
 
     fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str) -> String {

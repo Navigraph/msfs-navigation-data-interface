@@ -39,6 +39,7 @@ pub mod functions {
         GetGatesAtAirport,
         GetCommunicationsAtAirport,
         GetGlsNavaidsAtAirport,
+        GetPathPointsAtAirport,
     }
 
     #[derive(serde::Serialize)]

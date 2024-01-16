@@ -319,3 +319,11 @@ pub enum FrequencyUnits {
     /// Communication channel for 8.33 kHz spacing
     CommChannel,
 }
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum ApproachTypeIdentifier {
+    #[serde(rename = "LPV")]
+    LocalizerPerformanceVerticalGuidance,
+    #[serde(rename = "LP")]
+    LocalizerPerformance,
+}

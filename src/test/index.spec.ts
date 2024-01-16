@@ -14,6 +14,7 @@ import { DatabaseInfo } from "../js/types/database_info"
 import { Gate } from "../js/types/gate"
 import { GlsNavaid } from "../js/types/gls_navaid"
 import { NdbNavaid } from "../js/types/ndb_navaid"
+import { ApproachTypeIdentifier, PathPoint } from "../js/types/path_point"
 import { ApproachType } from "../js/types/procedure"
 import { AltitudeDescriptor, LegType, TurnDirection } from "../js/types/ProcedureLeg"
 import { IFLegData } from "../js/types/ProcedureLeg/IFLeg"
@@ -420,5 +421,40 @@ describe("test", () => {
       magnetic_approach_bearing: 62,
       magnetic_variation: 13,
     } satisfies GlsNavaid)
+  })
+
+  it("Get PathPoints at airport", async () => {
+    const pathpoints = await navdataInterface.get_path_points_at_airport("KLAX")
+
+    expect(pathpoints.length).toBe(8)
+
+    expect(pathpoints[0]).toStrictEqual({
+      area_code: "USA",
+      airport_ident: "KLAX",
+      icao_code: "K2",
+      ident: "W06A",
+      runway_ident: "RW06L",
+      approach_ident: "R06LY",
+      approach_type: ApproachTypeIdentifier.LocalizerPerformanceVerticalGuidance,
+      course_width: 106.75,
+      flightpath_alignment_location: {
+        lat: 33.95213333,
+        long: -118.40162778,
+      },
+      fpap_ellipsoid_height: -1.5,
+      glidepath_angle: 3,
+      gnss_channel_number: 82507,
+      horizontal_alert_limit: 40,
+      vertical_alert_limit: 50,
+      landing_threshold_location: {
+        lat: 33.94911111,
+        long: -118.43115833,
+      },
+      length_offset: 32,
+      ltp_ellipsoid_height: -1.5,
+      path_point_tch: 16.671746418774763,
+      fpap_orthometric_height: 34.5,
+      ltp_orthometric_height: 34.5,
+    } satisfies PathPoint)
   })
 })
