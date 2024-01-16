@@ -67,25 +67,25 @@ The gauge communicates using the following event names:
 Below is an example of communicating with the interface in JS. (We provide a JS wrapper, the code below is just a basic example to show how it works). Please read the CommBus documentation to determine how to interface with CommBus in your chosen language. `src/js` contains our JS wrapper, it is also a useful example for implementing a fully fleshed out wrapper.
 
 ```js
-const queue[] = []
+const queue = []
 
 const listener = RegisterCommBusListener(() => {
-  listener.on('NAVIGRAPH_FunctionResult', (jsonArgs) => {
+  listener.on("NAVIGRAPH_FunctionResult", jsonArgs => {
     const args = JSON.parse(jsonArgs)
 
     // When a FunctionResult is received, find the item in queue which matches the id, and resolve or reject it
     const queueItem = queue.find(m => m.id === args.id)
 
-    if(queueItem) {
+    if (queueItem) {
       queue.splice(queue.indexOf(queueItem), 1)
-        const data = args.data
+      const data = args.data
 
-        if (args.status === FunctionResultStatus.Success) {
-          queueItem.resolve(data)
-        } else {
-          queueItem.reject(new Error(typeof data === "string" ? data : "Unknown error"))
-        }
+      if (args.status === FunctionResultStatus.Success) {
+        queueItem.resolve(data)
+      } else {
+        queueItem.reject(new Error(typeof data === "string" ? data : "Unknown error"))
       }
+    }
   })
 }) // RegisterCommBusListener is a function provided by sim
 
@@ -95,8 +95,9 @@ function getAirport(ident) {
   const args = {
     function: "GetAirport", // The name of the function being called
     id, // CallFunctions and FunctionResults are tied together with the id field
-    data: { // The parameters of the function
-      ident
+    data: {
+      // The parameters of the function
+      ident,
     },
   }
 
@@ -105,8 +106,8 @@ function getAirport(ident) {
   return new Promise((resolve, reject) => {
     queue.push({
       id,
-      resolve: (response) => resolve(response),
-      reject: (error) => reject(error),
+      resolve: response => resolve(response),
+      reject: error => reject(error),
     })
   })
 }
@@ -117,9 +118,10 @@ function executeSql(sql, params) {
   const args = {
     function: "ExecuteSQLQuery", // The name of the function being called
     id, // CallFunctions and FunctionResults are tied together with the id field
-    data: { // The parameters of the function
+    data: {
+      // The parameters of the function
       sql,
-      params
+      params,
     },
   }
 
@@ -128,8 +130,8 @@ function executeSql(sql, params) {
   return new Promise((resolve, reject) => {
     queue.push({
       id,
-      resolve: (response) => resolve(response),
-      reject: (error) => reject(error),
+      resolve: response => resolve(response),
+      reject: error => reject(error),
     })
   })
 }
