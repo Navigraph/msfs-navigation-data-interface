@@ -8,6 +8,7 @@ use crate::{
     output::{
         airspace::{map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace, RestrictiveAirspace},
         airway::Airway,
+        communication::Communication,
         database_info::DatabaseInfo,
         gate::Gate,
         ndb_navaid::NdbNavaid,
@@ -360,6 +361,30 @@ impl Database {
         Ok(map_restrictive_airspaces(airspaces_data))
     }
 
+    pub fn get_communications_in_range(
+        &self, center: Coordinates, range: NauticalMiles,
+    ) -> Result<Vec<Communication>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let where_string = Self::range_query_where(center, range, "");
+
+        let mut enroute_stmt =
+            conn.prepare(format!("SELECT * FROM tbl_enroute_communication WHERE {where_string}").as_str())?;
+
+        let mut terminal_stmt =
+            conn.prepare(format!("SELECT * FROM tbl_airport_communication WHERE {where_string}").as_str())?;
+
+        let enroute_data = Database::fetch_rows::<sql_structs::EnrouteCommunication>(&mut enroute_stmt, [])?;
+        let terminal_data = Database::fetch_rows::<sql_structs::AirportCommunication>(&mut terminal_stmt, [])?;
+
+        Ok(enroute_data
+            .into_iter()
+            .map(Communication::from)
+            .chain(terminal_data.into_iter().map(Communication::from))
+            .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
+            .collect())
+    }
+
     pub fn get_runways_at_airport(
         &self, airport_ident: String,
     ) -> Result<Vec<RunwayThreshold>, Box<dyn std::error::Error>> {
@@ -445,6 +470,18 @@ impl Database {
         let gates_data = Database::fetch_rows::<sql_structs::Gate>(&mut stmt, params![airport_ident])?;
 
         Ok(gates_data.into_iter().map(Gate::from).collect())
+    }
+
+    pub fn get_communications_at_airport(
+        &self, airport_ident: String,
+    ) -> Result<Vec<Communication>, Box<dyn std::error::Error>> {
+        let conn = self.get_database()?;
+
+        let mut stmt = conn.prepare("SELECT * FROM tbl_airport_communication WHERE airport_identifier = (?1)")?;
+
+        let gates_data = Database::fetch_rows::<sql_structs::AirportCommunication>(&mut stmt, params![airport_ident])?;
+
+        Ok(gates_data.into_iter().map(Communication::from).collect())
     }
 
     fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str) -> String {

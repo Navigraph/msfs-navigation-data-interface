@@ -216,3 +216,106 @@ pub enum RestrictiveAirspaceType {
     #[serde(rename = "U")]
     Unknown,
 }
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum CommunicationType {
+    #[serde(rename = "ACC")]
+    AreaControlCenter,
+    #[serde(rename = "ACP")]
+    AirliftCommandPost,
+    #[serde(rename = "AIR")]
+    AirToAir,
+    #[serde(rename = "APP")]
+    ApproachControl,
+    #[serde(rename = "ARR")]
+    ArrivalControl,
+    #[serde(rename = "ASO")]
+    AutomaticSurfaceObservingSystem,
+    #[serde(rename = "ATI")]
+    AutomaticTerminalInformationServices,
+    #[serde(rename = "AWI")]
+    AirportWeatherInformationBroadcast,
+    #[serde(rename = "AWO")]
+    AutomaticWeatherObservingBroadcast,
+    #[serde(rename = "AWS")]
+    AerodromeWeatherInformationService,
+    #[serde(rename = "CLD")]
+    ClearanceDelivery,
+    #[serde(rename = "CPT")]
+    ClearancePreTaxi,
+    #[serde(rename = "CTA")]
+    ControlArea,
+    #[serde(rename = "CTL")]
+    Control,
+    #[serde(rename = "DEP")]
+    DepartureControl,
+    #[serde(rename = "DIR")]
+    Director,
+    #[serde(rename = "EFS")]
+    EnrouteFlightAdvisoryService,
+    #[serde(rename = "EMR")]
+    Emergency,
+    #[serde(rename = "FSS")]
+    FlightServiceStation,
+    #[serde(rename = "GCO")]
+    GroundCommOutlet,
+    #[serde(rename = "GND")]
+    GroundControl,
+    #[serde(rename = "GET")]
+    GateControl,
+    #[serde(rename = "HEL")]
+    HelicopterFrequency,
+    #[serde(rename = "INF")]
+    Information,
+    #[serde(rename = "MIL")]
+    MilitaryFrequency,
+    #[serde(rename = "MUL")]
+    Multicom,
+    #[serde(rename = "OPS")]
+    Operations,
+    #[serde(rename = "PAL")]
+    PilotActivatedLighting,
+    #[serde(rename = "RDO")]
+    Radio,
+    #[serde(rename = "RDR")]
+    Radar,
+    #[serde(rename = "RFS")]
+    RemoteFlightServiceStation,
+    #[serde(rename = "RMP")]
+    RampTaxiControl,
+    #[serde(rename = "RSA")]
+    AirportRadarServiceArea,
+    #[serde(rename = "TCA")]
+    /// Terminal Control Area (TCA)
+    Tca,
+    #[serde(rename = "TMA")]
+    /// Terminal Control Area (TMA)
+    Tma,
+    #[serde(rename = "TML")]
+    Terminal,
+    #[serde(rename = "TRS")]
+    TerminalRadarServiceArea,
+    #[serde(rename = "TWE")]
+    TranscriberWeatherBroadcast,
+    #[serde(rename = "TWR")]
+    Tower,
+    #[serde(rename = "UAC")]
+    UpperAreaControl,
+    #[serde(rename = "UNI")]
+    Unicom,
+    #[serde(rename = "VOL")]
+    Volmet,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum FrequencyUnits {
+    #[serde(rename = "H")]
+    High,
+    #[serde(rename = "V")]
+    VeryHigh,
+    #[serde(rename = "U")]
+    UltraHigh,
+    #[serde(rename = "C")]
+    /// Communication channel for 8.33 kHz spacing
+    CommChannel,
+}

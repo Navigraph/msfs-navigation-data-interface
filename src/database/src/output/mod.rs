@@ -1,6 +1,7 @@
 pub mod airport;
 pub mod airspace;
 pub mod airway;
+pub mod communication;
 pub mod database_info;
 pub mod fix;
 pub mod gate;

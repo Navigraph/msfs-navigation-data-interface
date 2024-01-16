@@ -41,6 +41,7 @@ export enum NavigraphFunction {
   GetAirwaysInRange = "GetAirwaysInRange",
   GetControlledAirspacesInRange = "GetControlledAirspacesInRange",
   GetRestrictiveAirspacesInRange = "GetRestrictiveAirspacesInRange",
+  GetCommunicationsInRange = "GetCommunicationsInRange",
   GetRunwaysAtAirport = "GetRunwaysAtAirport",
   GetDeparturesAtAirport = "GetDeparturesAtAirport",
   GetArrivalsAtAirport = "GetArrivalsAtAirport",
@@ -48,6 +49,7 @@ export enum NavigraphFunction {
   GetWaypointsAtAirport = "GetWaypointsAtAirport",
   GetNdbNavaidsAtAirport = "GetNdbNavaidsAtAirport",
   GetGatesAtAirport = "GetGatesAtAirport",
+  GetCommunicationsAtAirport = "GetCommunicationsAtAirport",
 }
 
 export enum FunctionResultStatus {

@@ -10,6 +10,7 @@ import {
 } from "./NavdataInterfaceTypes"
 import { Airport, Airway, Coordinates, NauticalMiles } from "./types"
 import { ControlledAirspace, RestrictiveAirspace } from "./types/airspace"
+import { Communication } from "./types/communication"
 import { DatabaseInfo } from "./types/database_info"
 import { Gate } from "./types/gate"
 import { Approach, Arrival, Departure } from "./types/procedure"
@@ -145,6 +146,10 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetRestrictiveAirspacesInRange", { center, range })
   }
 
+  public async get_communications_in_range(center: Coordinates, range: NauticalMiles): Promise<Communication[]> {
+    return await this.callWasmFunction("GetCommunicationsInRange", { center, range })
+  }
+
   public async get_runways_at_airport(airport_ident: string): Promise<Waypoint[]> {
     return await this.callWasmFunction("GetRunwaysAtAirport", { airport_ident })
   }
@@ -171,6 +176,10 @@ export class NavigraphNavdataInterface {
 
   public async get_gates_at_airport(airport_ident: string): Promise<Gate[]> {
     return await this.callWasmFunction("GetGatesAtAirport", { airport_ident })
+  }
+
+  public async get_communications_at_airport(airport_ident: string): Promise<Communication[]> {
+    return await this.callWasmFunction("GetCommunicationsAtAirport", { airport_ident })
   }
 
   /**

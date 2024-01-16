@@ -26,6 +26,7 @@ pub mod functions {
         GetAirwaysInRange,
         GetControlledAirspacesInRange,
         GetRestrictiveAirspacesInRange,
+        GetCommunicationsInRange,
         // Airport related queries
         GetRunwaysAtAirport,
         GetDeparturesAtAirport,
@@ -34,6 +35,7 @@ pub mod functions {
         GetWaypointsAtAirport,
         GetNdbNavaidsAtAirport,
         GetGatesAtAirport,
+        GetCommunicationsAtAirport,
     }
 
     #[derive(serde::Serialize)]

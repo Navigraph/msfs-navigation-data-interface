@@ -285,7 +285,7 @@ beforeAll(async () => {
 
   await navdataInterface.download_navdata(downloadUrl, path)
   await navdataInterface.set_active_database(path)
-}, 10000)
+}, 30000)
 
 void lifeCycle()
 

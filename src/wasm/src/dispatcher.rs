@@ -272,6 +272,14 @@ impl<'a> Dispatcher<'a> {
                         Ok(())
                     })
                 },
+                functions::FunctionType::GetCommunicationsInRange => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                    let communications = self.database.get_communications_in_range(params.center, params.range)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(communications)?));
+
+                    Ok(())
+                }),
                 functions::FunctionType::GetRunwaysAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let runways = self.database.get_runways_at_airport(params.airport_ident)?;
@@ -325,6 +333,14 @@ impl<'a> Dispatcher<'a> {
                     let gates = self.database.get_gates_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(gates)?));
+
+                    Ok(())
+                }),
+                functions::FunctionType::GetCommunicationsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
+                    let communications = self.database.get_communications_at_airport(params.airport_ident)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(communications)?));
 
                     Ok(())
                 }),

@@ -9,20 +9,27 @@ use super::enums::{
     SpeedDescriptor,
     TurnDirection,
 };
-use crate::enums::{ControlledAirspaceType, IfrCapability, RestrictiveAirspaceType, RunwaySurfaceCode};
+use crate::enums::{
+    CommunicationType,
+    ControlledAirspaceType,
+    FrequencyUnits,
+    IfrCapability,
+    RestrictiveAirspaceType,
+    RunwaySurfaceCode,
+};
 
 #[derive(Deserialize, Debug)]
 pub struct AirportCommunication {
-    pub area_code: Option<String>,
-    pub icao_code: Option<String>,
-    pub airport_identifier: Option<String>,
-    pub communication_type: Option<String>,
-    pub communication_frequency: Option<f64>,
-    pub frequency_units: Option<String>,
+    pub area_code: String,
+    pub icao_code: String,
+    pub airport_identifier: String,
+    pub communication_type: CommunicationType,
+    pub communication_frequency: f64,
+    pub frequency_units: FrequencyUnits,
     pub service_indicator: Option<String>,
     pub callsign: Option<String>,
-    pub latitude: Option<f64>,
-    pub longitude: Option<f64>,
+    pub latitude: f64,
+    pub longitude: f64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -171,17 +178,17 @@ pub struct EnrouteAirways {
 
 #[derive(Deserialize, Debug)]
 pub struct EnrouteCommunication {
-    pub area_code: Option<String>,
-    pub fir_rdo_ident: Option<String>,
+    pub area_code: String,
+    pub fir_rdo_ident: String,
     pub fir_uir_indicator: Option<String>,
-    pub communication_type: Option<String>,
-    pub communication_frequency: Option<f64>,
-    pub frequency_units: Option<String>,
+    pub communication_type: CommunicationType,
+    pub communication_frequency: f64,
+    pub frequency_units: FrequencyUnits,
     pub service_indicator: Option<String>,
     pub remote_name: Option<String>,
     pub callsign: Option<String>,
-    pub latitude: Option<f64>,
-    pub longitude: Option<f64>,
+    pub latitude: f64,
+    pub longitude: f64,
 }
 
 #[derive(Deserialize, Debug)]

@@ -9,6 +9,7 @@ import {
   RunwaySurfaceCode,
 } from "../js"
 import { ControlledAirspaceType, Path, PathType, RestrictiveAirspaceType } from "../js/types/airspace"
+import { Communication, CommunicationType, FrequencyUnits } from "../js/types/communication"
 import { DatabaseInfo } from "../js/types/database_info"
 import { Gate } from "../js/types/gate"
 import { NdbNavaid } from "../js/types/ndb_navaid"
@@ -194,6 +195,12 @@ describe("test", () => {
     } satisfies Path)
   })
 
+  it("Get communications in range", async () => {
+    const communications = await navdataInterface.get_communications_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+
+    expect(communications.length).toBe(46)
+  })
+
   it("Get airways", async () => {
     const airways = await navdataInterface.get_airways("A1")
 
@@ -369,5 +376,24 @@ describe("test", () => {
       },
       name: "10",
     } satisfies Gate)
+  })
+
+  it("Get communications at airport", async () => {
+    const communications = await navdataInterface.get_communications_at_airport("NZCH")
+
+    expect(communications.length).toBe(14)
+
+    expect(communications[0]).toStrictEqual({
+      area_code: "SPA",
+      airport_ident: "NZCH",
+      communication_type: CommunicationType.ApproachControl,
+      frequency: 120.9,
+      frequency_units: FrequencyUnits.VeryHigh,
+      callsign: "CHRISTCHURCH",
+      location: {
+        lat: -43.48944444,
+        long: 172.53444444,
+      },
+    } satisfies Communication)
   })
 })
