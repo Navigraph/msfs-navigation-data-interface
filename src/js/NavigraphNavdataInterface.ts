@@ -13,7 +13,11 @@ import { ControlledAirspace, RestrictiveAirspace } from "./types/airspace"
 import { Communication } from "./types/communication"
 import { DatabaseInfo } from "./types/database_info"
 import { Gate } from "./types/gate"
+import { GlsNavaid } from "./types/gls_navaid"
+import { NdbNavaid } from "./types/ndb_navaid"
+import { PathPoint } from "./types/path_point"
 import { Approach, Arrival, Departure } from "./types/procedure"
+import { RunwayThreshold } from "./types/runway_threshold"
 import { VhfNavaid } from "./types/vhfnavaid"
 import { Waypoint } from "./types/waypoint"
 
@@ -96,11 +100,11 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetWaypoints", { ident })
   }
 
-  public async get_vhf_navaids(ident: string): Promise<Waypoint[]> {
+  public async get_vhf_navaids(ident: string): Promise<VhfNavaid[]> {
     return await this.callWasmFunction("GetVhfNavaids", { ident })
   }
 
-  public async get_ndb_navaids(ident: string): Promise<Waypoint[]> {
+  public async get_ndb_navaids(ident: string): Promise<NdbNavaid[]> {
     return await this.callWasmFunction("GetNdbNavaids", { ident })
   }
 
@@ -124,7 +128,7 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetVhfNavaidsInRange", { center, range })
   }
 
-  public async get_ndb_navaids_in_range(center: Coordinates, range: NauticalMiles): Promise<Waypoint[]> {
+  public async get_ndb_navaids_in_range(center: Coordinates, range: NauticalMiles): Promise<NdbNavaid[]> {
     return await this.callWasmFunction("GetNdbNavaidsInRange", { center, range })
   }
 
@@ -150,7 +154,7 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetCommunicationsInRange", { center, range })
   }
 
-  public async get_runways_at_airport(airport_ident: string): Promise<Waypoint[]> {
+  public async get_runways_at_airport(airport_ident: string): Promise<RunwayThreshold[]> {
     return await this.callWasmFunction("GetRunwaysAtAirport", { airport_ident })
   }
 
@@ -166,11 +170,11 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetApproachesAtAirport", { airport_ident })
   }
 
-  public async get_waypoints_at_airport(airport_ident: string): Promise<Approach[]> {
+  public async get_waypoints_at_airport(airport_ident: string): Promise<Waypoint[]> {
     return await this.callWasmFunction("GetWaypointsAtAirport", { airport_ident })
   }
 
-  public async get_ndb_navaids_at_airport(airport_ident: string): Promise<Approach[]> {
+  public async get_ndb_navaids_at_airport(airport_ident: string): Promise<NdbNavaid[]> {
     return await this.callWasmFunction("GetNdbNavaidsAtAirport", { airport_ident })
   }
 
@@ -182,11 +186,11 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetCommunicationsAtAirport", { airport_ident })
   }
 
-  public async get_gls_navaids_at_airport(airport_ident: string): Promise<Communication[]> {
+  public async get_gls_navaids_at_airport(airport_ident: string): Promise<GlsNavaid[]> {
     return await this.callWasmFunction("GetGlsNavaidsAtAirport", { airport_ident })
   }
 
-  public async get_path_points_at_airport(airport_ident: string): Promise<Communication[]> {
+  public async get_path_points_at_airport(airport_ident: string): Promise<PathPoint[]> {
     return await this.callWasmFunction("GetPathPointsAtAirport", { airport_ident })
   }
 
