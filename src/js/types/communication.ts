@@ -1,4 +1,4 @@
-import { Coordinates } from "./types"
+import { Coordinates } from "./math"
 
 export enum FrequencyUnits {
   High = "H",

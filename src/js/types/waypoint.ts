@@ -1,4 +1,4 @@
-import { Coordinates } from "./types"
+import { Coordinates } from "./math"
 
 export interface Waypoint {
   area_code: string

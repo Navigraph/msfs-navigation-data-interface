@@ -1,6 +1,6 @@
 import { LegType, ProcedureLegBase, TurnDirection } from "."
 import { Fix } from "../fix"
-import { Degrees, NauticalMiles } from "../types"
+import { Degrees, NauticalMiles } from "../math"
 
 export interface CFLegData extends ProcedureLegBase {
   leg_type: LegType.CF

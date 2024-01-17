@@ -1,6 +1,6 @@
 import { AltitudeDescriptor, LegType, ProcedureLegBase, TurnDirection } from "."
 import { Fix } from "../fix"
-import { Degrees, Feet, Minutes, NauticalMiles } from "../types"
+import { Degrees, Feet, Minutes, NauticalMiles } from "../math"
 
 export interface HALegData extends ProcedureLegBase {
   leg_type: LegType.HA

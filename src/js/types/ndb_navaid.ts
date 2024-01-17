@@ -1,4 +1,4 @@
-import { Coordinates, KiloHertz } from "./types"
+import { Coordinates, KiloHertz } from "./math"
 
 export interface NdbNavaid {
   area_code: string

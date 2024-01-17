@@ -1,4 +1,4 @@
-import { Degrees, Feet, Knots, NauticalMiles } from "../types"
+import { Degrees, Feet, Knots, NauticalMiles } from "../math"
 import { AFLegData } from "./AFLeg"
 import { CALegData } from "./CALeg"
 import { CFLegData } from "./CFLeg"

@@ -1,4 +1,4 @@
-import { Coordinates, Degrees, Metres } from "./types"
+import { Coordinates, Degrees, Metres } from "./math"
 
 export enum ApproachTypeIdentifier {
   LocalizerPerformanceVerticalGuidance = "LPV",

@@ -21,6 +21,9 @@ import { RunwayThreshold } from "./types/runway_threshold"
 import { VhfNavaid } from "./types/vhfnavaid"
 import { Waypoint } from "./types/waypoint"
 
+/**
+ * A TS wrapper class used for interfacing with the Navigraph Navigation Data interface WASM gauge using the CommBus
+ */
 export class NavigraphNavdataInterface {
   private readonly listener: CommBusListener
   private queue: CommBusMessage[] = []
@@ -88,54 +91,124 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("SetActiveDatabase", { path })
   }
 
+  /**
+   * Gets information about the currently active database
+   */
   public async get_database_info(ident: string): Promise<DatabaseInfo> {
     return await this.callWasmFunction("GetDatabaseInfo", { ident })
   }
 
+  /**
+   * Gets data for an airport
+   * @param ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the airport data, or rejects if the airport does not exist
+   */
   public async get_airport(ident: string): Promise<Airport> {
     return await this.callWasmFunction("GetAirport", { ident })
   }
 
+  /**
+   * Gets a list of waypoints
+   * @param ident - The identifier to get the waypoints by
+   * @returns A promise that resolves with the list of waypoints
+   */
   public async get_waypoints(ident: string): Promise<Waypoint[]> {
     return await this.callWasmFunction("GetWaypoints", { ident })
   }
 
+  /**
+   * Gets a list of vhf navaids
+   * @param ident - The identifier to get the vhf navaids by
+   * @returns A promise that resolves with the list of vhf navaids
+   */
   public async get_vhf_navaids(ident: string): Promise<VhfNavaid[]> {
     return await this.callWasmFunction("GetVhfNavaids", { ident })
   }
 
+  /**
+   * Gets a list of ndb navaids
+   * @param ident - The identifier to get the ndb navaids by
+   * @returns A promise that resolves with the list of ndb navaids
+   */
   public async get_ndb_navaids(ident: string): Promise<NdbNavaid[]> {
     return await this.callWasmFunction("GetNdbNavaids", { ident })
   }
 
+  /**
+   * Gets a list of airways
+   * @param ident - The identifier to get the airways by
+   * @returns A promise that resolves with the list of airways
+   */
   public async get_airways(ident: string): Promise<Airway[]> {
     return await this.callWasmFunction("GetAirways", { ident })
   }
 
+  /**
+   * Gets a list of airways which pass through the given fix
+   * @param fix_ident - The identifier of the fix to get the airways by
+   * @param fix_icao_code - The ICAO code of the fix to get the airways by
+   * @returns A promise that resolves with the list of airways
+   */
   public async get_airways_at_fix(fix_ident: string, fix_icao_code: string): Promise<Airway[]> {
     return await this.callWasmFunction("GetAirwaysAtFix", { fix_ident, fix_icao_code })
   }
 
+  /**
+   * Gets all airports within a given range circle around a given point
+   * @param center - The center of the range circle
+   * @param range - The radius of the range circle (Nautical miles)
+   * @returns A promise that resolves with the list of airports
+   */
   public async get_airports_in_range(center: Coordinates, range: NauticalMiles): Promise<Airport[]> {
     return await this.callWasmFunction("GetAirportsInRange", { center, range })
   }
 
+  /**
+   * Gets all waypoints within a given range circle around a given point
+   * @param center - The center of the range circle
+   * @param range - The radius of the range circle (Nautical miles)
+   * @returns A promise that resolves with the list of waypoints
+   */
   public async get_waypoints_in_range(center: Coordinates, range: NauticalMiles): Promise<Waypoint[]> {
     return await this.callWasmFunction("GetWaypointsInRange", { center, range })
   }
 
+  /**
+   * Gets all vhf navaids within a given range circle around a given point
+   * @param center - The center of the range circle
+   * @param range - The radius of the range circle (Nautical miles)
+   * @returns A promise that resolves with the list of vhf navaids
+   */
   public async get_vhf_navaids_in_range(center: Coordinates, range: NauticalMiles): Promise<VhfNavaid[]> {
     return await this.callWasmFunction("GetVhfNavaidsInRange", { center, range })
   }
 
+  /**
+   * Gets all ndb navaids within a given range circle around a given point
+   * @param center - The center of the range circle
+   * @param range - The radius of the range circle (Nautical miles)
+   * @returns A promise that resolves with the list of ndb navaids
+   */
   public async get_ndb_navaids_in_range(center: Coordinates, range: NauticalMiles): Promise<NdbNavaid[]> {
     return await this.callWasmFunction("GetNdbNavaidsInRange", { center, range })
   }
 
+  /**
+   * Gets all airways which have a fix which falls within a given range circle around a given point
+   * @param center - The center of the range circle
+   * @param range - The radius of the range circle (Nautical miles)
+   * @returns A promise that resolves with the list of airways
+   */
   public async get_airways_in_range(center: Coordinates, range: NauticalMiles): Promise<Airway[]> {
     return await this.callWasmFunction("GetAirwaysInRange", { center, range })
   }
 
+  /**
+   * Gets all controlled airspaces which have an edge vertex which falls within a given range circle around a given point
+   * @param center - The center of the range circle
+   * @param range - The radius of the range circle (Nautical miles)
+   * @returns A promise that resolves with the list of controlled airspaces
+   */
   public async get_controlled_airspaces_in_range(
     center: Coordinates,
     range: NauticalMiles,
@@ -143,6 +216,12 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetControlledAirspacesInRange", { center, range })
   }
 
+  /**
+   * Gets all restrictive airspaces which have an edge vertex which falls within a given range circle around a given point
+   * @param center - The center of the range circle
+   * @param range - The radius of the range circle (Nautical miles)
+   * @returns A promise that resolves with the list of restrictive airspaces
+   */
   public async get_restrictive_airspaces_in_range(
     center: Coordinates,
     range: NauticalMiles,
@@ -150,46 +229,102 @@ export class NavigraphNavdataInterface {
     return await this.callWasmFunction("GetRestrictiveAirspacesInRange", { center, range })
   }
 
+  /**
+   * Gets all communications (airport and enroute) which have their station fall within a given range circle around a given point
+   * @param center - The center of the range circle
+   * @param range - The radius of the range circle (Nautical miles)
+   * @returns A promise that resolves with the list of communications
+   */
   public async get_communications_in_range(center: Coordinates, range: NauticalMiles): Promise<Communication[]> {
     return await this.callWasmFunction("GetCommunicationsInRange", { center, range })
   }
 
+  /**
+   * Gets all runways which serve an airport
+   * @param airport_ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the list of runways
+   */
   public async get_runways_at_airport(airport_ident: string): Promise<RunwayThreshold[]> {
     return await this.callWasmFunction("GetRunwaysAtAirport", { airport_ident })
   }
 
+  /**
+   * Gets all departure procedures which serve an airport
+   * @param airport_ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the list of departures
+   */
   public async get_departures_at_airport(airport_ident: string): Promise<Departure[]> {
     return await this.callWasmFunction("GetDeparturesAtAirport", { airport_ident })
   }
 
+  /**
+   * Gets all arrival procedures which serve an airport
+   * @param airport_ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the list of arrivals
+   */
   public async get_arrivals_at_airport(airport_ident: string): Promise<Arrival[]> {
     return await this.callWasmFunction("GetArrivalsAtAirport", { airport_ident })
   }
 
+  /**
+   * Gets all approach procedures which serve an airport
+   * @param airport_ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the list of approaches
+   */
   public async get_approaches_at_airport(airport_ident: string): Promise<Approach[]> {
     return await this.callWasmFunction("GetApproachesAtAirport", { airport_ident })
   }
 
+  /**
+   * Gets all terminal waypoints which are affiliated with an airport
+   * @param airport_ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the list of waypoints
+   */
   public async get_waypoints_at_airport(airport_ident: string): Promise<Waypoint[]> {
     return await this.callWasmFunction("GetWaypointsAtAirport", { airport_ident })
   }
 
+  /**
+   * Gets all ndb navaids which are affiliated with an airport
+   * @param airport_ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the list of ndb navaids
+   */
   public async get_ndb_navaids_at_airport(airport_ident: string): Promise<NdbNavaid[]> {
     return await this.callWasmFunction("GetNdbNavaidsAtAirport", { airport_ident })
   }
 
+  /**
+   * Gets all gates which are at an airport
+   * @param airport_ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the list of gates
+   */
   public async get_gates_at_airport(airport_ident: string): Promise<Gate[]> {
     return await this.callWasmFunction("GetGatesAtAirport", { airport_ident })
   }
 
+  /**
+   * Gets all communications which are at an airport
+   * @param airport_ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the list of communications
+   */
   public async get_communications_at_airport(airport_ident: string): Promise<Communication[]> {
     return await this.callWasmFunction("GetCommunicationsAtAirport", { airport_ident })
   }
 
+  /**
+   * Gets all gls navaids which serve an airport
+   * @param airport_ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the list of gls navaids
+   */
   public async get_gls_navaids_at_airport(airport_ident: string): Promise<GlsNavaid[]> {
     return await this.callWasmFunction("GetGlsNavaidsAtAirport", { airport_ident })
   }
 
+  /**
+   * Gets all path points which serve an airport
+   * @param airport_ident - The 4 letter identifier of the airport
+   * @returns A promise that resolves with the list of path points
+   */
   public async get_path_points_at_airport(airport_ident: string): Promise<PathPoint[]> {
     return await this.callWasmFunction("GetPathPointsAtAirport", { airport_ident })
   }

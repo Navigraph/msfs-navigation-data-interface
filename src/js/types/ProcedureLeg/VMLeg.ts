@@ -1,5 +1,5 @@
 import { LegType, ProcedureLegBase, TurnDirection } from "."
-import { Degrees } from "../types"
+import { Degrees } from "../math"
 
 export interface VMLegData extends ProcedureLegBase {
   leg_type: LegType.VM

@@ -1,4 +1,4 @@
-import { Coordinates, Degrees, Feet } from "./types"
+import { Coordinates, Degrees, Feet } from "./math"
 
 export interface RunwayThreshold {
   ident: string

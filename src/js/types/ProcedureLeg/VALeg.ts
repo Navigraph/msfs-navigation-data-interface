@@ -1,5 +1,5 @@
 import { AltitudeDescriptor, LegType, ProcedureLegBase, TurnDirection } from "."
-import { Degrees, Feet } from "../types"
+import { Degrees, Feet } from "../math"
 
 export interface VALegData extends ProcedureLegBase {
   leg_type: LegType.VA

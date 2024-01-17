@@ -1,4 +1,4 @@
-import { Coordinates, Feet, Knots } from "./types"
+import { Coordinates, Feet, Knots } from "./math"
 
 export enum IfrCapability {
   Yes = "Y",

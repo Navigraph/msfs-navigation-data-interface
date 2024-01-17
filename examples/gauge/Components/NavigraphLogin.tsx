@@ -157,10 +157,11 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
   private async handleDownloadClick() {
     try {
+      if (!this.navdataInterface.getIsInitialized()) throw new Error("Navdata interface not initialized")
+      
       // Get default package for client
       const pkg = await packages.getPackage(this.dropdownRef.instance.getNavdataFormat() as string)
 
-      if (!this.navdataInterface.getIsInitialized()) throw new Error("Navdata interface not initialized")
 
       // Download navdata to work dir
       await this.navdataInterface.download_navdata(pkg.file.url, pkg.format)

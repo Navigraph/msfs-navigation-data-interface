@@ -1,4 +1,4 @@
-import { Coordinates, Degrees, MegaHertz } from "./types"
+import { Coordinates, Degrees, MegaHertz } from "./math"
 
 export interface VhfNavaid {
   area_code: string

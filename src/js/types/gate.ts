@@ -1,4 +1,4 @@
-import { Coordinates } from "./types"
+import { Coordinates } from "./math"
 
 export interface Gate {
   area_code: string

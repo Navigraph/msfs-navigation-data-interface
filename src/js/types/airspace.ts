@@ -1,5 +1,5 @@
 import { TurnDirection } from "./ProcedureLeg"
-import { Coordinates, Degrees, NauticalMiles } from "./types"
+import { Coordinates, Degrees, NauticalMiles } from "./math"
 
 export enum ControlledAirspaceType {
   ClassC = "A",
