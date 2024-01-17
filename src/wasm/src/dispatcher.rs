@@ -5,7 +5,11 @@ use navigation_database::database::Database;
 
 use crate::{
     download::downloader::NavdataDownloader,
-    json_structs::{events, functions, params},
+    json_structs::{
+        events,
+        functions::{CallFunction, FunctionResult, FunctionStatus, FunctionType},
+        params,
+    },
     util,
 };
 
@@ -18,7 +22,7 @@ pub enum TaskStatus {
 }
 
 pub struct Task {
-    pub function_type: functions::FunctionType,
+    pub function_type: FunctionType,
     pub id: String,
     pub data: Option<serde_json::Value>,
     pub status: TaskStatus,
@@ -81,7 +85,7 @@ impl<'a> Dispatcher<'a> {
                     // TODO: maybe send error back to sim?
                     match Dispatcher::add_to_queue(Rc::clone(&captured_queue), args) {
                         Ok(_) => (),
-                        Err(e) => println!("Failed to add to queue: {}", e),
+                        Err(e) => println!("[NAVIGRAPH] Failed to add to queue: {}", e),
                     }
                 })
                 .expect("Failed to register NAVIGRAPH_CallFunction");
@@ -115,7 +119,7 @@ impl<'a> Dispatcher<'a> {
             let function_type = task.borrow().function_type;
 
             match function_type {
-                functions::FunctionType::DownloadNavdata => {
+                FunctionType::DownloadNavdata => {
                     // We can't use the execute_task function here because the download process doesn't finish in the
                     // function call, which results in slightly "messier" code
 
@@ -126,10 +130,10 @@ impl<'a> Dispatcher<'a> {
                     // Now we can download the navdata
                     self.downloader.download(Rc::clone(task))
                 },
-                functions::FunctionType::SetDownloadOptions => {
+                FunctionType::SetDownloadOptions => {
                     Dispatcher::execute_task(task.clone(), |t| self.downloader.set_download_options(t))
                 },
-                functions::FunctionType::SetActiveDatabase => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::SetActiveDatabase => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::SetActiveDatabaseParams>()?;
                     self.database.set_active_database(params.path)?;
 
@@ -137,7 +141,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::ExecuteSQLQuery => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::ExecuteSQLQuery => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::ExecuteSQLQueryParams>()?;
                     let data = self.database.execute_sql_query(params.sql, params.params)?;
 
@@ -145,14 +149,14 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetDatabaseInfo => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetDatabaseInfo => Dispatcher::execute_task(task.clone(), |t| {
                     let info = self.database.get_database_info()?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(info)?));
 
                     Ok(())
                 }),
-                functions::FunctionType::GetAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
                     let airport = self.database.get_airport(params.ident)?;
 
@@ -160,7 +164,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetWaypoints => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetWaypoints => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
                     let waypoints = self.database.get_waypoints(params.ident)?;
 
@@ -168,7 +172,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetVhfNavaids => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetVhfNavaids => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
                     let vhf_navaids = self.database.get_vhf_navaids(params.ident)?;
 
@@ -176,7 +180,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetNdbNavaids => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetNdbNavaids => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
                     let ndb_navaids = self.database.get_ndb_navaids(params.ident)?;
 
@@ -184,7 +188,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetAirways => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetAirways => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
                     let airways = self.database.get_airways(params.ident)?;
 
@@ -192,7 +196,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetAirwaysAtFix => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetAirwaysAtFix => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtFixParams>()?;
                     let airways = self
                         .database
@@ -202,47 +206,39 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetAirportsInRange => {
-                    Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
-                        let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                        let airports = self.database.get_airports_in_range(params.center, params.range)?;
+                FunctionType::GetAirportsInRange => Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
+                    let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                    let airports = self.database.get_airports_in_range(params.center, params.range)?;
 
-                        t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
 
-                        Ok(())
-                    })
-                },
-                functions::FunctionType::GetWaypointsInRange => {
-                    Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
-                        let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                        let waypoints = self.database.get_waypoints_in_range(params.center, params.range)?;
+                    Ok(())
+                }),
+                FunctionType::GetWaypointsInRange => Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
+                    let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                    let waypoints = self.database.get_waypoints_in_range(params.center, params.range)?;
 
-                        t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(waypoints)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(waypoints)?));
 
-                        Ok(())
-                    })
-                },
-                functions::FunctionType::GetVhfNavaidsInRange => {
-                    Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
-                        let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                        let navaids = self.database.get_vhf_navaids_in_range(params.center, params.range)?;
+                    Ok(())
+                }),
+                FunctionType::GetVhfNavaidsInRange => Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
+                    let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                    let navaids = self.database.get_vhf_navaids_in_range(params.center, params.range)?;
 
-                        t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
 
-                        Ok(())
-                    })
-                },
-                functions::FunctionType::GetNdbNavaidsInRange => {
-                    Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
-                        let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                        let navaids = self.database.get_ndb_navaids_in_range(params.center, params.range)?;
+                    Ok(())
+                }),
+                FunctionType::GetNdbNavaidsInRange => Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
+                    let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                    let navaids = self.database.get_ndb_navaids_in_range(params.center, params.range)?;
 
-                        t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
 
-                        Ok(())
-                    })
-                },
-                functions::FunctionType::GetAirwaysInRange => Dispatcher::execute_task(task.clone(), |t| {
+                    Ok(())
+                }),
+                FunctionType::GetAirwaysInRange => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
                     let airways = self.database.get_airways_in_range(params.center, params.range)?;
 
@@ -250,7 +246,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetControlledAirspacesInRange => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetControlledAirspacesInRange => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
                     let airspaces = self
                         .database
@@ -260,19 +256,17 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetRestrictiveAirspacesInRange => {
-                    Dispatcher::execute_task(task.clone(), |t| {
-                        let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                        let airspaces = self
-                            .database
-                            .get_restrictive_airspaces_in_range(params.center, params.range)?;
+                FunctionType::GetRestrictiveAirspacesInRange => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
+                    let airspaces = self
+                        .database
+                        .get_restrictive_airspaces_in_range(params.center, params.range)?;
 
-                        t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airspaces)?));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airspaces)?));
 
-                        Ok(())
-                    })
-                },
-                functions::FunctionType::GetCommunicationsInRange => Dispatcher::execute_task(task.clone(), |t| {
+                    Ok(())
+                }),
+                FunctionType::GetCommunicationsInRange => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
                     let communications = self.database.get_communications_in_range(params.center, params.range)?;
 
@@ -280,7 +274,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetRunwaysAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetRunwaysAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let runways = self.database.get_runways_at_airport(params.airport_ident)?;
 
@@ -288,7 +282,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetDeparturesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetDeparturesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let departures = self.database.get_departures_at_airport(params.airport_ident)?;
 
@@ -296,7 +290,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetArrivalsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetArrivalsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let arrivals = self.database.get_arrivals_at_airport(params.airport_ident)?;
 
@@ -304,7 +298,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetApproachesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetApproachesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let arrivals = self.database.get_approaches_at_airport(params.airport_ident)?;
 
@@ -312,7 +306,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetWaypointsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetWaypointsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let waypoints = self.database.get_waypoints_at_airport(params.airport_ident)?;
 
@@ -320,7 +314,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetNdbNavaidsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetNdbNavaidsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let navaids = self.database.get_ndb_navaids_at_airport(params.airport_ident)?;
 
@@ -328,7 +322,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetGatesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetGatesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let gates = self.database.get_gates_at_airport(params.airport_ident)?;
 
@@ -336,7 +330,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetCommunicationsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetCommunicationsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let communications = self.database.get_communications_at_airport(params.airport_ident)?;
 
@@ -344,7 +338,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetGlsNavaidsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetGlsNavaidsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let navaids = self.database.get_gls_navaids_at_airport(params.airport_ident)?;
 
@@ -352,7 +346,7 @@ impl<'a> Dispatcher<'a> {
 
                     Ok(())
                 }),
-                functions::FunctionType::GetPathPointsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
+                FunctionType::GetPathPointsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
                     let pathpoints = self.database.get_path_points_at_airport(params.airport_ident)?;
 
@@ -369,24 +363,24 @@ impl<'a> Dispatcher<'a> {
                 return true;
             }
 
-            let status: functions::FunctionStatus;
+            let status: FunctionStatus;
             let data: Option<serde_json::Value>;
 
             let (status, data) = match task.borrow().status {
                 TaskStatus::Success(ref result) => {
-                    status = functions::FunctionStatus::Success;
+                    status = FunctionStatus::Success;
                     data = result.clone();
                     (status, data)
                 },
                 TaskStatus::Failure(ref error) => {
-                    status = functions::FunctionStatus::Error;
+                    status = FunctionStatus::Error;
                     data = Some(error.clone().into());
                     (status, data)
                 },
                 _ => unreachable!(), // This should never happen
             };
 
-            let json = functions::FunctionResult {
+            let json = FunctionResult {
                 id: task.borrow().id.clone(),
                 status,
                 data,
@@ -407,7 +401,7 @@ impl<'a> Dispatcher<'a> {
         match task_operation(task.clone()) {
             Ok(_) => (),
             Err(e) => {
-                println!("Task failed: {}", e);
+                println!("[NAVIGRAPH] Task failed: {}", e);
                 task.borrow_mut().status = TaskStatus::Failure(e.to_string());
             },
         }
@@ -415,7 +409,7 @@ impl<'a> Dispatcher<'a> {
 
     fn add_to_queue(queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>, args: &str) -> Result<(), Box<dyn std::error::Error>> {
         let args = util::trim_null_terminator(args);
-        let json_result: functions::CallFunction = serde_json::from_str(args)?;
+        let json_result: CallFunction = serde_json::from_str(args)?;
 
         queue.borrow_mut().push(Rc::new(RefCell::new(Task {
             function_type: json_result.function,
@@ -429,11 +423,11 @@ impl<'a> Dispatcher<'a> {
 
     pub fn send_event(event: events::EventType, data: Option<serde_json::Value>) {
         let json = events::Event { event, data };
-        println!("Navigraph event");
+
         if let Ok(serialized_json) = serde_json::to_string(&json) {
             CommBus::call("NAVIGRAPH_Event", &serialized_json, CommBusBroadcastFlags::All);
         } else {
-            println!("Failed to serialize event");
+            println!("[NAVIGRAPH] Failed to serialize event");
         }
     }
 }

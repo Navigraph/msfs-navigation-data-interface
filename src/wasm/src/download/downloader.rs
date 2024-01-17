@@ -49,12 +49,12 @@ impl NavdataDownloader {
         if self.should_extract_next_batch() {
             match self.unzip_batch(self.options.borrow().batch_size) {
                 Ok(BatchReturn::Finished) => {
-                    println!("[WASM] Finished extracting");
+                    println!("[NAVIGRAPH] Finished extracting");
                     // Scope to drop the borrow so we can reset the download
                     {
                         let borrowed_task = self.task.borrow();
                         if (*borrowed_task).is_none() {
-                            println!("[WASM] Request is none");
+                            println!("[NAVIGRAPH] Request is none");
                             return;
                         }
                         let mut borrowed_task = borrowed_task.as_ref().unwrap().borrow_mut();
@@ -84,7 +84,7 @@ impl NavdataDownloader {
                     }
                 },
                 Err(e) => {
-                    println!("[WASM] Failed to unzip: {}", e);
+                    println!("[NAVIGRAPH] Failed to unzip: {}", e);
                     self.report_error(e.to_string());
                     self.reset_download();
                 },
@@ -109,10 +109,10 @@ impl NavdataDownloader {
     pub fn download(self: &Rc<Self>, task: Rc<RefCell<Task>>) {
         // Silently fail if we are already downloading (maybe we should send an error message?)
         if *self.download_status.borrow() == DownloadStatus::Downloading {
-            println!("[WASM] Already downloading");
+            println!("[NAVIGRAPH] Already downloading");
             return;
         } else {
-            println!("[WASM] Downloading");
+            println!("[NAVIGRAPH] Downloading");
             self.download_status.replace(DownloadStatus::Downloading);
             self.send_progress_update(None, None, None);
         }
@@ -129,7 +129,7 @@ impl NavdataDownloader {
 
         // Create the request
         let captured_self = self.clone();
-        println!("[WASM] Creating request");
+        println!("[NAVIGRAPH] Creating request");
         match NetworkRequestBuilder::new(&params.url)
             .unwrap()
             .with_callback(move |network_request, status_code| {
@@ -163,7 +163,7 @@ impl NavdataDownloader {
         let serialized_data = match serde_json::to_value(data) {
             Ok(data) => data,
             Err(e) => {
-                println!("[WASM] Failed to serialize download progress event: {}", e);
+                println!("[NAVIGRAPH] Failed to serialize download progress event: {}", e);
                 return;
             },
         };
@@ -240,7 +240,7 @@ impl NavdataDownloader {
     fn report_error(&self, message: String) {
         let borrowed_task = self.task.borrow();
         if (*borrowed_task).is_none() {
-            println!("[WASM] Task is none");
+            println!("[NAVIGRAPH] Task is none");
             return;
         }
         let mut borrowed_task = borrowed_task.as_ref().unwrap().borrow_mut();

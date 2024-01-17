@@ -1,6 +1,10 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    error::Error,
+    fmt::{Display, Formatter},
+};
 
 use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags, Result};
+use serde_json::{Number, Value};
 
 use super::output::{airport::Airport, airway::map_airways, procedure::departure::map_departures};
 use crate::{
@@ -38,14 +42,14 @@ impl Display for NoDatabaseOpen {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "No database open") }
 }
 
-impl std::error::Error for NoDatabaseOpen {}
+impl Error for NoDatabaseOpen {}
 
 impl Database {
     pub fn new() -> Self { Database { database: None } }
 
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> { self.database.as_ref().ok_or(NoDatabaseOpen) }
 
-    pub fn set_active_database(&mut self, mut path: String) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn set_active_database(&mut self, mut path: String) -> Result<(), Box<dyn Error>> {
         // Check if the path is a directory and if it is, search for a sqlite file
         let formatted_path = format!("\\work/{}", path);
         if util::get_path_type(std::path::Path::new(&formatted_path)) == util::PathType::Directory {
@@ -61,9 +65,7 @@ impl Database {
         Ok(())
     }
 
-    pub fn execute_sql_query(
-        &self, sql: String, params: Vec<String>,
-    ) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    pub fn execute_sql_query(&self, sql: String, params: Vec<String>) -> Result<Value, Box<dyn Error>> {
         // Execute query
         let conn = self.get_database()?;
         let mut stmt = conn.prepare(&sql)?;
@@ -78,11 +80,9 @@ impl Database {
             let mut map = serde_json::Map::new();
             for (i, name) in names.iter().enumerate() {
                 let value = match row.get_ref(i)? {
-                    ValueRef::Text(text) => Some(serde_json::Value::String(String::from_utf8(text.into()).unwrap())),
-                    ValueRef::Integer(int) => Some(serde_json::Value::Number(serde_json::Number::from(int))),
-                    ValueRef::Real(real) => {
-                        Some(serde_json::Value::Number(serde_json::Number::from_f64(real).unwrap()))
-                    },
+                    ValueRef::Text(text) => Some(Value::String(String::from_utf8(text.into()).unwrap())),
+                    ValueRef::Integer(int) => Some(Value::Number(Number::from(int))),
+                    ValueRef::Real(real) => Some(Value::Number(Number::from_f64(real).unwrap())),
                     ValueRef::Null => None,
                     ValueRef::Blob(_) => panic!("Unexpected value type Blob"),
                 };
@@ -91,7 +91,7 @@ impl Database {
                     map.insert(name.to_string(), value);
                 }
             }
-            Ok(serde_json::Value::Object(map))
+            Ok(Value::Object(map))
         })?;
 
         let mut data = Vec::new();
@@ -99,12 +99,12 @@ impl Database {
             data.push(row?);
         }
 
-        let json = serde_json::Value::Array(data);
+        let json = Value::Array(data);
 
         Ok(json)
     }
 
-    pub fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn std::error::Error>> {
+    pub fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_header")?;
@@ -114,7 +114,7 @@ impl Database {
         Ok(DatabaseInfo::from(header_data))
     }
 
-    pub fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn std::error::Error>> {
+    pub fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_airports WHERE airport_identifier = (?1)")?;
@@ -124,7 +124,7 @@ impl Database {
         Ok(Airport::from(airport_data))
     }
 
-    pub fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn std::error::Error>> {
+    pub fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut enroute_stmt = conn.prepare("SELECT * FROM tbl_enroute_waypoints WHERE waypoint_identifier = (?1)")?;
@@ -141,7 +141,7 @@ impl Database {
             .collect())
     }
 
-    pub fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>, Box<dyn std::error::Error>> {
+    pub fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_vhfnavaids WHERE vor_identifier = (?1)")?;
@@ -151,7 +151,7 @@ impl Database {
         Ok(navaids_data.into_iter().map(VhfNavaid::from).collect())
     }
 
-    pub fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>, Box<dyn std::error::Error>> {
+    pub fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut enroute_stmt = conn.prepare("SELECT * FROM tbl_enroute_ndbnavaids WHERE ndb_identifier = (?1)")?;
@@ -167,7 +167,7 @@ impl Database {
             .collect())
     }
 
-    pub fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn std::error::Error>> {
+    pub fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_enroute_airways WHERE route_identifier = (?1)")?;
@@ -177,9 +177,7 @@ impl Database {
         Ok(map_airways(airways_data))
     }
 
-    pub fn get_airways_at_fix(
-        &self, fix_ident: String, fix_icao_code: String,
-    ) -> Result<Vec<Airway>, Box<dyn std::error::Error>> {
+    pub fn get_airways_at_fix(&self, fix_ident: String, fix_icao_code: String) -> Result<Vec<Airway>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt: rusqlite::Statement<'_> = conn.prepare(
@@ -202,7 +200,7 @@ impl Database {
 
     pub fn get_airports_in_range(
         &self, center: Coordinates, range: NauticalMiles,
-    ) -> Result<Vec<Airport>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<Airport>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let where_string = Self::range_query_where(center, range, "airport_ref");
@@ -221,7 +219,7 @@ impl Database {
 
     pub fn get_waypoints_in_range(
         &self, center: Coordinates, range: NauticalMiles,
-    ) -> Result<Vec<Waypoint>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let where_string = Self::range_query_where(center, range, "waypoint");
@@ -245,7 +243,7 @@ impl Database {
 
     pub fn get_ndb_navaids_in_range(
         &self, center: Coordinates, range: NauticalMiles,
-    ) -> Result<Vec<NdbNavaid>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let where_string = Self::range_query_where(center, range, "ndb");
@@ -269,7 +267,7 @@ impl Database {
 
     pub fn get_vhf_navaids_in_range(
         &self, center: Coordinates, range: NauticalMiles,
-    ) -> Result<Vec<VhfNavaid>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let where_string = Self::range_query_where(center, range, "vor");
@@ -288,7 +286,7 @@ impl Database {
 
     pub fn get_airways_in_range(
         &self, center: Coordinates, range: NauticalMiles,
-    ) -> Result<Vec<Airway>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<Airway>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let where_string = Self::range_query_where(center, range, "waypoint");
@@ -316,7 +314,7 @@ impl Database {
 
     pub fn get_controlled_airspaces_in_range(
         &self, center: Coordinates, range: NauticalMiles,
-    ) -> Result<Vec<ControlledAirspace>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<ControlledAirspace>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let where_string = Self::range_query_where(center, range, "");
@@ -339,7 +337,7 @@ impl Database {
 
     pub fn get_restrictive_airspaces_in_range(
         &self, center: Coordinates, range: NauticalMiles,
-    ) -> Result<Vec<RestrictiveAirspace>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<RestrictiveAirspace>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let where_string = Self::range_query_where(center, range, "");
@@ -365,7 +363,7 @@ impl Database {
 
     pub fn get_communications_in_range(
         &self, center: Coordinates, range: NauticalMiles,
-    ) -> Result<Vec<Communication>, Box<dyn std::error::Error>> {
+    ) -> Result<Vec<Communication>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let where_string = Self::range_query_where(center, range, "");
@@ -387,9 +385,7 @@ impl Database {
             .collect())
     }
 
-    pub fn get_runways_at_airport(
-        &self, airport_ident: String,
-    ) -> Result<Vec<RunwayThreshold>, Box<dyn std::error::Error>> {
+    pub fn get_runways_at_airport(&self, airport_ident: String) -> Result<Vec<RunwayThreshold>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_runways WHERE airport_identifier = (?1)")?;
@@ -399,9 +395,7 @@ impl Database {
         Ok(runways_data.into_iter().map(Into::into).collect())
     }
 
-    pub fn get_departures_at_airport(
-        &self, airport_ident: String,
-    ) -> Result<Vec<Departure>, Box<dyn std::error::Error>> {
+    pub fn get_departures_at_airport(&self, airport_ident: String) -> Result<Vec<Departure>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut departures_stmt = conn.prepare("SELECT * FROM tbl_sids WHERE airport_identifier = (?1)")?;
@@ -415,7 +409,7 @@ impl Database {
         Ok(map_departures(departures_data, runways_data))
     }
 
-    pub fn get_arrivals_at_airport(&self, airport_ident: String) -> Result<Vec<Arrival>, Box<dyn std::error::Error>> {
+    pub fn get_arrivals_at_airport(&self, airport_ident: String) -> Result<Vec<Arrival>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut arrivals_stmt = conn.prepare("SELECT * FROM tbl_stars WHERE airport_identifier = (?1)")?;
@@ -429,9 +423,7 @@ impl Database {
         Ok(map_arrivals(arrivals_data, runways_data))
     }
 
-    pub fn get_approaches_at_airport(
-        &self, airport_ident: String,
-    ) -> Result<Vec<Approach>, Box<dyn std::error::Error>> {
+    pub fn get_approaches_at_airport(&self, airport_ident: String) -> Result<Vec<Approach>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut approachs_stmt = conn.prepare("SELECT * FROM tbl_iaps WHERE airport_identifier = (?1)")?;
@@ -442,7 +434,7 @@ impl Database {
         Ok(map_approaches(approaches_data))
     }
 
-    pub fn get_waypoints_at_airport(&self, airport_ident: String) -> Result<Vec<Waypoint>, Box<dyn std::error::Error>> {
+    pub fn get_waypoints_at_airport(&self, airport_ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_terminal_waypoints WHERE region_code = (?1)")?;
@@ -452,9 +444,7 @@ impl Database {
         Ok(waypoints_data.into_iter().map(Waypoint::from).collect())
     }
 
-    pub fn get_ndb_navaids_at_airport(
-        &self, airport_ident: String,
-    ) -> Result<Vec<NdbNavaid>, Box<dyn std::error::Error>> {
+    pub fn get_ndb_navaids_at_airport(&self, airport_ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_terminal_ndbnavaids WHERE airport_identifier = (?1)")?;
@@ -464,7 +454,7 @@ impl Database {
         Ok(waypoints_data.into_iter().map(NdbNavaid::from).collect())
     }
 
-    pub fn get_gates_at_airport(&self, airport_ident: String) -> Result<Vec<Gate>, Box<dyn std::error::Error>> {
+    pub fn get_gates_at_airport(&self, airport_ident: String) -> Result<Vec<Gate>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_gate WHERE airport_identifier = (?1)")?;
@@ -474,9 +464,7 @@ impl Database {
         Ok(gates_data.into_iter().map(Gate::from).collect())
     }
 
-    pub fn get_communications_at_airport(
-        &self, airport_ident: String,
-    ) -> Result<Vec<Communication>, Box<dyn std::error::Error>> {
+    pub fn get_communications_at_airport(&self, airport_ident: String) -> Result<Vec<Communication>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_airport_communication WHERE airport_identifier = (?1)")?;
@@ -486,9 +474,7 @@ impl Database {
         Ok(gates_data.into_iter().map(Communication::from).collect())
     }
 
-    pub fn get_gls_navaids_at_airport(
-        &self, airport_ident: String,
-    ) -> Result<Vec<GlsNavaid>, Box<dyn std::error::Error>> {
+    pub fn get_gls_navaids_at_airport(&self, airport_ident: String) -> Result<Vec<GlsNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_gls WHERE airport_identifier = (?1)")?;
@@ -498,9 +484,7 @@ impl Database {
         Ok(gates_data.into_iter().map(GlsNavaid::from).collect())
     }
 
-    pub fn get_path_points_at_airport(
-        &self, airport_ident: String,
-    ) -> Result<Vec<PathPoint>, Box<dyn std::error::Error>> {
+    pub fn get_path_points_at_airport(&self, airport_ident: String) -> Result<Vec<PathPoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_pathpoints WHERE airport_identifier = (?1)")?;
@@ -536,9 +520,7 @@ impl Database {
         }
     }
 
-    fn fetch_row<T>(
-        stmt: &mut rusqlite::Statement, params: impl rusqlite::Params,
-    ) -> Result<T, Box<dyn std::error::Error>>
+    fn fetch_row<T>(stmt: &mut rusqlite::Statement, params: impl rusqlite::Params) -> Result<T, Box<dyn Error>>
     where
         T: for<'r> serde::Deserialize<'r>,
     {
@@ -547,9 +529,7 @@ impl Database {
         Ok(row)
     }
 
-    fn fetch_rows<T>(
-        stmt: &mut rusqlite::Statement, params: impl rusqlite::Params,
-    ) -> Result<Vec<T>, Box<dyn std::error::Error>>
+    fn fetch_rows<T>(stmt: &mut rusqlite::Statement, params: impl rusqlite::Params) -> Result<Vec<T>, Box<dyn Error>>
     where
         T: for<'r> serde::Deserialize<'r>,
     {

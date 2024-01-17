@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::{
     enums::ApproachTypeIdentifier,
-    math::{Coordinates, Degrees, Metres},
+    math::{feet_to_meters, Coordinates, Degrees, Meters},
     sql_structs,
 };
 
@@ -17,17 +17,17 @@ pub struct PathPoint {
     pub runway_ident: String,
     pub ident: String,
     pub landing_threshold_location: Coordinates,
-    pub ltp_ellipsoid_height: Metres,
-    pub fpap_ellipsoid_height: Metres,
-    pub ltp_orthometric_height: Option<Metres>,
-    pub fpap_orthometric_height: Option<Metres>,
+    pub ltp_ellipsoid_height: Meters,
+    pub fpap_ellipsoid_height: Meters,
+    pub ltp_orthometric_height: Option<Meters>,
+    pub fpap_orthometric_height: Option<Meters>,
     pub glidepath_angle: Degrees,
     pub flightpath_alignment_location: Coordinates,
-    pub course_width: Metres,
-    pub length_offset: Metres,
-    pub path_point_tch: Metres,
-    pub horizontal_alert_limit: Metres,
-    pub vertical_alert_limit: Metres,
+    pub course_width: Meters,
+    pub length_offset: Meters,
+    pub path_point_tch: Meters,
+    pub horizontal_alert_limit: Meters,
+    pub vertical_alert_limit: Meters,
     pub gnss_channel_number: f64,
     pub approach_type: ApproachTypeIdentifier,
 }
@@ -57,7 +57,7 @@ impl From<sql_structs::Pathpoints> for PathPoint {
             course_width: row.course_width_at_threshold,
             length_offset: row.length_offset,
             path_point_tch: if row.tch_units_indicator == "F".to_string() {
-                row.path_point_tch / 3.281
+                feet_to_meters(row.path_point_tch)
             } else {
                 row.path_point_tch
             },

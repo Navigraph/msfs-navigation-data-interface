@@ -9,9 +9,9 @@ export interface PathPoint {
   area_code: string
   airport_ident: string
   icao_code: string
-  /// The identifier of the approach this path point is used in, such as `R36RY` or `R20`
+  /** The identifier of the approach this path point is used in, such as `R36RY` or `R20` */
   approach_ident: string
-  /// The identifier of the runway this path point is used with, such as `RW02` or `RW36L`
+  /** The identifier of the runway this path point is used with, such as `RW02` or `RW36L` */
   runway_ident: string
   ident: string
   landing_threshold_location: Coordinates

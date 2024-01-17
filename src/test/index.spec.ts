@@ -452,7 +452,7 @@ describe("test", () => {
       },
       length_offset: 32,
       ltp_ellipsoid_height: -1.5,
-      path_point_tch: 16.671746418774763,
+      path_point_tch: 16.6725594664781,
       fpap_orthometric_height: 34.5,
       ltp_orthometric_height: 34.5,
     } satisfies PathPoint)

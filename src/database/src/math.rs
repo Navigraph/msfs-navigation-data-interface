@@ -4,11 +4,13 @@ pub type NauticalMiles = f64;
 pub type Degrees = f64;
 pub type Radians = f64;
 pub type Feet = f64;
-pub type Metres = f64;
+pub type Meters = f64;
 pub type Knots = f64;
 pub type Minutes = f64;
 pub type KiloHertz = f64;
 pub type MegaHertz = f64;
+
+pub(crate) fn feet_to_meters(metres: Meters) -> Feet { metres / 3.28084 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 pub struct Coordinates {
@@ -22,7 +24,6 @@ const MAX_LAT: Degrees = 90.0;
 const MIN_LONG: Degrees = -180.0;
 const MAX_LONG: Degrees = 180.0;
 
-/// These
 impl Coordinates {
     /// Returns the Southwest and Northeast corner of a box around coordinates with a minimum `distance`
     pub fn distance_bounds(&self, distance: NauticalMiles) -> (Coordinates, Coordinates) {
