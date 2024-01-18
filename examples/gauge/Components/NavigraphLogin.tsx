@@ -133,7 +133,9 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
           if (p) {
             this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${p.verification_uri_complete}`
             this.qrCodeRef.instance.style.display = "block"
-            console.info(p.verification_uri_complete)
+            this.qrCodeRef.instance.onclick = () => {
+              OpenBrowser(p.verification_uri_complete);
+            }
           }
         }, this.cancelSource.token)
       }
