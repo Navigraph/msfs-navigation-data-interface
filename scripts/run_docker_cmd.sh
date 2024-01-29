@@ -4,4 +4,6 @@ IMAGE="ghcr.io/flybywiresim/dev-env@sha256:528f8e1ca9063b9346c7d4f684d7aadbcb58c
 
 cd "$(dirname "$0")"
 
+echo "Running $@ in docker"
+
 docker run --rm -v "$(pwd)/../:/external" -v "$(pwd)/../out:/out" $IMAGE "$@"
