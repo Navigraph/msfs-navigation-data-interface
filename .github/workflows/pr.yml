@@ -12,16 +12,32 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: create env file
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Fetch cached node_modules
+        uses: actions/cache@v3
+        with:
+          path: "**/node_modules"
+          key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create env file
         run: |
           touch .env
           echo NAVDATA_SIGNED_URL=${{ secrets.NAVDATA_SIGNED_URL }} >> .env
+
       - name: Build WASM module
         run: npm run build:wasm-workflow
+
       - name: Test
-        env:
-          CI: false
-        run: npm run test-workflow
+        run: npm run test
+        
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v2
         with:
