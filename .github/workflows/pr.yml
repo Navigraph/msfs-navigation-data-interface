@@ -11,12 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            !examples
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
 
       - name: Fetch cached node_modules
         uses: actions/cache@v3
@@ -39,7 +42,7 @@ jobs:
         run: npm run jest
         
       - name: Upload WASM module to GitHub
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: msfs_navdata_interface.wasm
           path: ./out/msfs_navdata_interface.wasm
