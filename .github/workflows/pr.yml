@@ -19,9 +19,9 @@ jobs:
       - name: Build WASM module
         run: npm run build:wasm-workflow
       - name: Test
-        run: npm run test-workflow
         env:
-          CI: ""
+          CI: false
+        run: npm run test-workflow
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v2
         with:
