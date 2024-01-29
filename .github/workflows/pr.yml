@@ -36,7 +36,7 @@ jobs:
         run: npm run build:wasm-workflow
 
       - name: Test
-        run: npm run test
+        run: npm run jest
         
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v2
