@@ -1,4 +1,6 @@
-module.exports = {
+import type { JestConfigWithTsJest } from "ts-jest/dist/types"
+
+module.exports = <JestConfigWithTsJest>{
   testEnvironment: "node",
   transform: {
     "^.+\\.tsx?$": "ts-jest",

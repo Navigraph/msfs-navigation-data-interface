@@ -3,5 +3,4 @@
 rm -rf test_work
 mkdir test_work
 
-npm install
-npm run jest
+source "${BASH_SOURCE%/*}/run_docker_cmd.sh" npm run jest
