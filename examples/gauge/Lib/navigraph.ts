@@ -16,9 +16,13 @@ if (!config.clientId || config.clientId.includes("<")) {
 
 initializeApp(config)
 
-// Wait 1s before accessing datastorage
-// This is a potential workaround for the issue where datastorage does not deliver credentials on startup.
-const dataStoreInit = new Promise(resolve => setTimeout(resolve, 1000))
+// Wait for DataStorage ready event before initializing SDK
+const dataStoreInit = new Promise<void>(res => {
+  const lis = RegisterViewListener("JS_LISTENER_DATASTORAGE", () => {
+    res()
+    lis.unregister()
+  })
+})
 
 const isNavigraphClient = config.clientId.includes("navigraph")
 const clientPrefix = isNavigraphClient ? "NG" : config.clientId.toUpperCase().replace("-", "_") + "_NG"
