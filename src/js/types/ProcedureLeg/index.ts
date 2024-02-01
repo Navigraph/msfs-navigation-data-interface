@@ -112,3 +112,22 @@ export type HXLegData = HALegData | HFLegData | HMLegData
 export type XFLegData = AFLegData | CFLegData | DFLegData | IFLegData | RFLegData | TFLegData | HXLegData
 export type FXLegData = FALegData | FMLegData | FDLegData
 export type ProcedureLeg = XFLegData | CALegData | XILegData | XDLegData | VALegData | VMLegData | XRLegData
+
+export * from "./AFLeg"
+export * from "./CALeg"
+export * from "./CFLeg"
+export * from "./DFLeg"
+export * from "./FALeg"
+export * from "./FDLeg"
+export * from "./FMLeg"
+export * from "./HALeg"
+export * from "./HFLeg"
+export * from "./HMLeg"
+export * from "./IFLeg"
+export * from "./RFLeg"
+export * from "./TFLeg"
+export * from "./VALeg"
+export * from "./VMLeg"
+export * from "./XDLeg"
+export * from "./XILeg"
+export * from "./XRLeg"
