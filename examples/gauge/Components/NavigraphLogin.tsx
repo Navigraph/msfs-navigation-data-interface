@@ -1,8 +1,9 @@
 import { ComponentProps, DisplayComponent, EventBus, FSComponent, VNode } from "@microsoft/msfs-sdk"
-import { CancelToken, navigraphRequest } from "navigraph/auth"
+import { CancelToken } from "navigraph/auth"
 import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
 import "./NavigraphLogin.css"
+import { DownloadProgressPhase, NavigraphEventType, NavigraphNavdataInterface } from "msfs-navdata-interface"
 import { Dropdown } from "./Dropdown"
 
 interface NavigraphLoginProps extends ComponentProps {
@@ -16,42 +17,46 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   private readonly qrCodeRef = FSComponent.createRef<HTMLImageElement>()
   private readonly dropdownRef = FSComponent.createRef<Dropdown>()
   private readonly downloadButtonRef = FSComponent.createRef<HTMLButtonElement>()
+  private readonly executeButtonRef = FSComponent.createRef<HTMLButtonElement>()
+  private readonly inputRef = FSComponent.createRef<HTMLInputElement>()
 
   private cancelSource = CancelToken.source()
 
-  private commBusListener: CommBusListener
-
-  private wasmInitialized = false
+  private navdataInterface: NavigraphNavdataInterface
 
   constructor(props: NavigraphLoginProps) {
     super(props)
 
-    this.commBusListener = RegisterCommBusListener(() => {
-      console.info("CommBus listener registered")
+    this.navdataInterface = new NavigraphNavdataInterface()
+
+    this.navdataInterface.onReady(() => {
+      this.navdataInterface
+        .set_active_database("avionics_v2")
+        .then(() => {
+          console.info("WASM set active database")
+        })
+        .catch(e => {
+          this.displayError(e)
+        })
     })
 
-    this.commBusListener.on("NAVIGRAPH_Heartbeat", () => {
-      if (!this.wasmInitialized) {
-        this.wasmInitialized = true
-        console.log("WASM initialized")
+    this.navdataInterface.onEvent(NavigraphEventType.DownloadProgress, data => {
+      switch (data.phase) {
+        case DownloadProgressPhase.Downloading:
+          this.displayMessage("Downloading navdata...")
+          break
+        case DownloadProgressPhase.Cleaning:
+          if (!data.deleted) return
+          this.displayMessage(`Cleaning destination directory. ${data.deleted} files deleted so far`)
+          break
+        case DownloadProgressPhase.Extracting: {
+          // Ensure non-null
+          if (!data.unzipped || !data.total_to_unzip) return
+          const percent = Math.round((data.unzipped / data.total_to_unzip) * 100)
+          this.displayMessage(`Unzipping files... ${percent}% complete`)
+          break
+        }
       }
-    })
-
-    this.commBusListener.on("NAVIGRAPH_NavdataDownloaded", () => {
-      console.info("WASM downloaded navdata")
-      this.displayMessage("Navdata downloaded")
-    })
-
-    this.commBusListener.on("NAVIGRAPH_UnzippedFilesRemaining", (jsonArgs: string) => {
-      const args = JSON.parse(jsonArgs)
-      console.info("WASM unzipping files", args)
-      const percent = Math.round((args.unzipped / args.total) * 100)
-      this.displayMessage(`Unzipping files... ${percent}% complete`)
-    })
-
-    this.commBusListener.on("NAVIGRAPH_DownloadFailed", (jsonArgs: string) => {
-      const args = JSON.parse(jsonArgs)
-      this.displayError(args.error)
     })
   }
 
@@ -70,6 +75,10 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
             <div ref={this.downloadButtonRef} class="button">
               Download
             </div>
+            <input ref={this.inputRef} type="text" id="sql" name="sql" value="ESSA" class="text-field" />
+            <div ref={this.executeButtonRef} class="button">
+              Execute SQL
+            </div>
           </div>
         </div>
       </div>
@@ -83,10 +92,21 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   public onAfterRender(node: VNode): void {
     super.onAfterRender(node)
 
-    this.loginButtonRef.instance.addEventListener("click", () =>
-      this.handleClick().catch(e => this.displayError(e.message)),
-    )
+    this.loginButtonRef.instance.addEventListener("click", () => this.handleClick())
     this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
+
+    this.executeButtonRef.instance.addEventListener("click", () => {
+      console.time("query")
+      this.navdataInterface
+        .get_airport(this.inputRef.instance.value)
+        .then(airport => {
+          console.log(airport)
+          console.timeEnd("query")
+        })
+        .catch(e => {
+          console.error(e)
+        })
+    })
 
     AuthService.user.sub(user => {
       if (user) {
@@ -104,17 +124,24 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
   }
 
   private async handleClick() {
-    if (AuthService.getUser()) {
-      await AuthService.signOut()
-    } else {
-      this.cancelSource = CancelToken.source() // Reset any previous cancellations
-      AuthService.signIn(p => {
-        if (p) {
-          this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${p.verification_uri_complete}`
-          this.qrCodeRef.instance.style.display = "block"
-          console.info(p.verification_uri_complete)
-        }
-      }, this.cancelSource.token).catch(e => this.displayError(e.message))
+    try {
+      if (AuthService.getUser()) {
+        await AuthService.signOut()
+      } else {
+        this.cancelSource = CancelToken.source() // Reset any previous cancellations
+        await AuthService.signIn(p => {
+          if (p) {
+            this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${p.verification_uri_complete}`
+            this.qrCodeRef.instance.style.display = "block"
+            this.qrCodeRef.instance.onclick = () => {
+              OpenBrowser(p.verification_uri_complete);
+            }
+          }
+        }, this.cancelSource.token)
+      }
+    } catch (err) {
+      if (err instanceof Error) this.displayError(err.message)
+      else this.displayError(`Unknown error: ${String(err)}`)
     }
   }
 
@@ -130,26 +157,25 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
       .catch(e => console.error(e))
   }
 
-  private handleDownloadClick() {
-    packages
-      .getPackage(this.dropdownRef.instance.getNavdataFormat() as string)
-      .then(pkg => {
-        const url = pkg.file.url
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        if (this.wasmInitialized) {
-          this.commBusListener.callWasm(
-            "NAVIGRAPH_DownloadNavdata",
-            JSON.stringify({
-              url,
-              folder: pkg.format,
-            }),
-          )
-          this.displayMessage("Downloading navdata...")
-        } else {
-          this.displayError("WASM not initialized")
-        }
-      })
-      .catch(e => this.displayError(e.message))
+  private async handleDownloadClick() {
+    try {
+      if (!this.navdataInterface.getIsInitialized()) throw new Error("Navdata interface not initialized")
+      
+      // Get default package for client
+      const pkg = await packages.getPackage(this.dropdownRef.instance.getNavdataFormat() as string)
+
+
+      // Download navdata to work dir
+      await this.navdataInterface.download_navdata(pkg.file.url, pkg.format)
+      this.displayMessage("Navdata downloaded")
+
+      // Set active database to recently downloaded package
+      await this.navdataInterface.set_active_database(pkg.format)
+      console.info("WASM set active database")
+    } catch (err) {
+      if (err instanceof Error) this.displayError(err.message)
+      else this.displayError(`Unknown error: ${String(err)}`)
+    }
   }
 
   private displayMessage(message: string) {

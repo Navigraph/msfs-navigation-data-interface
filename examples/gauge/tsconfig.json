@@ -11,5 +11,6 @@
     "jsxFactory": "FSComponent.buildComponent" /* Required for FSComponent framework JSX */,
     "jsxFragmentFactory": "FSComponent.Fragment" /* Required for FSComponent framework JSX */,
     "jsx": "react" /* Required for FSComponent framework JSX */
-  }
+  },
+  "include": ["**/*", "../../src/navdata-sdk"]
 }

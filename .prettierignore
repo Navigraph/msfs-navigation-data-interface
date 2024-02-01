@@ -1,0 +1,8 @@
+# Rollup
+.rollup.cache
+
+package-lock.json
+
+*.gltf
+*.json
+*.yml

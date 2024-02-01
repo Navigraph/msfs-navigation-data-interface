@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+
+members = ["src/wasm", "src/database"]
+
+[profile.release]
+lto = true
+strip = true
+
+[patch.crates-io]
+rusqlite = { git = "https://github.com/navigraph/rusqlite", rev = "7921774" }

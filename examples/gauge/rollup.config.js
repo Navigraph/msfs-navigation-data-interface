@@ -22,7 +22,7 @@ export default {
   },
   plugins: [
     css({ output: "MyInstrument.css" }),
-    resolve(),
+    resolve({ extensions: [".js", ".jsx", ".ts", ".tsx"] }),
     esbuild({ target: "es2017" }),
     replace({
       "process.env.NG_CLIENT_ID": JSON.stringify(process.env.NG_CLIENT_ID),
