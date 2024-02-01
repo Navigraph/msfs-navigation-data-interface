@@ -1,4 +1,24 @@
 import {
+  Airport,
+  Airway,
+  Approach,
+  Arrival,
+  Communication,
+  ControlledAirspace,
+  Coordinates,
+  DatabaseInfo,
+  Departure,
+  Gate,
+  GlsNavaid,
+  NauticalMiles,
+  NdbNavaid,
+  PathPoint,
+  RestrictiveAirspace,
+  RunwayThreshold,
+  VhfNavaid,
+  Waypoint,
+} from "../types"
+import {
   Callback,
   CommBusMessage,
   DownloadProgressData,
@@ -8,18 +28,6 @@ import {
   NavigraphFunction,
   RawNavigraphEvent,
 } from "./NavdataInterfaceTypes"
-import { Airport, Airway, Coordinates, NauticalMiles } from "./types"
-import { ControlledAirspace, RestrictiveAirspace } from "./types/airspace"
-import { Communication } from "./types/communication"
-import { DatabaseInfo } from "./types/database_info"
-import { Gate } from "./types/gate"
-import { GlsNavaid } from "./types/gls_navaid"
-import { NdbNavaid } from "./types/ndb_navaid"
-import { PathPoint } from "./types/path_point"
-import { Approach, Arrival, Departure } from "./types/procedure"
-import { RunwayThreshold } from "./types/runway_threshold"
-import { VhfNavaid } from "./types/vhfnavaid"
-import { Waypoint } from "./types/waypoint"
 
 /**
  * A TS wrapper class used for interfacing with the Navigraph Navigation Data interface WASM gauge using the CommBus

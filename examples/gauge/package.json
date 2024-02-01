@@ -23,7 +23,7 @@
     "rollup-plugin-import-css": "^3.3.5"
   },
   "dependencies": {
-    "msfs-navdata-interface": "*",
+    "@navigraph/msfs-navigation-data-interface": "*",
     "navigraph": "1.2.35"
   }
 }
