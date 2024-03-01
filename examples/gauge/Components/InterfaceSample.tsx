@@ -3,7 +3,11 @@ import { CancelToken } from "navigraph/auth"
 import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
 import "./InterfaceSample.css"
-import { DownloadProgressPhase, NavigraphEventType, NavigraphNavdataInterface } from "@navigraph/msfs-navigation-data-interface"
+import {
+  DownloadProgressPhase,
+  NavigraphEventType,
+  NavigraphNavdataInterface,
+} from "@navigraph/msfs-navigation-data-interface"
 import { Dropdown } from "./Dropdown"
 
 interface InterfaceSampleProps extends ComponentProps {
@@ -32,12 +36,8 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     this.navdataInterface.onReady(() => {
       this.navdataInterface
         .set_active_database("avionics_v2")
-        .then(() => {
-          console.info("WASM set active database")
-        })
-        .catch(e => {
-          this.displayError(e)
-        })
+        .then(() => console.info("WASM set active database"))
+        .catch(err => this.displayError(String(err)))
     })
 
     this.navdataInterface.onEvent(NavigraphEventType.DownloadProgress, data => {
@@ -100,12 +100,10 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       this.navdataInterface
         .get_airport(this.inputRef.instance.value)
         .then(airport => {
-          console.log(airport)
+          console.info(airport)
           console.timeEnd("query")
         })
-        .catch(e => {
-          console.error(e)
-        })
+        .catch(e => console.error(e))
     })
 
     AuthService.user.sub(user => {
@@ -134,7 +132,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
             this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${p.verification_uri_complete}`
             this.qrCodeRef.instance.style.display = "block"
             this.qrCodeRef.instance.onclick = () => {
-              OpenBrowser(p.verification_uri_complete);
+              OpenBrowser(p.verification_uri_complete)
             }
           }
         }, this.cancelSource.token)
@@ -163,7 +161,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
       const format = this.dropdownRef.instance.getNavigationDataFormat()
       if (!format) throw new Error("Unable to fetch package: No navigation data format has been selected")
-      
+
       // Get default package for client
       const pkg = await packages.getPackage(format)
 
