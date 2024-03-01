@@ -4,8 +4,8 @@
 pub mod functions {
     #[derive(serde::Deserialize, Clone, Copy)]
     pub enum FunctionType {
-        /// `DownloadNavdataParams`
-        DownloadNavdata,
+        /// `DownloadNavigationDataParams`
+        DownloadNavigationData,
         /// `SetDownloadOptionsParams`
         SetDownloadOptions,
         /// `SetActiveDatabaseParams`
@@ -137,7 +137,7 @@ pub mod params {
     use navigation_database::math::{Coordinates, NauticalMiles};
 
     #[derive(serde::Deserialize)]
-    pub struct DownloadNavdataParams {
+    pub struct DownloadNavigationDataParams {
         /// Path to the folder to download to
         pub path: String,
         /// URL to download from

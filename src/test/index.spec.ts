@@ -5,7 +5,7 @@ import {
   Fix,
   FixType,
   IfrCapability,
-  NavigraphNavdataInterface,
+  NavigraphNavigationDataInterface,
   RunwaySurfaceCode,
 } from "../js"
 import { ControlledAirspaceType, Path, PathType, RestrictiveAirspaceType } from "../js/types/airspace"
@@ -22,11 +22,11 @@ import { RunwayThreshold } from "../js/types/runway_threshold"
 import { VhfNavaid } from "../js/types/vhfnavaid"
 import { Waypoint } from "../js/types/waypoint"
 
-const navdataInterface = new NavigraphNavdataInterface()
+const navigationDataInterface = new NavigraphNavigationDataInterface()
 
 describe("test", () => {
   it("Database info", async () => {
-    const info = await navdataInterface.get_database_info("KJFK")
+    const info = await navigationDataInterface.get_database_info("KJFK")
 
     expect(info).toStrictEqual({
       airac_cycle: "2313",
@@ -36,7 +36,7 @@ describe("test", () => {
   })
 
   it("Fetch airport", async () => {
-    const airport = await navdataInterface.get_airport("KJFK")
+    const airport = await navigationDataInterface.get_airport("KJFK")
 
     expect(airport).toStrictEqual({
       area_code: "USA",
@@ -59,7 +59,7 @@ describe("test", () => {
   })
 
   it("Get waypoints", async () => {
-    const waypoints = await navdataInterface.get_waypoints("GLENN")
+    const waypoints = await navigationDataInterface.get_waypoints("GLENN")
 
     expect(waypoints.length).toBe(3)
 
@@ -76,7 +76,7 @@ describe("test", () => {
   })
 
   it("Get vhf navaids", async () => {
-    const navaids = await navdataInterface.get_vhf_navaids("CH")
+    const navaids = await navigationDataInterface.get_vhf_navaids("CH")
 
     expect(navaids.length).toBe(3)
 
@@ -94,7 +94,7 @@ describe("test", () => {
   })
 
   it("Get ndb navaids", async () => {
-    const navaids = await navdataInterface.get_ndb_navaids("CH")
+    const navaids = await navigationDataInterface.get_ndb_navaids("CH")
 
     expect(navaids.length).toBe(4)
 
@@ -112,31 +112,31 @@ describe("test", () => {
   })
 
   it("Get airports in range", async () => {
-    const airports = await navdataInterface.get_airports_in_range({ lat: 51.468, long: -0.4551 }, 640)
+    const airports = await navigationDataInterface.get_airports_in_range({ lat: 51.468, long: -0.4551 }, 640)
 
     expect(airports.length).toBe(1686)
   })
 
   it("Get waypoints in range", async () => {
-    const waypoints = await navdataInterface.get_waypoints_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+    const waypoints = await navigationDataInterface.get_waypoints_in_range({ lat: -43.4876, long: 172.5374 }, 10)
 
     expect(waypoints.length).toBe(126)
   })
 
   it("Get vhf navaids in range", async () => {
-    const vhf_navaids = await navdataInterface.get_vhf_navaids_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+    const vhf_navaids = await navigationDataInterface.get_vhf_navaids_in_range({ lat: -43.4876, long: 172.5374 }, 10)
 
     expect(vhf_navaids.length).toBe(3)
   })
 
   it("Get ndb navaids in range", async () => {
-    const ndb_navaids = await navdataInterface.get_ndb_navaids_in_range({ lat: -45.9282, long: 170.1981 }, 5)
+    const ndb_navaids = await navigationDataInterface.get_ndb_navaids_in_range({ lat: -45.9282, long: 170.1981 }, 5)
 
     expect(ndb_navaids.length).toBe(1)
   })
 
   it("Get controlled airspaces in range", async () => {
-    const airspaces = await navdataInterface.get_controlled_airspaces_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+    const airspaces = await navigationDataInterface.get_controlled_airspaces_in_range({ lat: -43.4876, long: 172.5374 }, 10)
 
     expect(airspaces.length).toBe(17)
 
@@ -176,7 +176,7 @@ describe("test", () => {
   })
 
   it("Get restrictive airspaces in range", async () => {
-    const airspaces = await navdataInterface.get_restrictive_airspaces_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+    const airspaces = await navigationDataInterface.get_restrictive_airspaces_in_range({ lat: -43.4876, long: 172.5374 }, 10)
 
     expect(airspaces.length).toBe(5)
 
@@ -198,13 +198,13 @@ describe("test", () => {
   })
 
   it("Get communications in range", async () => {
-    const communications = await navdataInterface.get_communications_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+    const communications = await navigationDataInterface.get_communications_in_range({ lat: -43.4876, long: 172.5374 }, 10)
 
     expect(communications.length).toBe(46)
   })
 
   it("Get airways", async () => {
-    const airways = await navdataInterface.get_airways("A1")
+    const airways = await navigationDataInterface.get_airways("A1")
 
     const target_airway = airways[0]
 
@@ -226,19 +226,19 @@ describe("test", () => {
   })
 
   it("Get airways at fix", async () => {
-    const airways = await navdataInterface.get_airways_at_fix("ODOWD", "NZ")
+    const airways = await navigationDataInterface.get_airways_at_fix("ODOWD", "NZ")
 
     expect(airways.length).toBe(4)
   })
 
   it("Get airways in range", async () => {
-    const airways = await navdataInterface.get_airways_in_range({ lat: -43.4876, long: 172.5374 }, 10)
+    const airways = await navigationDataInterface.get_airways_in_range({ lat: -43.4876, long: 172.5374 }, 10)
 
     expect(airways.length).toBe(27)
   })
 
   it("Get runways at airport", async () => {
-    const runways = await navdataInterface.get_runways_at_airport("NZCH")
+    const runways = await navigationDataInterface.get_runways_at_airport("NZCH")
 
     expect(runways.length).toBe(4)
 
@@ -261,7 +261,7 @@ describe("test", () => {
   })
 
   it("Get departures", async () => {
-    const departures = await navdataInterface.get_departures_at_airport("KLAX")
+    const departures = await navigationDataInterface.get_departures_at_airport("KLAX")
 
     expect(departures.length).toBe(22)
 
@@ -278,7 +278,7 @@ describe("test", () => {
   })
 
   it("Get Arrivals", async () => {
-    const arrivals = await navdataInterface.get_arrivals_at_airport("KLAX")
+    const arrivals = await navigationDataInterface.get_arrivals_at_airport("KLAX")
 
     expect(arrivals.length).toBe(24)
 
@@ -295,7 +295,7 @@ describe("test", () => {
   })
 
   it("Get Approaches", async () => {
-    const approaches = await navdataInterface.get_approaches_at_airport("KLAX")
+    const approaches = await navigationDataInterface.get_approaches_at_airport("KLAX")
 
     expect(approaches.length).toBe(24)
 
@@ -312,20 +312,20 @@ describe("test", () => {
   })
 
   it("Get waypoints at airport", async () => {
-    const waypoints = await navdataInterface.get_waypoints_at_airport("NZCH")
+    const waypoints = await navigationDataInterface.get_waypoints_at_airport("NZCH")
 
     expect(waypoints.length).toBe(200)
   })
 
   it("Get ndb navaids at airport", async () => {
-    const navaids = await navdataInterface.get_ndb_navaids_at_airport("EDDM")
+    const navaids = await navigationDataInterface.get_ndb_navaids_at_airport("EDDM")
 
     expect(navaids.length).toBe(4)
   })
 
   it("Check procedure leg types", async () => {
     // This airport has the most different leg types
-    const approaches = await navdataInterface.get_approaches_at_airport("GCLP")
+    const approaches = await navigationDataInterface.get_approaches_at_airport("GCLP")
 
     const approach1 = approaches.find(approach => approach.ident == "L21RZ")
 
@@ -364,7 +364,7 @@ describe("test", () => {
   })
 
   it("Get gates at airport", async () => {
-    const gates = await navdataInterface.get_gates_at_airport("NZCH")
+    const gates = await navigationDataInterface.get_gates_at_airport("NZCH")
 
     expect(gates.length).toBe(48)
 
@@ -381,7 +381,7 @@ describe("test", () => {
   })
 
   it("Get communications at airport", async () => {
-    const communications = await navdataInterface.get_communications_at_airport("NZCH")
+    const communications = await navigationDataInterface.get_communications_at_airport("NZCH")
 
     expect(communications.length).toBe(14)
 
@@ -400,7 +400,7 @@ describe("test", () => {
   })
 
   it("Get GlsNavaids at airport", async () => {
-    const communications = await navdataInterface.get_gls_navaids_at_airport("YSSY")
+    const communications = await navigationDataInterface.get_gls_navaids_at_airport("YSSY")
 
     expect(communications.length).toBe(6)
 
@@ -424,7 +424,7 @@ describe("test", () => {
   })
 
   it("Get PathPoints at airport", async () => {
-    const pathpoints = await navdataInterface.get_path_points_at_airport("KLAX")
+    const pathpoints = await navigationDataInterface.get_path_points_at_airport("KLAX")
 
     expect(pathpoints.length).toBe(8)
 

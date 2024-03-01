@@ -21,16 +21,16 @@ pub enum DownloadStatus {
     Failed(String),
 }
 
-pub struct NavdataDownloader {
+pub struct NavigationDataDownloader {
     zip_handler: RefCell<Option<ZipFileHandler<Cursor<Vec<u8>>>>>,
     download_status: RefCell<DownloadStatus>,
     options: RefCell<DownloadOptions>,
     task: RefCell<Option<Rc<RefCell<Task>>>>,
 }
 
-impl NavdataDownloader {
+impl NavigationDataDownloader {
     pub fn new() -> Self {
-        NavdataDownloader {
+        NavigationDataDownloader {
             zip_handler: RefCell::new(None),
             download_status: RefCell::new(DownloadStatus::NoDownload),
             options: RefCell::new(DownloadOptions { batch_size: 10 }), // default batch size
@@ -118,7 +118,7 @@ impl NavdataDownloader {
         }
         self.task.borrow_mut().replace(task.clone());
 
-        let params = match task.borrow().parse_data_as::<params::DownloadNavdataParams>() {
+        let params = match task.borrow().parse_data_as::<params::DownloadNavigationDataParams>() {
             Ok(params) => params,
             Err(e) => {
                 self.download_status

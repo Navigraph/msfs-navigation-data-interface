@@ -20,7 +20,7 @@ jobs:
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./out/msfs_navdata_interface.wasm
+          files: ./out/msfs_navigation_data_interface.wasm
           prerelease: true
           generate_release_notes: true
 

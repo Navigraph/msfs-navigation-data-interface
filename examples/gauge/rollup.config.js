@@ -11,13 +11,13 @@ const DEBUG = process.env.DEBUG === "true"
 
 let outputDest = "../aircraft/PackageSources"
 if (DEBUG) {
-  outputDest = "../aircraft/Packages/navigraph-aircraft-navdata-interface-sample"
+  outputDest = "../aircraft/Packages/navigraph-aircraft-navigation-data-interface-sample"
 }
 
 export default {
   input: "MyInstrument.tsx",
   output: {
-    dir: `${outputDest}/html_ui/Pages/VCockpit/Instruments/Navigraph/NavdataInterfaceSample`,
+    dir: `${outputDest}/html_ui/Pages/VCockpit/Instruments/Navigraph/NavigationDataInterfaceSample`,
     format: "es",
   },
   plugins: [
@@ -33,7 +33,7 @@ export default {
       targets: [
         {
           src: "MyInstrument.html",
-          dest: `${outputDest}/html_ui/Pages/VCockpit/Instruments/Navigraph/NavdataInterfaceSample`,
+          dest: `${outputDest}/html_ui/Pages/VCockpit/Instruments/Navigraph/NavigationDataInterfaceSample`,
         },
       ],
     }),

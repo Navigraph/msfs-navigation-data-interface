@@ -1,5 +1,5 @@
 [package]
-name = "msfs-navdata-interface"
+name = "msfs-navigation-data-interface"
 version = "0.1.0"
 edition = "2021"
 

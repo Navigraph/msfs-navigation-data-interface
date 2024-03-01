@@ -1,6 +1,6 @@
-# Navigraph Navdata Interface in MSFS
+# Navigraph Navigation Data Interface in MSFS
 
-This is a barebones implementation to be able to download up-to-date Navigraph navdata into MSFS (more specifically into the `work` folder of the aircraft).
+This is a barebones implementation to be able to download up-to-date Navigraph navigation data into MSFS (more specifically into the `work` folder of the aircraft).
 
 Documentation on the events used on the CommBus is located [here](/DOCS.md)
 
@@ -9,18 +9,18 @@ Documentation on the events used on the CommBus is located [here](/DOCS.md)
 Here's an overview on the structure of this repository, which is designed to be as simple as possible to use
 
 - `examples/`
-  - Contains sample implementations for using the navdata interface
+  - Contains sample implementations for using the navigation data interface
   - `aircraft/` includes a base aircraft to test in the sim
   - `gauge/` includes a very simple TypeScript instrument to communicate with the WASM module
 - `src/`
   - `database` Includes rust source code for interfacing with a DFD sqlite file (not WASM specific)
   - `js` Includes source code for the JS interface for using the sdk
   - `test` Includes code for testing the JS and Rust code using a Node runtime
-  - `wasm` includes the Rust source code for the WASM module which handles the downloading of the databse file, and interfacing with the database implementation
+  - `wasm` includes the Rust source code for the WASM module which handles the downloading of the database file, and interfacing with the database implementation
 
 ## Including in Your Aircraft
 
-1. You'll need to either build the WASM module yourself (not recommended, but documented further down) or download it from [the latest release](https://github.com/Navigraph/msfs-navdata-interface/releases) (alternatively you can download it off of a commit by looking at the uploaded artifacts).
+1. You'll need to either build the WASM module yourself (not recommended, but documented further down) or download it from [the latest release](https://github.com/Navigraph/msfs-navigation-data-interface/releases) (alternatively you can download it off of a commit by looking at the uploaded artifacts).
 2. Add the WASM module into your `panel` folder in `PackageSources`
 3. Add the following entry into `panel.cfg` (make sure to replace `NN` with the proper `VCockpit` ID):
    ```
@@ -28,7 +28,7 @@ Here's an overview on the structure of this repository, which is designed to be 
    size_mm=0,0
    pixel_size=0,0
    texture=NO_TEXTURE
-   htmlgauge00=WasmInstrument/WasmInstrument.html?wasm_module=msfs_navdata_interface.wasm&wasm_gauge=navdata_interface,0,0,1,1
+   htmlgauge00=WasmInstrument/WasmInstrument.html?wasm_module=msfs_navigation_data_interface.wasm&wasm_gauge=navigation_data_interface,0,0,1,1
    ```
    - Note that if you already have a `VCockpit` with `NO_TEXTURE` you can just add another `htmlgauge` to it, while making sure to increase the index
 
@@ -41,18 +41,18 @@ Before building, make sure you have properly created and set an `.env` file in `
 3. Run `npm i` the first time you build, in order to install dependencies
 4. Run `npm run build` to build into the `PackageSources` folder of the aircraft sample (or `npm run dev` to build into the `Packages` folder of the aircraft and listen to changes in the source).
 5. Make sure the WASM module is included in the `panel` folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) for info on that
-6. Open the `examples/aircraft/NavdataInterfaceAircraftProject.xml` file in the simulator and build there
+6. Open the `examples/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build there
 
 ## Building the WASM Module Yourself
 
 1. [Download](https://www.docker.com/products/docker-desktop/) Docker Desktop
 2. Run `npm run build:wasm` (must be on Windows)
    - This will take a while to download and build the first time, but subsequent runs will be quicker
-3. The compiled WASM module will be copied to `out` **and** `examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navdata_Interface_Aircraft/panel`
+3. The compiled WASM module will be copied to `out` **and** `examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel`
 
-## Interfacing with the navdata gauge manually
+## Interfacing with the gauge manually
 
-The navdata interface acts as its own WASM gauge in sim, so in order to communicate with it, you must use the [CommBus](https://docs.flightsimulator.com/html/Programming_Tools/WASM/Communication_API/Communication_API.htm).
+The navigation data interface acts as its own WASM gauge in sim, so in order to communicate with it, you must use the [CommBus](https://docs.flightsimulator.com/html/Programming_Tools/WASM/Communication_API/Communication_API.htm).
 
 The gauge communicates using the following event names:
 

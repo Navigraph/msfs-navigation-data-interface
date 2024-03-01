@@ -4,8 +4,8 @@ _PackageInt
 .rollup.cache
 tsconfig.tsbuildinfo
 .vs
-examples/aircraft/PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/NavdataInterfaceSample
-examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navdata_Interface_Aircraft/panel/msfs_navdata_interface.wasm
+examples/aircraft/PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/NavigationDataInterfaceSample
+examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel/msfs_navigation_data_interface.wasm
 out
 
 # Rust

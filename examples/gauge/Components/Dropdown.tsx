@@ -7,7 +7,7 @@ export class Dropdown extends DisplayComponent<ComponentProps> {
 
   private readonly dropdownButtonText = Subject.create<string>("Select an item")
 
-  private navdataFormat: null | string = null
+  private navigationDataFormat: null | string = null
 
   public render(): VNode {
     return (
@@ -44,9 +44,9 @@ export class Dropdown extends DisplayComponent<ComponentProps> {
       dropdownMenu.style.display = "none"
     } else if (dropdownMenu.contains(target)) {
       this.dropdownButtonText.set(target.textContent as string)
-      const navdataFormat = target.dataset.navdataFormat
-      if (navdataFormat) {
-        this.navdataFormat = navdataFormat
+      const navigationDataFormat = target.dataset.navigationDataFormat
+      if (navigationDataFormat) {
+        this.navigationDataFormat = navigationDataFormat
       }
     }
   }
@@ -54,11 +54,11 @@ export class Dropdown extends DisplayComponent<ComponentProps> {
   public addDropdownItem(text: string, format: string): void {
     const dropdownItem = document.createElement("li")
     dropdownItem.textContent = text
-    dropdownItem.dataset.navdataFormat = format
+    dropdownItem.dataset.navigationDataFormat = format
     this.dropdownMenuRef.instance.appendChild(dropdownItem)
   }
 
-  public getNavdataFormat(): string | null {
-    return this.navdataFormat
+  public getnavigationDataFormat(): string | null {
+    return this.navigationDataFormat
   }
 }

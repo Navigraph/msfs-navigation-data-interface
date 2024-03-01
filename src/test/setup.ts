@@ -3,7 +3,7 @@ import { argv, env } from "node:process"
 import random from "random-bigint"
 import { v4 } from "uuid"
 import { WASI } from "wasi"
-import { NavigraphNavdataInterface } from "../js"
+import { NavigraphNavigationDataInterface } from "../js"
 import { WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
 import "dotenv/config"
 
@@ -29,7 +29,7 @@ enum PanelService {
 
 type WasmInstance = {
   exports: {
-    navdata_interface_gauge_callback: (fsContext: bigint, serviceId: PanelService, dataPointer: number) => void
+    navigation_data_interface_gauge_callback: (fsContext: bigint, serviceId: PanelService, dataPointer: number) => void
     malloc: (size: number) => number
     free: (pointer: number) => void
     memory: WebAssembly.Memory
@@ -207,7 +207,7 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
 
       const requestId: bigint = random(32) // Setting it to 64 does... strange things
 
-      // Currently the only network request is for the navdata zip which is downloaded as a blob
+      // Currently the only network request is for the navigation data zip which is downloaded as a blob
       fetch(url)
         .then(result => result.blob())
         .then(async blob => {
@@ -239,8 +239,8 @@ wasiSystem.initialize(wasmInstance)
 const fsContext = BigInt(0)
 
 // Run the initialisation functions to setup the gauge
-wasmInstance.exports.navdata_interface_gauge_callback(fsContext, PanelService.PRE_INSTALL, 0)
-wasmInstance.exports.navdata_interface_gauge_callback(fsContext, PanelService.POST_INITIALIZE, 0)
+wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.PRE_INSTALL, 0)
+wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.POST_INITIALIZE, 0)
 
 const drawRate = 30
 
@@ -264,7 +264,7 @@ async function lifeCycle() {
 
     memoryBuffer.set(array, pointer)
 
-    wasmInstance.exports.navdata_interface_gauge_callback(fsContext, PanelService.PRE_DRAW, pointer)
+    wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.PRE_DRAW, pointer)
 
     wasmInstance.exports.free(pointer)
   }
@@ -272,19 +272,19 @@ async function lifeCycle() {
 
 // This will run once for each test file
 beforeAll(async () => {
-  const navdataInterface = new NavigraphNavdataInterface()
+  const navigationDataInterface = new NavigraphNavigationDataInterface()
 
-  const downloadUrl = process.env.NAVDATA_SIGNED_URL
+  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
 
   if (!downloadUrl) {
-    throw new Error("Please specify the env var `NAVDATA_SIGNED_URL`")
+    throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL`")
   }
 
-  // Download navdata to a unique folder to prevent clashes
+  // Download navigation data to a unique folder to prevent clashes
   const path = v4()
 
-  await navdataInterface.download_navdata(downloadUrl, path)
-  await navdataInterface.set_active_database(path)
+  await navigationDataInterface.download_navigation_data(downloadUrl, path)
+  await navigationDataInterface.set_active_database(path)
 }, 30000)
 
 void lifeCycle()

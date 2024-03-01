@@ -4,7 +4,7 @@ use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::database::Database;
 
 use crate::{
-    download::downloader::NavdataDownloader,
+    download::downloader::NavigationDataDownloader,
     json_structs::{
         events,
         functions::{CallFunction, FunctionResult, FunctionStatus, FunctionType},
@@ -41,7 +41,7 @@ impl Task {
 
 pub struct Dispatcher<'a> {
     commbus: CommBus<'a>,
-    downloader: Rc<NavdataDownloader>,
+    downloader: Rc<NavigationDataDownloader>,
     database: Database,
     delta_time: std::time::Duration,
     queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
@@ -51,7 +51,7 @@ impl<'a> Dispatcher<'a> {
     pub fn new() -> Self {
         Dispatcher {
             commbus: CommBus::default(),
-            downloader: Rc::new(NavdataDownloader::new()),
+            downloader: Rc::new(NavigationDataDownloader::new()),
             database: Database::new(),
             delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
                                                                    * the first update */
@@ -119,7 +119,7 @@ impl<'a> Dispatcher<'a> {
             let function_type = task.borrow().function_type;
 
             match function_type {
-                FunctionType::DownloadNavdata => {
+                FunctionType::DownloadNavigationData => {
                     // We can't use the execute_task function here because the download process doesn't finish in the
                     // function call, which results in slightly "messier" code
 
@@ -127,7 +127,7 @@ impl<'a> Dispatcher<'a> {
                     // database
                     self.database.close_connection();
 
-                    // Now we can download the navdata
+                    // Now we can download the navigation data
                     self.downloader.download(Rc::clone(task))
                 },
                 FunctionType::SetDownloadOptions => {

@@ -61,7 +61,7 @@ jobs:
       - name: Create env file
         run: |
           touch .env
-          echo NAVDATA_SIGNED_URL=${{ secrets.NAVDATA_SIGNED_URL }} >> .env
+          echo NAVIGATION_DATA_SIGNED_URL=${{ secrets.NAVIGATION_DATA_SIGNED_URL }} >> .env
 
       - name: Build WASM module
         run: npm run build:wasm-workflow
@@ -72,5 +72,5 @@ jobs:
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: msfs_navdata_interface.wasm
-          path: ./out/msfs_navdata_interface.wasm
+          name: msfs_navigation_data_interface.wasm
+          path: ./out/msfs_navigation_data_interface.wasm

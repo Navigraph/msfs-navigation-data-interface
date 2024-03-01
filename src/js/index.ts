@@ -1,3 +1,3 @@
-export * from "./interface/NavdataInterfaceTypes"
-export * from "./interface/NavigraphNavdataInterface"
+export * from "./interface/NavigationDataInterfaceTypes"
+export * from "./interface/NavigraphNavigationDataInterface"
 export * from "./types"
