@@ -160,10 +160,12 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private async handleDownloadClick() {
     try {
       if (!this.navdataInterface.getIsInitialized()) throw new Error("Navdata interface not initialized")
+
+      const format = this.dropdownRef.instance.getNavigationDataFormat()
+      if (!format) throw new Error("Unable to fetch package: No navigation data format has been selected")
       
       // Get default package for client
-      const pkg = await packages.getPackage(this.dropdownRef.instance.getNavdataFormat() as string)
-
+      const pkg = await packages.getPackage(format)
 
       // Download navdata to work dir
       await this.navdataInterface.download_navdata(pkg.file.url, pkg.format)
