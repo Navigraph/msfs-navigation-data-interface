@@ -1,7 +1,7 @@
 /// <reference types="@microsoft/msfs-types/Pages/VCockpit/Core/VCockpit" />
 
 import { EventBus, FSComponent } from "@microsoft/msfs-sdk"
-import { NavigraphLogin } from "./Components/NavigraphLogin"
+import { InterfaceSample } from "./Components/InterfaceSample"
 import { AuthService } from "./Services/AuthService"
 import "./MyInstrument.css"
 
@@ -26,7 +26,7 @@ class MyInstrument extends BaseInstrument {
     super.connectedCallback()
 
     AuthService.init(this.bus)
-    FSComponent.render(<NavigraphLogin bus={this.bus} />, document.getElementById("InstrumentContent"))
+    FSComponent.render(<InterfaceSample bus={this.bus} />, document.getElementById("InstrumentContent"))
   }
 }
 

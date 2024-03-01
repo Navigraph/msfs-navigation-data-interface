@@ -2,15 +2,15 @@ import { ComponentProps, DisplayComponent, EventBus, FSComponent, VNode } from "
 import { CancelToken } from "navigraph/auth"
 import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
-import "./NavigraphLogin.css"
+import "./InterfaceSample.css"
 import { DownloadProgressPhase, NavigraphEventType, NavigraphNavdataInterface } from "@navigraph/msfs-navigation-data-interface"
 import { Dropdown } from "./Dropdown"
 
-interface NavigraphLoginProps extends ComponentProps {
+interface InterfaceSampleProps extends ComponentProps {
   bus: EventBus
 }
 
-export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
+export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly textRef = FSComponent.createRef<HTMLDivElement>()
   private readonly navdataTextRef = FSComponent.createRef<HTMLDivElement>()
   private readonly loginButtonRef = FSComponent.createRef<HTMLButtonElement>()
@@ -24,7 +24,7 @@ export class NavigraphLogin extends DisplayComponent<NavigraphLoginProps> {
 
   private navdataInterface: NavigraphNavdataInterface
 
-  constructor(props: NavigraphLoginProps) {
+  constructor(props: InterfaceSampleProps) {
     super(props)
 
     this.navdataInterface = new NavigraphNavdataInterface()
