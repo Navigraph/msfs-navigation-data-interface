@@ -1,4 +1,4 @@
-import { ComponentProps, ComputedSubject, DisplayComponent, FSComponent, Subject, VNode } from "@microsoft/msfs-sdk"
+import { ComponentProps, DisplayComponent, FSComponent, Subject, VNode } from "@microsoft/msfs-sdk"
 import "./Dropdown.css"
 
 export class Dropdown extends DisplayComponent<ComponentProps> {
@@ -60,7 +60,7 @@ export class Dropdown extends DisplayComponent<ComponentProps> {
     this.dropdownMenuRef.instance.appendChild(dropdownItem)
   }
 
-  public getnavigationDataFormat(): string | null {
+  public getNavigationDataFormat(): string | null {
     return this.navigationDataFormat
   }
 }
