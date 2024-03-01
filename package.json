@@ -1,7 +1,7 @@
 {
   "workspaces": [
     "examples/*",
-    "src/*"
+    "src/js/*"
   ],
   "scripts": {
     "format": "prettier --write .",
