@@ -21,6 +21,8 @@ export class Dropdown extends DisplayComponent<ComponentProps> {
   }
 
   public onAfterRender(node: VNode): void {
+    super.onAfterRender(node)
+
     const dropdownButton = this.dropdownButtonRef.instance
     const dropdownMenu = this.dropdownMenuRef.instance
 
