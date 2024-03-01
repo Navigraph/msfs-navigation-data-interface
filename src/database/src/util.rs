@@ -53,5 +53,5 @@ pub fn find_sqlite_file(path: &str) -> Result<String, Box<dyn std::error::Error>
             }
         }
     }
-    Err("No database found".into())
+    Err("No SQL database found. Make sure the database specified is a SQL database".into())
 }
