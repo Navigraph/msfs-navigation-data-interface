@@ -6,7 +6,7 @@ import "./InterfaceSample.css"
 import {
   DownloadProgressPhase,
   NavigraphEventType,
-  NavigraphNavdataInterface,
+  NavigraphNavigationDataInterface,
 } from "@navigraph/msfs-navigation-data-interface"
 import { Dropdown } from "./Dropdown"
 
@@ -16,7 +16,7 @@ interface InterfaceSampleProps extends ComponentProps {
 
 export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly textRef = FSComponent.createRef<HTMLDivElement>()
-  private readonly navdataTextRef = FSComponent.createRef<HTMLDivElement>()
+  private readonly navigationDataTextRef = FSComponent.createRef<HTMLDivElement>()
   private readonly loginButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly qrCodeRef = FSComponent.createRef<HTMLImageElement>()
   private readonly dropdownRef = FSComponent.createRef<Dropdown>()
@@ -26,24 +26,24 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
   private cancelSource = CancelToken.source()
 
-  private navdataInterface: NavigraphNavdataInterface
+  private navigationDataInterface: NavigraphNavigationDataInterface
 
   constructor(props: InterfaceSampleProps) {
     super(props)
 
-    this.navdataInterface = new NavigraphNavdataInterface()
+    this.navigationDataInterface = new NavigraphNavigationDataInterface()
 
-    this.navdataInterface.onReady(() => {
-      this.navdataInterface
+    this.navigationDataInterface.onReady(() => {
+      this.navigationDataInterface
         .set_active_database("avionics_v2")
         .then(() => console.info("WASM set active database"))
         .catch(err => this.displayError(String(err)))
     })
 
-    this.navdataInterface.onEvent(NavigraphEventType.DownloadProgress, data => {
+    this.navigationDataInterface.onEvent(NavigraphEventType.DownloadProgress, data => {
       switch (data.phase) {
         case DownloadProgressPhase.Downloading:
-          this.displayMessage("Downloading navdata...")
+          this.displayMessage("Downloading navigation data...")
           break
         case DownloadProgressPhase.Cleaning:
           if (!data.deleted) return
@@ -67,7 +67,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
           <div class="vertical">
             <div ref={this.textRef}>Loading</div>
             <div ref={this.loginButtonRef} class="button" />
-            <div ref={this.navdataTextRef} />
+            <div ref={this.navigationDataTextRef} />
             <img ref={this.qrCodeRef} class="qr-code" />
           </div>
           <div class="vertical">
@@ -97,7 +97,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
     this.executeButtonRef.instance.addEventListener("click", () => {
       console.time("query")
-      this.navdataInterface
+      this.navigationDataInterface
         .get_airport(this.inputRef.instance.value)
         .then(airport => {
           console.info(airport)
@@ -157,7 +157,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
   private async handleDownloadClick() {
     try {
-      if (!this.navdataInterface.getIsInitialized()) throw new Error("Navdata interface not initialized")
+      if (!this.navigationDataInterface.getIsInitialized()) throw new Error("Navigation data interface not initialized")
 
       const format = this.dropdownRef.instance.getNavigationDataFormat()
       if (!format) throw new Error("Unable to fetch package: No navigation data format has been selected")
@@ -165,12 +165,12 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       // Get default package for client
       const pkg = await packages.getPackage(format)
 
-      // Download navdata to work dir
-      await this.navdataInterface.download_navdata(pkg.file.url, pkg.format)
-      this.displayMessage("Navdata downloaded")
+      // Download navigation data to work dir
+      await this.navigationDataInterface.download_navigation_data(pkg.file.url, pkg.format)
+      this.displayMessage("Navigation data downloaded")
 
       // Set active database to recently downloaded package
-      await this.navdataInterface.set_active_database(pkg.format)
+      await this.navigationDataInterface.set_active_database(pkg.format)
       console.info("WASM set active database")
     } catch (err) {
       if (err instanceof Error) this.displayError(err.message)
@@ -179,12 +179,12 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   }
 
   private displayMessage(message: string) {
-    this.navdataTextRef.instance.textContent = message
-    this.navdataTextRef.instance.style.color = "white"
+    this.navigationDataTextRef.instance.textContent = message
+    this.navigationDataTextRef.instance.style.color = "white"
   }
 
   private displayError(error: string) {
-    this.navdataTextRef.instance.textContent = error
-    this.navdataTextRef.instance.style.color = "red"
+    this.navigationDataTextRef.instance.textContent = error
+    this.navigationDataTextRef.instance.style.color = "red"
   }
 }
