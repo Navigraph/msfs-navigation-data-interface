@@ -2,8 +2,6 @@
 
 This is a barebones implementation to be able to download up-to-date Navigraph navigation data into MSFS (more specifically into the `work` folder of the aircraft).
 
-Documentation on the events used on the CommBus is located [here](/DOCS.md)
-
 ## Repository Structure
 
 Here's an overview on the structure of this repository, which is designed to be as simple as possible to use
