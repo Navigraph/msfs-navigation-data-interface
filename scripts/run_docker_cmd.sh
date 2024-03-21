@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE="ghcr.io/flybywiresim/dev-env@sha256:528f8e1ca9063b9346c7d4f684d7aadbcb58ca1fba2b1a3c2cdd9c820c4236f4"
+IMAGE="ghcr.io/flybywiresim/dev-env@sha256:13b03e3cdbc4a22f1a710e22771db0cb3f7bd54af42f9eb5cb749f816eb68844"
 
 cd "$(dirname "$0")"
 
