@@ -22,7 +22,6 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly dropdownRef = FSComponent.createRef<Dropdown>()
   private readonly downloadButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly executeButtonRef = FSComponent.createRef<HTMLButtonElement>()
-  private readonly setActiveButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly inputRef = FSComponent.createRef<HTMLInputElement>()
 
   private cancelSource = CancelToken.source()
@@ -69,9 +68,6 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
             <div ref={this.downloadButtonRef} class="button">
               Download
             </div>
-            <div ref={this.setActiveButtonRef} class="button">
-              Set as Active
-            </div>
             <input ref={this.inputRef} type="text" id="sql" name="sql" value="ESSA" class="text-field" />
             <div ref={this.executeButtonRef} class="button">
               Execute SQL
@@ -101,16 +97,6 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
           console.timeEnd("query")
         })
         .catch(e => console.error(e))
-    })
-
-    this.setActiveButtonRef.instance.addEventListener("click", () => {
-      const format = this.dropdownRef.instance.getNavigationDataFormat()
-      if (!format) return
-      // This will only work if the database specified is a SQLite database
-      this.navigationDataInterface
-        .set_active_database(format)
-        .then(() => console.info("WASM set active database"))
-        .catch(err => this.displayError(String(err)))
     })
 
     AuthService.user.sub(user => {
@@ -173,7 +159,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       const pkg = await packages.getPackage(format)
 
       // Download navigation data to work dir
-      await this.navigationDataInterface.download_navigation_data(pkg.file.url, pkg.format)
+      await this.navigationDataInterface.download_navigation_data(pkg.file.url)
       this.displayMessage("Navigation data downloaded")
     } catch (err) {
       if (err instanceof Error) this.displayError(err.message)

@@ -1,16 +1,18 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, error::Error, fs, path::Path, rc::Rc};
 
 use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::database::Database;
 
 use crate::{
-    download::downloader::NavigationDataDownloader,
+    consts,
+    download::downloader::{DownloadStatus, NavigationDataDownloader},
     json_structs::{
+        data::GetActiveDatabasePathData,
         events,
         functions::{CallFunction, FunctionResult, FunctionStatus, FunctionType},
         params,
     },
-    util,
+    util::{self, path_exists},
 };
 
 #[derive(PartialEq, Eq)]
@@ -76,20 +78,19 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn handle_initialized(&mut self) {
-        {
-            // We need to clone twice because we need to move the queue into the closure and then clone it again
-            // whenever it gets called
-            let captured_queue = Rc::clone(&self.queue);
-            self.commbus
-                .register("NAVIGRAPH_CallFunction", move |args| {
-                    // TODO: maybe send error back to sim?
-                    match Dispatcher::add_to_queue(Rc::clone(&captured_queue), args) {
-                        Ok(_) => (),
-                        Err(e) => println!("[NAVIGRAPH] Failed to add to queue: {}", e),
-                    }
-                })
-                .expect("Failed to register NAVIGRAPH_CallFunction");
-        }
+        self.load_database();
+        // We need to clone twice because we need to move the queue into the closure and then clone it again
+        // whenever it gets called
+        let captured_queue = Rc::clone(&self.queue);
+        self.commbus
+            .register("NAVIGRAPH_CallFunction", move |args| {
+                // TODO: maybe send error back to sim?
+                match Dispatcher::add_to_queue(Rc::clone(&captured_queue), args) {
+                    Ok(_) => (),
+                    Err(e) => println!("[NAVIGRAPH] Failed to add to queue: {}", e),
+                }
+            })
+            .expect("Failed to register NAVIGRAPH_CallFunction");
     }
 
     fn handle_update(&mut self, data: &sGaugeDrawData) {
@@ -104,6 +105,61 @@ impl<'a> Dispatcher<'a> {
 
         self.process_queue();
         self.downloader.on_update();
+
+        // Because the download process doesn't finish in the function call, we need to check if the download is finished to call the on_download_finish function
+        if *self.downloader.download_status.borrow() == DownloadStatus::Downloaded {
+            self.on_download_finish();
+            self.downloader.acknowledge_download();
+        }
+    }
+
+    fn load_database(&mut self) {
+        println!("[NAVIGRAPH] Loading database");
+        // First check if we have a database in the downloaded location
+        let found_downloaded = self
+            .set_database_if_exists(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION)
+            .is_ok();
+
+        if found_downloaded {
+            println!("[NAVIGRAPH] Loaded database from downloaded location");
+            return;
+        }
+
+        // If we didn't find a database in the downloaded location, check the default location
+        let found_default = self
+            .set_database_if_exists(consts::NAVIGATION_DATA_DEFAULT_LOCATION)
+            .is_ok();
+
+        if !found_default {
+            println!("[NAVIGRAPH] No database found in default location, not loading any database");
+        }
+    }
+
+    fn set_database_if_exists(&mut self, path: &str) -> Result<(), Box<dyn Error>> {
+        if path_exists(&Path::new(path)) {
+            let sqlite_path = navigation_database::util::find_sqlite_file(path)?;
+            self.database.set_active_database(sqlite_path)?;
+
+            Ok(())
+        } else {
+            Err("Path does not exist".into())
+        }
+    }
+
+    fn on_download_finish(&mut self) {
+        println!("[NAVIGRAPH] Checking if downloaded database is a valid SQLite file");
+        match navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION) {
+            Ok(path) => {
+                println!("[NAVIGRAPH] Found valid SQLite file: {}", path);
+                match self.database.set_active_database(path) {
+                    Ok(_) => {},
+                    Err(e) => {
+                        println!("[NAVIGRAPH] Failed to set active database: {}", e);
+                    },
+                };
+            },
+            Err(_) => {},
+        }
     }
 
     fn process_queue(&mut self) {
@@ -128,19 +184,20 @@ impl<'a> Dispatcher<'a> {
                     self.database.close_connection();
 
                     // Now we can download the navigation data
-                    self.downloader.download(Rc::clone(task))
+                    self.downloader.download(Rc::clone(task));
                 },
-                FunctionType::SetDownloadOptions => {
-                    Dispatcher::execute_task(task.clone(), |t| self.downloader.set_download_options(t))
-                },
-                FunctionType::SetActiveDatabase => Dispatcher::execute_task(task.clone(), |t| {
-                    let params = t.borrow().parse_data_as::<params::SetActiveDatabaseParams>()?;
-                    self.database.set_active_database(params.path)?;
+                FunctionType::GetActiveDatabasePath => Dispatcher::execute_task(task.clone(), |t| {
+                    let data = GetActiveDatabasePathData {
+                        path: self.database.path.clone(),
+                    };
 
-                    t.borrow_mut().status = TaskStatus::Success(None);
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(data)?));
 
                     Ok(())
                 }),
+                FunctionType::SetDownloadOptions => {
+                    Dispatcher::execute_task(task.clone(), |t| self.downloader.set_download_options(t))
+                },
                 FunctionType::ExecuteSQLQuery => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::ExecuteSQLQueryParams>()?;
                     let data = self.database.execute_sql_query(params.sql, params.params)?;

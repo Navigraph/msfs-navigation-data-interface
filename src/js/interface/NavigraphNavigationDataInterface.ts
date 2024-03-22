@@ -69,11 +69,20 @@ export class NavigraphNavigationDataInterface {
    * Downloads the navigation data from the given URL to the given path
    *
    * @param url - A valid signed URL to download the navigation data from
-   * @param path - The path to download the navigation data to
    * @returns A promise that resolves when the download is complete
    */
-  public async download_navigation_data(url: string, path: string): Promise<void> {
-    return await this.callWasmFunction("DownloadNavigationData", { url, path })
+  public async download_navigation_data(url: string): Promise<void> {
+    return await this.callWasmFunction("DownloadNavigationData", { url })
+  }
+
+  /**
+   * Gets the currently active database path
+   *
+   * @returns A promise that resolves with the path of the currently active database
+   */
+
+  public async get_active_database_path(): Promise<string> {
+    return await this.callWasmFunction("GetActiveDatabasePath", {})
   }
 
   /**
@@ -84,19 +93,6 @@ export class NavigraphNavigationDataInterface {
    */
   public async set_download_options(batch_size: number): Promise<void> {
     return await this.callWasmFunction("SetDownloadOptions", batch_size)
-  }
-
-  /**
-   * Sets the active DFD database to the one at the given path
-   *
-   * @remarks
-   * The path must be a valid path to a folder that contains a DFD file.
-   *
-   * @param path - The path to the folder that contains the DFD file
-   * @returns A promise that resolves when the function is complete
-   */
-  public async set_active_database(path: string): Promise<void> {
-    return await this.callWasmFunction("SetActiveDatabase", { path })
   }
 
   /**

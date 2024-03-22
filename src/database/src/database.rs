@@ -27,35 +27,49 @@ use crate::{
         vhf_navaid::VhfNavaid,
         waypoint::Waypoint,
     },
-    sql_structs::{self},
-    util,
+    sql_structs, util,
 };
 
 pub struct Database {
     database: Option<Connection>,
+    pub path: Option<String>,
 }
 
 #[derive(Debug)]
 struct NoDatabaseOpen;
 
 impl Display for NoDatabaseOpen {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "No database open") }
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "No database open")
+    }
 }
 
 impl Error for NoDatabaseOpen {}
 
 impl Database {
-    pub fn new() -> Self { Database { database: None } }
-
-    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> { self.database.as_ref().ok_or(NoDatabaseOpen) }
-
-    pub fn set_active_database(&mut self, mut path: String) -> Result<(), Box<dyn Error>> {
-        // Check if the path is a directory and if it is, search for a sqlite file
-        let formatted_path = format!("\\work/{}", path);
-        if util::get_path_type(std::path::Path::new(&formatted_path)) == util::PathType::Directory {
-            path = util::find_sqlite_file(&formatted_path)?;
+    pub fn new() -> Self {
+        Database {
+            database: None,
+            path: None,
         }
+    }
 
+    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
+        self.database.as_ref().ok_or(NoDatabaseOpen)
+    }
+
+    pub fn set_active_database(&mut self, path: String) -> Result<(), Box<dyn Error>> {
+        println!("[NAVIGRAPH] Setting active database to {}", path);
+        self.close_connection();
+        if util::is_sqlite_file(&path)? {
+            self.open_connection(path.clone())?;
+        }
+        self.path = Some(path);
+
+        Ok(())
+    }
+
+    pub fn open_connection(&mut self, path: String) -> Result<(), Box<dyn Error>> {
         // We have to open with flags because the SQLITE_OPEN_CREATE flag with the default open causes the file to
         // be overwritten
         let flags = OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
@@ -541,5 +555,7 @@ impl Database {
         Ok(data)
     }
 
-    pub fn close_connection(&mut self) { self.database = None; }
+    pub fn close_connection(&mut self) {
+        self.database = None;
+    }
 }

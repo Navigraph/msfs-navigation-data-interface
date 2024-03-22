@@ -1,3 +1,4 @@
+mod consts;
 mod dispatcher;
 mod download;
 mod json_structs;
