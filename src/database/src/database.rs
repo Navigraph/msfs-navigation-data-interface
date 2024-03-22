@@ -59,6 +59,10 @@ impl Database {
     }
 
     pub fn set_active_database(&mut self, path: String) -> Result<(), Box<dyn Error>> {
+        let path = match util::find_sqlite_file(&path) {
+            Ok(new_path) => new_path,
+            Err(_) => path,
+        };
         println!("[NAVIGRAPH] Setting active database to {}", path);
         self.close_connection();
         if util::is_sqlite_file(&path)? {

@@ -137,10 +137,7 @@ impl<'a> Dispatcher<'a> {
 
     fn set_database_if_exists(&mut self, path: &str) -> Result<(), Box<dyn Error>> {
         if path_exists(&Path::new(path)) {
-            let sqlite_path = navigation_database::util::find_sqlite_file(path)?;
-            self.database.set_active_database(sqlite_path)?;
-
-            Ok(())
+            self.database.set_active_database(path.to_owned())
         } else {
             Err("Path does not exist".into())
         }
