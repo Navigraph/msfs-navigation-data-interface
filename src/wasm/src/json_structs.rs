@@ -2,14 +2,14 @@
 
 /// Contains structs relating to functions
 pub mod functions {
-    #[derive(serde::Deserialize, Clone, Copy)]
+    #[derive(serde::Deserialize, Clone, Copy, PartialEq)]
     pub enum FunctionType {
         /// `DownloadNavigationDataParams`
         DownloadNavigationData,
+        /// no Params
+        GetActiveDatabasePath,
         /// `SetDownloadOptionsParams`
         SetDownloadOptions,
-        /// `SetActiveDatabaseParams`
-        SetActiveDatabase,
         /// `ExecuteSQLQueryParams`
         ExecuteSQLQuery,
 
@@ -138,8 +138,6 @@ pub mod params {
 
     #[derive(serde::Deserialize)]
     pub struct DownloadNavigationDataParams {
-        /// Path to the folder to download to
-        pub path: String,
         /// URL to download from
         pub url: String,
     }
@@ -148,12 +146,6 @@ pub mod params {
     pub struct SetDownloadOptionsParams {
         /// Batch size for deleting/extracting files
         pub batch_size: usize,
-    }
-
-    #[derive(serde::Deserialize)]
-    pub struct SetActiveDatabaseParams {
-        /// Path to the DFD database file
-        pub path: String,
     }
 
     #[derive(serde::Deserialize)]
@@ -186,5 +178,12 @@ pub mod params {
     #[derive(serde::Deserialize)]
     pub struct GetAtAirportParams {
         pub airport_ident: String,
+    }
+}
+
+pub mod data {
+    #[derive(serde::Serialize)]
+    pub struct GetActiveDatabasePathData {
+        pub path: Option<String>,
     }
 }

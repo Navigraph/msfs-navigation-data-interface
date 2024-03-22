@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs"
 import { argv, env } from "node:process"
+import { WASI } from "wasi"
 import random from "random-bigint"
 import { v4 } from "uuid"
-import { WASI } from "wasi"
 import { NavigraphNavigationDataInterface } from "../js"
 import { WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
 import "dotenv/config"
@@ -280,11 +280,7 @@ beforeAll(async () => {
     throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL`")
   }
 
-  // Download navigation data to a unique folder to prevent clashes
-  const path = v4()
-
-  await navigationDataInterface.download_navigation_data(downloadUrl, path)
-  await navigationDataInterface.set_active_database(path)
+  await navigationDataInterface.download_navigation_data(downloadUrl)
 }, 30000)
 
 void lifeCycle()
