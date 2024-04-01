@@ -1,0 +1,1 @@
+This is an empty sample for an airport navigation data file to be used to test the bundled navigation data feature of the interface
