@@ -2,7 +2,9 @@ use std::{fs, io, path::Path};
 
 use navigation_database::util::{get_path_type, PathType};
 
-pub fn path_exists(path: &Path) -> bool { get_path_type(path) != PathType::DoesNotExist }
+pub fn path_exists(path: &Path) -> bool {
+    get_path_type(path) != PathType::DoesNotExist
+}
 
 pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::Result<()> {
     // Make sure we are deleting a directory (and in turn that it exists)
@@ -22,9 +24,11 @@ pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::
     // After we have collected the entries, delete them
     for entry in entries {
         let path = entry.path();
-        if get_path_type(&path) == PathType::Directory {
+        let path_type = get_path_type(&path);
+
+        if path_type == PathType::Directory {
             delete_folder_recursively(&path, batch_size)?;
-        } else {
+        } else if path_type == PathType::File {
             fs::remove_file(&path)?;
         }
     }
@@ -42,4 +46,6 @@ pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::
     Ok(())
 }
 
-pub fn trim_null_terminator(s: &str) -> &str { s.trim_end_matches(char::from(0)) }
+pub fn trim_null_terminator(s: &str) -> &str {
+    s.trim_end_matches(char::from(0))
+}
