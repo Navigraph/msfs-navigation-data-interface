@@ -1,4 +1,4 @@
-use std::{cell::RefCell, error::Error, fs, path::Path, rc::Rc};
+use std::{cell::RefCell, error::Error, path::Path, rc::Rc};
 
 use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::database::Database;
