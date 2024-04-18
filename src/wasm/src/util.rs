@@ -30,6 +30,8 @@ pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::
             delete_folder_recursively(&path, batch_size)?;
         } else if path_type == PathType::File {
             fs::remove_file(&path)?;
+        } else if let None = path.extension() { // There are edge cases where completely empty directories are created and can't be deleted. They get registered as "unknown" path type so we need to check if the path has an extension (which would tell us if it's a file or a directory), and if it doesn't, we delete it as a directory
+            let _ = fs::remove_dir(&path); // this can fail silently, but we don't care since there also might be cases where a file literally doesn't exist
         }
     }
     // Check if the directory is empty. If it is, delete it
