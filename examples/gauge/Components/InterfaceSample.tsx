@@ -24,6 +24,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly downloadButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly executeButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly inputRef = FSComponent.createRef<Input>()
+  private readonly outputRef = FSComponent.createRef<HTMLPreElement>()
 
   private cancelSource = CancelToken.source()
 
@@ -59,21 +60,32 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       <div class="auth-container">
         <div class="horizontal">
           <div class="vertical">
+            <h4>Step 1 - Sign in</h4>
             <div ref={this.textRef}>Loading</div>
             <div ref={this.loginButtonRef} class="button" />
             <div ref={this.navigationDataTextRef} />
             <img ref={this.qrCodeRef} class="qr-code" />
           </div>
           <div class="vertical">
+            <h4>Step 2 - Select Database</h4>
             <Dropdown ref={this.dropdownRef} />
             <div ref={this.downloadButtonRef} class="button">
               Download
             </div>
+          </div>
+        </div>
+
+        <h4 style="text-align: center;">Step 3 - Query the database</h4>
+        <div class="horizontal">
+          <div class="vertical">
             <Input ref={this.inputRef} type="text" value="ESSA" class="text-field" />
             <div ref={this.executeButtonRef} class="button">
               Fetch Airport
             </div>
           </div>
+          <pre ref={this.outputRef} id="output">
+            The output of the query will show up here
+          </pre>
         </div>
       </div>
     )
@@ -89,7 +101,11 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       console.time("query")
       this.navigationDataInterface
         .get_airport(this.inputRef.instance.value)
-        .then(airport => console.info(airport))
+        .then(airport => {
+          console.info(airport)
+
+          this.outputRef.instance.textContent = JSON.stringify(airport, null, 2)
+        })
         .catch(e => console.error(e))
         .finally(() => console.timeEnd("query"))
     })
@@ -100,6 +116,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
         this.qrCodeRef.instance.style.display = "none"
         this.loginButtonRef.instance.textContent = "Log out"
         this.textRef.instance.textContent = `Welcome, ${user.preferred_username}`
+        this.displayMessage("")
 
         this.handleLogin()
       } else {
@@ -115,6 +132,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
         await AuthService.signOut()
       } else {
         this.cancelSource = CancelToken.source() // Reset any previous cancellations
+        this.displayMessage("Authenticating.. Scan code (or click it) to sign in")
         await AuthService.signIn(p => {
           if (p) {
             this.qrCodeRef.instance.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${p.verification_uri_complete}`
@@ -126,6 +144,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
         }, this.cancelSource.token)
       }
     } catch (err) {
+      this.qrCodeRef.instance.style.display = "none"
       if (err instanceof Error) this.displayError(err.message)
       else this.displayError(`Unknown error: ${String(err)}`)
     }
