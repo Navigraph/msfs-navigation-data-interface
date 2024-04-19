@@ -70,7 +70,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
             </div>
             <input ref={this.inputRef} type="text" id="sql" name="sql" value="ESSA" class="text-field" />
             <div ref={this.executeButtonRef} class="button">
-              Execute SQL
+              Fetch Airport
             </div>
           </div>
         </div>
