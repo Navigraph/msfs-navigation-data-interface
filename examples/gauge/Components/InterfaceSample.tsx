@@ -78,10 +78,6 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     )
   }
 
-  public onBeforeRender(): void {
-    super.onBeforeRender()
-  }
-
   public onAfterRender(node: VNode): void {
     super.onAfterRender(node)
 
@@ -92,11 +88,9 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       console.time("query")
       this.navigationDataInterface
         .get_airport(this.inputRef.instance.value)
-        .then(airport => {
-          console.info(airport)
-          console.timeEnd("query")
-        })
+        .then(airport => console.info(airport))
         .catch(e => console.error(e))
+        .finally(() => console.timeEnd("query"))
     })
 
     AuthService.user.sub(user => {
