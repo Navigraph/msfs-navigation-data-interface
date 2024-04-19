@@ -40,13 +40,13 @@ The default location for navigation data is `work/NavigationData`. If you have b
 
 ## Building the Sample Aircraft
 
-Before building, make sure you have properly created and set an `.env` file in `src/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials
+Before building, make sure you have properly created and set an `.env` file in `examples/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials
 
 1. [Download](https://nodejs.org/en/download) Node.js
-2. Open the `src/gauge` folder in a terminal
+2. Open the `examples/gauge` folder in a terminal
 3. Run `npm i` the first time you build, in order to install dependencies
 4. Run `npm run build` to build into the `PackageSources` folder of the aircraft sample (or `npm run dev` to build into the `Packages` folder of the aircraft and listen to changes in the source).
-5. Make sure the WASM module is included in the `panel` folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) for info on that
+5. Make sure the WASM module is included in the [`panel`](examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel) folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) for info on that
 6. Open the `examples/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build there
 
 ## Building the WASM Module Yourself
