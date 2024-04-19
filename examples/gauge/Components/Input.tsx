@@ -1,10 +1,9 @@
 import { ComponentProps, DisplayComponent, FSComponent, Subscribable, UUID, VNode } from "@microsoft/msfs-sdk"
 
 interface InputProps extends ComponentProps {
-  type: HTMLInputElement["type"]
-  name?: string
   value?: string
   class?: string | Subscribable<string>
+  textarea?: boolean
 }
 
 export class Input extends DisplayComponent<InputProps> {
@@ -23,7 +22,7 @@ export class Input extends DisplayComponent<InputProps> {
   }
 
   private getInputProps() {
-    return { name: this.props.name, value: this.props.value, class: this.props.class }
+    return { value: this.props.value, class: this.props.class }
   }
 
   /**
@@ -46,6 +45,12 @@ export class Input extends DisplayComponent<InputProps> {
   }
 
   render() {
+    if (this.props.textarea)
+      return (
+        <textarea style="width:350px;height:180px;" ref={this.inputRef} {...this.getInputProps()}>
+          {this.props.value}
+        </textarea>
+      )
     return <input ref={this.inputRef} {...this.getInputProps()} />
   }
 }

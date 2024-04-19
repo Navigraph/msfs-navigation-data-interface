@@ -22,8 +22,10 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly qrCodeRef = FSComponent.createRef<HTMLImageElement>()
   private readonly dropdownRef = FSComponent.createRef<Dropdown>()
   private readonly downloadButtonRef = FSComponent.createRef<HTMLButtonElement>()
-  private readonly executeButtonRef = FSComponent.createRef<HTMLButtonElement>()
-  private readonly inputRef = FSComponent.createRef<Input>()
+  private readonly icaoInputRef = FSComponent.createRef<Input>()
+  private readonly executeIcaoButtonRef = FSComponent.createRef<HTMLButtonElement>()
+  private readonly sqlInputRef = FSComponent.createRef<Input>()
+  private readonly executeSqlButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly outputRef = FSComponent.createRef<HTMLPreElement>()
 
   private cancelSource = CancelToken.source()
@@ -78,9 +80,19 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
         <h4 style="text-align: center;">Step 3 - Query the database</h4>
         <div class="horizontal">
           <div class="vertical">
-            <Input ref={this.inputRef} type="text" value="ESSA" class="text-field" />
-            <div ref={this.executeButtonRef} class="button">
+            <Input ref={this.icaoInputRef} value="ESSA" class="text-field" />
+            <div ref={this.executeIcaoButtonRef} class="button">
               Fetch Airport
+            </div>
+            <div style="height:30px;"></div>
+            <Input
+              ref={this.sqlInputRef}
+              textarea
+              value="SELECT airport_name FROM tbl_airports WHERE airport_identifier = 'ESSA'"
+              class="text-field"
+            />
+            <div ref={this.executeSqlButtonRef} class="button">
+              Execute SQL
             </div>
           </div>
           <pre ref={this.outputRef} id="output">
@@ -97,14 +109,25 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     this.loginButtonRef.instance.addEventListener("click", () => this.handleClick())
     this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
 
-    this.executeButtonRef.instance.addEventListener("click", () => {
+    this.executeIcaoButtonRef.instance.addEventListener("click", () => {
       console.time("query")
       this.navigationDataInterface
-        .get_airport(this.inputRef.instance.value)
+        .get_airport(this.icaoInputRef.instance.value)
         .then(airport => {
           console.info(airport)
-
           this.outputRef.instance.textContent = JSON.stringify(airport, null, 2)
+        })
+        .catch(e => console.error(e))
+        .finally(() => console.timeEnd("query"))
+    })
+
+    this.executeSqlButtonRef.instance.addEventListener("click", () => {
+      console.time("query")
+      this.navigationDataInterface
+        .execute_sql(this.sqlInputRef.instance.value, [])
+        .then(result => {
+          console.info(result)
+          this.outputRef.instance.textContent = JSON.stringify(result, null, 2)
         })
         .catch(e => console.error(e))
         .finally(() => console.timeEnd("query"))
