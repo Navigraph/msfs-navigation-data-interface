@@ -9,6 +9,7 @@ import {
   NavigraphNavigationDataInterface,
 } from "@navigraph/msfs-navigation-data-interface"
 import { Dropdown } from "./Dropdown"
+import { Input } from "./Input"
 
 interface InterfaceSampleProps extends ComponentProps {
   bus: EventBus
@@ -22,7 +23,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly dropdownRef = FSComponent.createRef<Dropdown>()
   private readonly downloadButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly executeButtonRef = FSComponent.createRef<HTMLButtonElement>()
-  private readonly inputRef = FSComponent.createRef<HTMLInputElement>()
+  private readonly inputRef = FSComponent.createRef<Input>()
 
   private cancelSource = CancelToken.source()
 
@@ -68,7 +69,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
             <div ref={this.downloadButtonRef} class="button">
               Download
             </div>
-            <input ref={this.inputRef} type="text" id="sql" name="sql" value="ESSA" class="text-field" />
+            <Input ref={this.inputRef} type="text" value="ESSA" class="text-field" />
             <div ref={this.executeButtonRef} class="button">
               Fetch Airport
             </div>
