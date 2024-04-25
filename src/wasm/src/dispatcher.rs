@@ -1,18 +1,14 @@
 use std::{cell::RefCell, error::Error, path::Path, rc::Rc};
 
-use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
+use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::database::Database;
 
 use crate::{
-    consts,
-    download::downloader::{DownloadStatus, NavigationDataDownloader},
-    json_structs::{
-        data::GetActiveDatabasePathData,
+    consts, download::downloader::{DownloadStatus, NavigationDataDownloader}, json_structs::{
         events,
         functions::{CallFunction, FunctionResult, FunctionStatus, FunctionType},
         params,
-    },
-    util::{self, path_exists},
+    }, meta, network_helper::NetworkHelper, util::{self, path_exists}
 };
 
 #[derive(PartialEq, Eq)]
@@ -28,6 +24,7 @@ pub struct Task {
     pub id: String,
     pub data: Option<serde_json::Value>,
     pub status: TaskStatus,
+    pub associated_network_request: Option<NetworkHelper>,
 }
 
 impl Task {
@@ -181,17 +178,15 @@ impl<'a> Dispatcher<'a> {
                     // Now we can download the navigation data
                     self.downloader.download(Rc::clone(task));
                 },
-                FunctionType::GetActiveDatabasePath => Dispatcher::execute_task(task.clone(), |t| {
-                    let data = GetActiveDatabasePathData {
-                        path: self.database.path.clone(),
-                    };
-
-                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(data)?));
-
-                    Ok(())
-                }),
                 FunctionType::SetDownloadOptions => {
                     Dispatcher::execute_task(task.clone(), |t| self.downloader.set_download_options(t))
+                },
+                FunctionType::GetNavigationDataInstallStatus => {
+                    // We can't use the execute_task function here because the download process doesn't finish in the
+                    // function call, which results in slightly "messier" code
+
+                    // We first need to initialize the network request and then wait for the response
+                    meta::start_network_request(Rc::clone(task))
                 },
                 FunctionType::ExecuteSQLQuery => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::ExecuteSQLQueryParams>()?;
@@ -409,6 +404,30 @@ impl<'a> Dispatcher<'a> {
             }
         }
 
+        // Network request tasks
+        for task in queue.iter().filter(|task| task.borrow().status == TaskStatus::InProgress) {
+            let response_state = match task.borrow().associated_network_request {
+                Some(ref request) => request.response_state(),
+                None => continue,
+            };
+            let function_type = task.borrow().function_type;
+            if response_state == NetworkRequestState::DataReady {
+                match function_type {
+                    FunctionType::GetNavigationDataInstallStatus => {
+                        println!("[NAVIGRAPH] Network request completed, getting install status");
+                        meta::get_navigation_data_install_status(Rc::clone(task));
+                        println!("[NAVIGRAPH] Install status task completed");
+                    },
+                    _ => {
+                        // Should not happen for now
+                        println!("[NAVIGRAPH] Network request completed but no handler for this type of request");
+                    },
+                }
+            } else if response_state == NetworkRequestState::Failed {
+                task.borrow_mut().status = TaskStatus::Failure("Network request failed".to_owned());
+            }
+        }
+
         // Process completed tasks (everything should at least be in progress at this point)
         queue.retain(|task| {
             if let TaskStatus::InProgress = task.borrow().status {
@@ -468,6 +487,7 @@ impl<'a> Dispatcher<'a> {
             id: json_result.id,
             data: json_result.data,
             status: TaskStatus::NotStarted,
+            associated_network_request: None,
         })));
 
         Ok(())
