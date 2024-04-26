@@ -25,8 +25,12 @@ pub struct NavigationDataStatus {
     pub status: InstallStatus,
     #[serde(rename = "installedFormat")]
     pub installed_format: Option<String>,
+    #[serde(rename = "installedRevision")]
+    pub installed_revision: Option<String>,
     #[serde(rename = "installedCycle")]
     pub installed_cycle: Option<String>,
+    #[serde(rename = "validityPeriod")]
+    pub validity_period: Option<String>,
     #[serde(rename = "latestCycle")]
     pub latest_cycle: String,
 }
@@ -45,6 +49,8 @@ pub struct InstalledNavigationDataCycleInfo {
     pub revision: String,
     pub name: String,
     pub format: String,
+    #[serde(rename = "validityPeriod")]
+    pub validity_period: String,
 }
 
 pub fn start_network_request(task: Rc<RefCell<Task>>) {
@@ -102,12 +108,16 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
         InstallStatus::None
     };
 
+    println!("opening json");
+
     // Open JSON
     let json_path = match status {
         InstallStatus::Manual => Some(PathBuf::from(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION).join("cycle.json")),
         InstallStatus::Bundled => Some(PathBuf::from(consts::NAVIGATION_DATA_DEFAULT_LOCATION).join("cycle.json")),
         InstallStatus::None => None,
     };
+
+    println!("json_path: {:#?}", json_path);
 
     let installed_cycle_info = match json_path {
         Some(json_path) => {
@@ -138,8 +148,16 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
             Some(installed_cycle_info) => Some(installed_cycle_info.format.clone()),
             None => None,
         },
+        installed_revision: match &installed_cycle_info {
+            Some(installed_cycle_info) => Some(installed_cycle_info.revision.clone()),
+            None => None,
+        },
         installed_cycle: match &installed_cycle_info {
             Some(installed_cycle_info) => Some(installed_cycle_info.cycle.clone()),
+            None => None,
+        },
+        validity_period: match &installed_cycle_info {
+            Some(installed_cycle_info) => Some(installed_cycle_info.validity_period.clone()),
             None => None,
         },
         latest_cycle: response_struct.cycle,
