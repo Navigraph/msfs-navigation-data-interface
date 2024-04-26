@@ -108,16 +108,12 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
         InstallStatus::None
     };
 
-    println!("opening json");
-
     // Open JSON
     let json_path = match status {
         InstallStatus::Manual => Some(PathBuf::from(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION).join("cycle.json")),
         InstallStatus::Bundled => Some(PathBuf::from(consts::NAVIGATION_DATA_DEFAULT_LOCATION).join("cycle.json")),
         InstallStatus::None => None,
     };
-
-    println!("json_path: {:#?}", json_path);
 
     let installed_cycle_info = match json_path {
         Some(json_path) => {
