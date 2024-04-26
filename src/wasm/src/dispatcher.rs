@@ -4,11 +4,16 @@ use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEv
 use navigation_database::database::Database;
 
 use crate::{
-    consts, download::downloader::{DownloadStatus, NavigationDataDownloader}, json_structs::{
+    consts,
+    download::downloader::{DownloadStatus, NavigationDataDownloader},
+    json_structs::{
         events,
         functions::{CallFunction, FunctionResult, FunctionStatus, FunctionType},
         params,
-    }, meta, network_helper::NetworkHelper, util::{self, path_exists}
+    },
+    meta,
+    network_helper::NetworkHelper,
+    util::{self, path_exists},
 };
 
 #[derive(PartialEq, Eq)]
@@ -405,7 +410,10 @@ impl<'a> Dispatcher<'a> {
         }
 
         // Network request tasks
-        for task in queue.iter().filter(|task| task.borrow().status == TaskStatus::InProgress) {
+        for task in queue
+            .iter()
+            .filter(|task| task.borrow().status == TaskStatus::InProgress)
+        {
             let response_state = match task.borrow().associated_network_request {
                 Some(ref request) => request.response_state(),
                 None => continue,
