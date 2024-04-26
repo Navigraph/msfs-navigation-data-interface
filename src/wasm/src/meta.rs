@@ -13,7 +13,7 @@ use crate::{
     util::path_exists,
 };
 
-#[derive(serde::Serialize, Debug)]
+#[derive(serde::Serialize, Clone, Copy, Debug)]
 pub enum InstallStatus {
     Bundled,
     Manual,
@@ -140,7 +140,7 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
         None => None,
     };
 
-    let status = NavigationDataStatus {
+    let navigation_data_status = NavigationDataStatus {
         status,
         installed_format: match &installed_cycle_info {
             Some(installed_cycle_info) => Some(installed_cycle_info.format.clone()),
@@ -166,15 +166,13 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
         latest_cycle: response_struct.cycle,
     };
 
-    let status_as_value = match serde_json::to_value(&status) {
+    let status_as_value = match serde_json::to_value(&navigation_data_status) {
         Ok(status_as_value) => status_as_value,
         Err(e) => {
             task.borrow_mut().status = TaskStatus::Failure(e.to_string());
             return;
         },
     };
-
-    println!("Status: {:#?}", status);
 
     task.borrow_mut().status = TaskStatus::Success(Some(status_as_value));
 }
