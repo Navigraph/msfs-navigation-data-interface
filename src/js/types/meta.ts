@@ -9,6 +9,7 @@ export interface NavigationDataStatus {
   installedFormat: string | null
   installedRegion: string | null
   installedCycle: string | null
+  installedPath: string | null
   validityPeriod: string | null
   lastestCycle: string | null
 }

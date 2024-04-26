@@ -29,6 +29,8 @@ pub struct NavigationDataStatus {
     pub installed_revision: Option<String>,
     #[serde(rename = "installedCycle")]
     pub installed_cycle: Option<String>,
+    #[serde(rename = "installedPath")]
+    pub install_path: Option<String>,
     #[serde(rename = "validityPeriod")]
     pub validity_period: Option<String>,
     #[serde(rename = "latestCycle")]
@@ -151,6 +153,11 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
         installed_cycle: match &installed_cycle_info {
             Some(installed_cycle_info) => Some(installed_cycle_info.cycle.clone()),
             None => None,
+        },
+        install_path: match status {
+            InstallStatus::Manual => Some(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION.to_string()),
+            InstallStatus::Bundled => Some(consts::NAVIGATION_DATA_DEFAULT_LOCATION.to_string()),
+            InstallStatus::None => None,
         },
         validity_period: match &installed_cycle_info {
             Some(installed_cycle_info) => Some(installed_cycle_info.validity_period.clone()),
