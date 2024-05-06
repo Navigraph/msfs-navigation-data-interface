@@ -46,7 +46,7 @@ jobs:
         run: npm ci
 
       - name: Run linting
-        run: npm run lint:js -- -- --max-warnings 0
+        run: npm run lint:js -- --max-warnings 0
 
   build-test:
     name: Build & test 🛠️
