@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs"
 import { argv, env } from "node:process"
 import { WASI } from "wasi"
-import random from "random-bigint"
 import { v4 } from "uuid"
 import { NavigraphNavigationDataInterface } from "../js"
 import { WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
 import "dotenv/config"
+import { random } from "./randomBigint"
 
 enum PanelService {
   POST_QUERY = 1,
@@ -157,6 +157,7 @@ let wasmFunctionTable: WebAssembly.Table // The table of callback functions in t
  * Maps request ids to a tuple of the returned data's pointer, and the data's size
  */
 const promiseResults = new Map<bigint, [number, number]>()
+const failedRequests: bigint[] = [];
 
 wasmInstance = new WebAssembly.Instance(wasmModule, {
   wasi_snapshot_preview1: wasiSystem.wasiImport,
@@ -205,7 +206,7 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
     fsNetworkHttpRequestGet: (urlPointer: number, paramPointer: number, callback: number, ctx: number) => {
       const url = readString(urlPointer)
 
-      const requestId: bigint = random(32) // Setting it to 64 does... strange things
+      const requestId = random(16) // Extra bits get lopped off by WASM, this number works
 
       // Currently the only network request is for the navigation data zip which is downloaded as a blob
       fetch(url)
@@ -222,11 +223,20 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
           func(requestId, 200, ctx)
         })
         .catch(err => {
-          console.error(err)
+          failedRequests.push(requestId);
         })
 
       return requestId
     },
+    fsNetworkHttpRequestGetState: (requestId: bigint) => {
+      if(failedRequests.includes(requestId)) {
+        return 4 // FS_NETWORK_HTTP_REQUEST_STATE_FAILED
+      }
+      if(promiseResults.has(requestId)) {
+        return 3 // FS_NETWORK_HTTP_REQUEST_STATE_DATA_READY
+      }
+      return 2 // FS_NETWORK_HTTP_REQUEST_STATE_WAITING_FOR_DATA
+    }
   },
 }) as WasmInstance
 
