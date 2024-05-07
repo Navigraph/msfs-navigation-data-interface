@@ -345,6 +345,10 @@ export class NavigraphNavigationDataInterface {
    * @returns A promise that resolves when the function returns
    */
   private async callWasmFunction<T = unknown>(name: keyof typeof NavigraphFunction, data: unknown): Promise<T> {
+    if (!this.isInitialized) {
+      throw new Error("Interface is not initialized")
+    }
+
     const id = Utils.generateGUID()
 
     const args = {
