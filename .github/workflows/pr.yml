@@ -10,7 +10,7 @@ name: Label, Build & Lint PR
 
 jobs:
   autolabel:
-    uses: Navigraph/workflows/.github/workflows/autolabel.yml@main
+    uses: ./.github/workflows/autolabel.yml
     secrets: inherit
 
   filter:
@@ -22,7 +22,7 @@ jobs:
       example: ${{ steps.changes.outputs.example }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v3
         id: changes
         with:
           filters: |
