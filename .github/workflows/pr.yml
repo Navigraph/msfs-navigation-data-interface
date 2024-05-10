@@ -22,7 +22,7 @@ jobs:
       example: ${{ steps.changes.outputs.example }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v3
         id: changes
         with:
           filters: |
@@ -46,7 +46,7 @@ jobs:
         run: npm ci
 
       - name: Run linting
-        run: npm run lint:js -- -- --max-warnings 0
+        run: npm run lint:js -- --max-warnings 0
 
   build-test:
     name: Build & test 🛠️

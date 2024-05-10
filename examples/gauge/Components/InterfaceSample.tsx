@@ -1,4 +1,13 @@
-import { ComponentProps, DisplayComponent, EventBus, FSComponent, VNode } from "@microsoft/msfs-sdk"
+import {
+  ComponentProps,
+  DisplayComponent,
+  EventBus,
+  FSComponent,
+  MappedSubject,
+  ObjectSubject,
+  Subject,
+  VNode,
+} from "@microsoft/msfs-sdk"
 import { CancelToken } from "navigraph/auth"
 import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
@@ -8,6 +17,7 @@ import {
   NavigraphEventType,
   NavigraphNavigationDataInterface,
 } from "@navigraph/msfs-navigation-data-interface"
+import { NavigationDataStatus } from "@navigraph/msfs-navigation-data-interface/types/meta"
 import { Dropdown } from "./Dropdown"
 import { Input } from "./Input"
 
@@ -27,6 +37,8 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly sqlInputRef = FSComponent.createRef<Input>()
   private readonly executeSqlButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly outputRef = FSComponent.createRef<HTMLPreElement>()
+
+  private readonly navigationDataStatus = Subject.create<NavigationDataStatus | null>(null)
 
   private cancelSource = CancelToken.source()
 
@@ -57,6 +69,36 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     })
   }
 
+  public renderDatabaseStatus(): VNode | void {
+    return (
+      <>
+        <div
+          class={MappedSubject.create(([status]) => {
+            return status ? "vertical" : "hidden"
+          }, this.navigationDataStatus)}
+        >
+          <div>{this.navigationDataStatus.map(s => `Install method: ${s?.status}`)}</div>
+          <div>
+            {this.navigationDataStatus.map(
+              s => `Installed format: ${s?.installedFormat} revision ${s?.installedRevision}`,
+            )}
+          </div>
+          <div>{this.navigationDataStatus.map(s => `Installed path: ${s?.installedPath}`)}</div>
+          <div>{this.navigationDataStatus.map(s => `Installed cycle: ${s?.installedCycle}`)}</div>
+          <div>{this.navigationDataStatus.map(s => `Latest cycle: ${s?.latestCycle}`)}</div>
+          <div>{this.navigationDataStatus.map(s => `Validity period: ${s?.validityPeriod}`)}</div>
+        </div>
+        <div
+          class={MappedSubject.create(([status]) => {
+            return status ? "hidden" : "visible"
+          }, this.navigationDataStatus)}
+        >
+          Loading status...
+        </div>
+      </>
+    )
+  }
+
   public render(): VNode {
     return (
       <div class="auth-container">
@@ -74,6 +116,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
             <div ref={this.downloadButtonRef} class="button">
               Download
             </div>
+            {this.renderDatabaseStatus()}
           </div>
         </div>
 
@@ -108,6 +151,16 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
     this.loginButtonRef.instance.addEventListener("click", () => this.handleClick())
     this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
+
+    // Populate status when ready
+    this.navigationDataInterface.onReady(() => {
+      this.navigationDataInterface
+        .get_navigation_data_install_status()
+        .then(status => {
+          this.navigationDataStatus.set(status)
+        })
+        .catch(e => console.error(e))
+    })
 
     this.executeIcaoButtonRef.instance.addEventListener("click", () => {
       console.time("query")
@@ -197,6 +250,15 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
       // Download navigation data to work dir
       await this.navigationDataInterface.download_navigation_data(pkg.file.url)
+
+      // Update navigation data status
+      this.navigationDataInterface
+        .get_navigation_data_install_status()
+        .then(status => {
+          this.navigationDataStatus.set(status)
+        })
+        .catch(e => console.error(e))
+
       this.displayMessage("Navigation data downloaded")
     } catch (err) {
       if (err instanceof Error) this.displayError(err.message)

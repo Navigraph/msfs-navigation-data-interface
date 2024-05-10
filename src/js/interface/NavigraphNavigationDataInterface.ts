@@ -18,6 +18,7 @@ import {
   VhfNavaid,
   Waypoint,
 } from "../types"
+import { NavigationDataStatus } from "../types/meta"
 import {
   Callback,
   CommBusMessage,
@@ -76,16 +77,6 @@ export class NavigraphNavigationDataInterface {
   }
 
   /**
-   * Gets the currently active database path
-   *
-   * @returns A promise that resolves with the path of the currently active database
-   */
-
-  public async get_active_database_path(): Promise<string> {
-    return await this.callWasmFunction("GetActiveDatabasePath", {})
-  }
-
-  /**
    * Sets the download options for all future downloads
    *
    * @param batchSize - The number of files to delete or unzip each update (default: 10). This is a performance optimization to avoid blocking the main thread for too long.
@@ -93,6 +84,15 @@ export class NavigraphNavigationDataInterface {
    */
   public async set_download_options(batch_size: number): Promise<void> {
     return await this.callWasmFunction("SetDownloadOptions", batch_size)
+  }
+
+  /**
+   * Gets the installation status of the navigation data
+   *
+   * @returns A promise that resolves with the installation status
+   */
+  public async get_navigation_data_install_status(): Promise<NavigationDataStatus> {
+    return await this.callWasmFunction("GetNavigationDataInstallStatus", {})
   }
 
   /**
@@ -341,6 +341,10 @@ export class NavigraphNavigationDataInterface {
    * @returns A promise that resolves when the function returns
    */
   private async callWasmFunction<T = unknown>(name: keyof typeof NavigraphFunction, data: unknown): Promise<T> {
+    if (!this.isInitialized) {
+      throw new Error("Interface is not initialized")
+    }
+
     const id = Utils.generateGUID()
 
     const args = {

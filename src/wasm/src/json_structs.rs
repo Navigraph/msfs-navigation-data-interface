@@ -6,10 +6,10 @@ pub mod functions {
     pub enum FunctionType {
         /// `DownloadNavigationDataParams`
         DownloadNavigationData,
-        /// no Params
-        GetActiveDatabasePath,
         /// `SetDownloadOptionsParams`
         SetDownloadOptions,
+        /// `GetNavigationDataInstallStatus`
+        GetNavigationDataInstallStatus,
         /// `ExecuteSQLQueryParams`
         ExecuteSQLQuery,
 
@@ -178,12 +178,5 @@ pub mod params {
     #[derive(serde::Deserialize)]
     pub struct GetAtAirportParams {
         pub airport_ident: String,
-    }
-}
-
-pub mod data {
-    #[derive(serde::Serialize)]
-    pub struct GetActiveDatabasePathData {
-        pub path: Option<String>,
     }
 }

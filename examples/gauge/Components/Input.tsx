@@ -47,7 +47,7 @@ export class Input extends DisplayComponent<InputProps> {
   render() {
     if (this.props.textarea)
       return (
-        <textarea style="width:350px;height:180px;" ref={this.inputRef} {...this.getInputProps()}>
+        <textarea style="width:350px;height:100px;" ref={this.inputRef} {...this.getInputProps()}>
           {this.props.value}
         </textarea>
       )
