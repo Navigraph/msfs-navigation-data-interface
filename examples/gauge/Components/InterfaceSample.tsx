@@ -4,22 +4,21 @@ import {
   EventBus,
   FSComponent,
   MappedSubject,
-  ObjectSubject,
   Subject,
   VNode,
 } from "@microsoft/msfs-sdk"
-import { CancelToken } from "navigraph/auth"
-import { packages } from "../Lib/navigraph"
-import { AuthService } from "../Services/AuthService"
-import "./InterfaceSample.css"
 import {
   DownloadProgressPhase,
   NavigraphEventType,
   NavigraphNavigationDataInterface,
 } from "@navigraph/msfs-navigation-data-interface"
 import { NavigationDataStatus } from "@navigraph/msfs-navigation-data-interface/types/meta"
+import { CancelToken } from "navigraph/auth"
+import { packages } from "../Lib/navigraph"
+import { AuthService } from "../Services/AuthService"
 import { Dropdown } from "./Dropdown"
 import { Input } from "./Input"
+import "./InterfaceSample.css"
 
 interface InterfaceSampleProps extends ComponentProps {
   bus: EventBus
@@ -88,13 +87,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
           <div>{this.navigationDataStatus.map(s => `Latest cycle: ${s?.latestCycle}`)}</div>
           <div>{this.navigationDataStatus.map(s => `Validity period: ${s?.validityPeriod}`)}</div>
         </div>
-        <div
-          class={MappedSubject.create(([status]) => {
-            return status ? "hidden" : "visible"
-          }, this.navigationDataStatus)}
-        >
-          Loading status...
-        </div>
+        <div class={this.navigationDataStatus.map(status => (status ? "hidden" : "visible"))}>Loading status...</div>
       </>
     )
   }
@@ -156,9 +149,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     this.navigationDataInterface.onReady(() => {
       this.navigationDataInterface
         .get_navigation_data_install_status()
-        .then(status => {
-          this.navigationDataStatus.set(status)
-        })
+        .then(status => this.navigationDataStatus.set(status))
         .catch(e => console.error(e))
     })
 
@@ -254,9 +245,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       // Update navigation data status
       this.navigationDataInterface
         .get_navigation_data_install_status()
-        .then(status => {
-          this.navigationDataStatus.set(status)
-        })
+        .then(status => this.navigationDataStatus.set(status))
         .catch(e => console.error(e))
 
       this.displayMessage("Navigation data downloaded")
