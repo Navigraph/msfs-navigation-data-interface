@@ -38,9 +38,10 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly sqlInputRef = FSComponent.createRef<Input>()
   private readonly executeSqlButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly outputRef = FSComponent.createRef<HTMLPreElement>()
+  private readonly loadingRef = FSComponent.createRef<HTMLDivElement>()
+  private readonly authContainerRef = FSComponent.createRef<HTMLDivElement>()
 
   private readonly navigationDataStatus = Subject.create<NavigationDataStatus | null>(null)
-  private readonly interfaceInitialized = Subject.create(false)
 
   private cancelSource = CancelToken.source()
 
@@ -50,18 +51,6 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     super(props)
 
     this.navigationDataInterface = new NavigraphNavigationDataInterface()
-
-    // Populate status when ready
-    this.navigationDataInterface.onReady(() => {
-      this.navigationDataInterface
-        .get_navigation_data_install_status()
-        .then(status => {
-          this.navigationDataStatus.set(status)
-        })
-        .catch(e => console.error(e))
-
-      this.interfaceInitialized.set(true)
-    })
 
     this.navigationDataInterface.onEvent(NavigraphEventType.DownloadProgress, data => {
       switch (data.phase) {
@@ -116,11 +105,11 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   public render(): VNode {
     return (
       <>
-        <div class="loading-container" hidden={this.interfaceInitialized}>
+        <div class="loading-container" ref={this.loadingRef}>
           Waiting for navigation data interface to initialize... If building for the first time, this may take a few
           minutes
         </div>
-        <div class="auth-container" hidden={this.interfaceInitialized.map(SubscribableMapFunctions.not())}>
+        <div class="auth-container" ref={this.authContainerRef} style={{ display: "none" }}>
           <div class="horizontal">
             <div class="vertical">
               <h4>Step 1 - Sign in</h4>
@@ -168,6 +157,20 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
   public onAfterRender(node: VNode): void {
     super.onAfterRender(node)
+
+    // Populate status when ready
+    this.navigationDataInterface.onReady(() => {
+      this.navigationDataInterface
+        .get_navigation_data_install_status()
+        .then(status => {
+          this.navigationDataStatus.set(status)
+        })
+        .catch(e => console.error(e))
+
+      // show the auth container
+      this.authContainerRef.instance.style.display = "block"
+      this.loadingRef.instance.style.display = "none"
+    })
 
     this.loginButtonRef.instance.addEventListener("click", () => this.handleClick())
     this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
