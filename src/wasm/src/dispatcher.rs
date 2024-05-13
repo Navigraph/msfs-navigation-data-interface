@@ -11,7 +11,7 @@ use crate::{
         functions::{CallFunction, FunctionResult, FunctionStatus, FunctionType},
         params,
     },
-    meta,
+    meta::{self, InternalState},
     network_helper::NetworkHelper,
     util::{self, path_exists},
 };
@@ -117,23 +117,73 @@ impl<'a> Dispatcher<'a> {
 
     fn load_database(&mut self) {
         println!("[NAVIGRAPH] Loading database");
-        // First check if we have a database in the downloaded location
-        let found_downloaded = self
-            .set_database_if_exists(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION)
-            .is_ok();
 
-        if found_downloaded {
-            println!("[NAVIGRAPH] Loaded database from downloaded location");
-            return;
+        // Are we bundled? None means we haven't installed anything yet
+        let is_bundled = meta::get_internal_state()
+            .map(|internal_state| Some(internal_state.is_bundled))
+            .unwrap_or(None);
+
+        // Get the installed cycle
+        let installed_cycle = match meta::get_installed_cycle_from_json(
+            &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("cycle.json"),
+        ) {
+            Ok(cycle) => Some(cycle.cycle),
+            Err(_) => None,
+        };
+
+        // Get the bundled cycle
+        let bundled_cycle = match meta::get_installed_cycle_from_json(
+            &Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION).join("cycle.json"),
+        ) {
+            Ok(cycle) => Some(cycle.cycle),
+            Err(_) => None,
+        };
+
+        let bundled_updated = if is_bundled.is_some() && is_bundled.unwrap() {
+            // If we are bundled, we need to check if the bundled cycle is newer than the installed cycle
+            if installed_cycle.is_some() && bundled_cycle.is_some() {
+                bundled_cycle.unwrap() > installed_cycle.unwrap()
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        let need_to_copy = is_bundled.is_none();
+
+        // If we are bundled and the installed cycle is older than the bundled cycle, we need to copy the bundled database to the work location. Or if we haven't installed anything yet, we need to copy the bundled database to the work location
+        if bundled_updated || need_to_copy {
+            // we need to copy to the work location
+            match util::copy_files_to_folder(
+                &Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION),
+                &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION),
+            ) {
+                Ok(_) => {
+                    let res = meta::set_internal_state(InternalState { is_bundled: true });
+                    if let Err(e) = res {
+                        println!("[NAVIGRAPH] Failed to set internal state: {}", e);
+                    }
+                },
+                Err(e) => {
+                    println!(
+                        "[NAVIGRAPH] Failed to copy database from default location to work location: {}",
+                        e
+                    );
+                    return;
+                },
+            }
         }
 
-        // If we didn't find a database in the downloaded location, check the default location
-        let found_default = self
-            .set_database_if_exists(consts::NAVIGATION_DATA_DEFAULT_LOCATION)
+        // Finally, set the active database
+        let found_work = self
+            .set_database_if_exists(consts::NAVIGATION_DATA_WORK_LOCATION)
             .is_ok();
 
-        if !found_default {
-            println!("[NAVIGRAPH] No database found in default location, not loading any database");
+        if found_work {
+            println!("[NAVIGRAPH] Loaded database");
+        } else {
+            println!("[NAVIGRAPH] Failed to load database");
         }
     }
 
@@ -146,7 +196,7 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn on_download_finish(&mut self) {
-        match navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION) {
+        match navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_WORK_LOCATION) {
             Ok(path) => {
                 match self.database.set_active_database(path) {
                     Ok(_) => {},
