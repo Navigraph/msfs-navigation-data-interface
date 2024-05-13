@@ -157,7 +157,7 @@ let wasmFunctionTable: WebAssembly.Table // The table of callback functions in t
  * Maps request ids to a tuple of the returned data's pointer, and the data's size
  */
 const promiseResults = new Map<bigint, [number, number]>()
-const failedRequests: bigint[] = [];
+const failedRequests: bigint[] = []
 
 wasmInstance = new WebAssembly.Instance(wasmModule, {
   wasi_snapshot_preview1: wasiSystem.wasiImport,
@@ -223,20 +223,20 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
           func(requestId, 200, ctx)
         })
         .catch(err => {
-          failedRequests.push(requestId);
+          failedRequests.push(requestId)
         })
 
       return requestId
     },
     fsNetworkHttpRequestGetState: (requestId: bigint) => {
-      if(failedRequests.includes(requestId)) {
+      if (failedRequests.includes(requestId)) {
         return 4 // FS_NETWORK_HTTP_REQUEST_STATE_FAILED
       }
-      if(promiseResults.has(requestId)) {
+      if (promiseResults.has(requestId)) {
         return 3 // FS_NETWORK_HTTP_REQUEST_STATE_DATA_READY
       }
       return 2 // FS_NETWORK_HTTP_REQUEST_STATE_WAITING_FOR_DATA
-    }
+    },
   },
 }) as WasmInstance
 
@@ -289,6 +289,15 @@ beforeAll(async () => {
   if (!downloadUrl) {
     throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL`")
   }
+
+  // Utility function to convert onReady to a promise
+  const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
+    return new Promise((resolve, _reject) => {
+      navDataInterface.onReady(() => resolve())
+    })
+  }
+
+  await waitForReady(navigationDataInterface)
 
   await navigationDataInterface.download_navigation_data(downloadUrl)
 }, 30000)
