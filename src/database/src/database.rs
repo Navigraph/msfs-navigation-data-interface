@@ -76,7 +76,7 @@ impl Database {
     pub fn open_connection(&mut self, path: String) -> Result<(), Box<dyn Error>> {
         // We have to open with flags because the SQLITE_OPEN_CREATE flag with the default open causes the file to
         // be overwritten
-        let flags = OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+        let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
         let conn = Connection::open_with_flags(path, flags)?;
         self.database = Some(conn);
 

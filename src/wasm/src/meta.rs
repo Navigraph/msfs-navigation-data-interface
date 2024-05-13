@@ -1,5 +1,6 @@
 use std::{
     cell::RefCell,
+    error::Error,
     path::{Path, PathBuf},
     rc::Rc,
 };
@@ -13,7 +14,18 @@ use crate::{
     util::path_exists,
 };
 
-#[derive(serde::Serialize, Clone, Copy, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct InternalState {
+    pub is_bundled: bool,
+}
+
+impl Default for InternalState {
+    fn default() -> Self {
+        Self { is_bundled: false }
+    }
+}
+
+#[derive(serde::Serialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InstallStatus {
     Bundled,
     Manual,
@@ -55,6 +67,26 @@ pub struct InstalledNavigationDataCycleInfo {
     pub validity_period: String,
 }
 
+pub fn get_internal_state() -> Result<InternalState, Box<dyn Error>> {
+    let config_path = Path::new(consts::NAVIGATION_DATA_INTERNAL_CONFIG_LOCATION);
+    if !path_exists(&config_path) {
+        return Err("Internal config file does not exist")?;
+    }
+
+    let config_file = std::fs::File::open(config_path)?;
+    let internal_state: InternalState = serde_json::from_reader(config_file)?;
+
+    Ok(internal_state)
+}
+
+pub fn set_internal_state(internal_state: InternalState) -> Result<(), Box<dyn Error>> {
+    let config_path = Path::new(consts::NAVIGATION_DATA_INTERNAL_CONFIG_LOCATION);
+    let config_file = std::fs::File::create(config_path)?;
+    serde_json::to_writer(config_file, &internal_state)?;
+
+    Ok(())
+}
+
 pub fn start_network_request(task: Rc<RefCell<Task>>) {
     let request = NetworkHelper::make_request("https://navdata.api.navigraph.com/info", Method::Get, None, None);
     let request = match request {
@@ -65,6 +97,13 @@ pub fn start_network_request(task: Rc<RefCell<Task>>) {
         },
     };
     task.borrow_mut().associated_network_request = Some(request);
+}
+
+pub fn get_installed_cycle_from_json(path: &Path) -> Result<InstalledNavigationDataCycleInfo, Box<dyn Error>> {
+    let json_file = std::fs::File::open(path)?;
+    let installed_cycle_info: InstalledNavigationDataCycleInfo = serde_json::from_reader(json_file)?;
+
+    Ok(installed_cycle_info)
 }
 
 pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
@@ -98,23 +137,26 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
     };
 
     // figure out install status
-    let found_downloaded = path_exists(Path::new(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION));
+    let found_downloaded = path_exists(Path::new(consts::NAVIGATION_DATA_WORK_LOCATION));
 
-    let found_bundled = path_exists(Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION));
+    let found_bundled = get_internal_state()
+        .map(|internal_state| internal_state.is_bundled)
+        .unwrap_or(false);
 
-    let status = if found_downloaded {
-        InstallStatus::Manual
-    } else if found_bundled {
+    // Check bundled first, as downloaded and bundled are both possible
+    let status = if found_bundled {
         InstallStatus::Bundled
+    } else if found_downloaded {
+        InstallStatus::Manual
     } else {
         InstallStatus::None
     };
 
     // Open JSON
-    let json_path = match status {
-        InstallStatus::Manual => Some(PathBuf::from(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION).join("cycle.json")),
-        InstallStatus::Bundled => Some(PathBuf::from(consts::NAVIGATION_DATA_DEFAULT_LOCATION).join("cycle.json")),
-        InstallStatus::None => None,
+    let json_path = if status != InstallStatus::None {
+        Some(PathBuf::from(consts::NAVIGATION_DATA_WORK_LOCATION).join("cycle.json"))
+    } else {
+        None
     };
 
     let installed_cycle_info = match json_path {
@@ -154,10 +196,10 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
             Some(installed_cycle_info) => Some(installed_cycle_info.cycle.clone()),
             None => None,
         },
-        install_path: match status {
-            InstallStatus::Manual => Some(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION.to_string()),
-            InstallStatus::Bundled => Some(consts::NAVIGATION_DATA_DEFAULT_LOCATION.to_string()),
-            InstallStatus::None => None,
+        install_path: if status == InstallStatus::Manual {
+            Some(consts::NAVIGATION_DATA_WORK_LOCATION.to_string())
+        } else {
+            None
         },
         validity_period: match &installed_cycle_info {
             Some(installed_cycle_info) => Some(installed_cycle_info.validity_period.clone()),

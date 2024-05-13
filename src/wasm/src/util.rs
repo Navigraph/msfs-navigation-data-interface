@@ -49,6 +49,34 @@ pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::
     Ok(())
 }
 
+pub fn copy_files_to_folder(from: &Path, to: &Path) -> io::Result<()> {
+    // Make sure we are copying a directory (and in turn that it exists)
+    if get_path_type(from) != PathType::Directory {
+        return Ok(());
+    }
+    // Let's clear the directory we are copying to
+    delete_folder_recursively(to, None)?;
+    // Create the directory we are copying to
+    fs::create_dir(to)?;
+    // Collect the entries that we will copy
+    let entries = fs::read_dir(from)?.collect::<Result<Vec<_>, _>>()?;
+    // Copy the entries
+    for entry in entries {
+        let path = entry.path();
+        let path_type = get_path_type(&path);
+
+        if path_type == PathType::Directory {
+            let new_dir = to.join(path.file_name().unwrap());
+            fs::create_dir(&new_dir)?;
+            copy_files_to_folder(&path, &new_dir)?;
+        } else if path_type == PathType::File {
+            fs::copy(&path, to.join(path.file_name().unwrap()))?;
+        }
+    }
+
+    Ok(())
+}
+
 pub fn trim_null_terminator(s: &str) -> &str {
     s.trim_end_matches(char::from(0))
 }

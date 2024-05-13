@@ -5,6 +5,7 @@ import {
   FSComponent,
   MappedSubject,
   Subject,
+  SubscribableMapFunctions,
   VNode,
 } from "@microsoft/msfs-sdk"
 import {
@@ -36,6 +37,8 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly sqlInputRef = FSComponent.createRef<Input>()
   private readonly executeSqlButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly outputRef = FSComponent.createRef<HTMLPreElement>()
+  private readonly loadingRef = FSComponent.createRef<HTMLDivElement>()
+  private readonly authContainerRef = FSComponent.createRef<HTMLDivElement>()
 
   private readonly navigationDataStatus = Subject.create<NavigationDataStatus | null>(null)
 
@@ -94,56 +97,59 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
   public render(): VNode {
     return (
-      <div class="auth-container">
-        <div class="horizontal">
-          <div class="vertical">
-            <h4>Step 1 - Sign in</h4>
-            <div ref={this.textRef}>Loading</div>
-            <div ref={this.loginButtonRef} class="button" />
-            <div ref={this.navigationDataTextRef} />
-            <img ref={this.qrCodeRef} class="qr-code" />
-          </div>
-          <div class="vertical">
-            <h4>Step 2 - Select Database</h4>
-            <Dropdown ref={this.dropdownRef} />
-            <div ref={this.downloadButtonRef} class="button">
-              Download
-            </div>
-            {this.renderDatabaseStatus()}
-          </div>
+      <>
+        <div class="loading-container" ref={this.loadingRef}>
+          Waiting for navigation data interface to initialize... If building for the first time, this may take a few
+          minutes
         </div>
+        <div class="auth-container" ref={this.authContainerRef} style={{ display: "none" }}>
+          <div class="horizontal">
+            <div class="vertical">
+              <h4>Step 1 - Sign in</h4>
+              <div ref={this.textRef}>Loading</div>
+              <div ref={this.loginButtonRef} class="button" />
+              <div ref={this.navigationDataTextRef} />
+              <img ref={this.qrCodeRef} class="qr-code" />
+            </div>
+            <div class="vertical">
+              <h4>Step 2 - Select Database</h4>
+              <Dropdown ref={this.dropdownRef} />
+              <div ref={this.downloadButtonRef} class="button">
+                Download
+              </div>
+              {this.renderDatabaseStatus()}
+            </div>
+          </div>
 
-        <h4 style="text-align: center;">Step 3 - Query the database</h4>
-        <div class="horizontal">
-          <div class="vertical">
-            <Input ref={this.icaoInputRef} value="ESSA" class="text-field" />
-            <div ref={this.executeIcaoButtonRef} class="button">
-              Fetch Airport
+          <h4 style="text-align: center;">Step 3 - Query the database</h4>
+          <div class="horizontal">
+            <div class="vertical">
+              <Input ref={this.icaoInputRef} value="ESSA" class="text-field" />
+              <div ref={this.executeIcaoButtonRef} class="button">
+                Fetch Airport
+              </div>
+              <div style="height:30px;"></div>
+              <Input
+                ref={this.sqlInputRef}
+                textarea
+                value="SELECT airport_name FROM tbl_airports WHERE airport_identifier = 'ESSA'"
+                class="text-field"
+              />
+              <div ref={this.executeSqlButtonRef} class="button">
+                Execute SQL
+              </div>
             </div>
-            <div style="height:30px;"></div>
-            <Input
-              ref={this.sqlInputRef}
-              textarea
-              value="SELECT airport_name FROM tbl_airports WHERE airport_identifier = 'ESSA'"
-              class="text-field"
-            />
-            <div ref={this.executeSqlButtonRef} class="button">
-              Execute SQL
-            </div>
+            <pre ref={this.outputRef} id="output">
+              The output of the query will show up here
+            </pre>
           </div>
-          <pre ref={this.outputRef} id="output">
-            The output of the query will show up here
-          </pre>
         </div>
-      </div>
+      </>
     )
   }
 
   public onAfterRender(node: VNode): void {
     super.onAfterRender(node)
-
-    this.loginButtonRef.instance.addEventListener("click", () => this.handleClick())
-    this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
 
     // Populate status when ready
     this.navigationDataInterface.onReady(() => {
@@ -151,7 +157,14 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
         .get_navigation_data_install_status()
         .then(status => this.navigationDataStatus.set(status))
         .catch(e => console.error(e))
+
+      // show the auth container
+      this.authContainerRef.instance.style.display = "block"
+      this.loadingRef.instance.style.display = "none"
     })
+
+    this.loginButtonRef.instance.addEventListener("click", () => this.handleClick())
+    this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
 
     this.executeIcaoButtonRef.instance.addEventListener("click", () => {
       console.time("query")
