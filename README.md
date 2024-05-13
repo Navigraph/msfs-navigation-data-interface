@@ -36,7 +36,7 @@ If you bundle outdated navigation data in your aircraft and you want this module
 
 ## Where is the Navigation Data Stored?
 
-The default location for navigation data is `work/NavigationData`. If you have bundled navigation data, its located in the `NavigationData` folder in the root of your project.
+The default location for navigation data is `work/NavigationData`. If you have bundled navigation data, its located in the `NavigationData` folder in the root of your project. (although it gets copied into the `work` directory at runtime)
 
 ## Building the Sample Aircraft
 

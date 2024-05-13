@@ -1,4 +1,4 @@
-use std::{cell::RefCell, error::Error, path::Path, rc::Rc};
+use std::{cell::RefCell, path::Path, rc::Rc};
 
 use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::database::Database;
@@ -114,16 +114,17 @@ impl<'a> Dispatcher<'a> {
             self.downloader.acknowledge_download();
         }
     }
-
     fn load_database(&mut self) {
         println!("[NAVIGRAPH] Loading database");
+
+        // Go through logic to determine which database to load
 
         // Are we bundled? None means we haven't installed anything yet
         let is_bundled = meta::get_internal_state()
             .map(|internal_state| Some(internal_state.is_bundled))
             .unwrap_or(None);
 
-        // Get the installed cycle
+        // Get the installed cycle (if it exists)
         let installed_cycle = match meta::get_installed_cycle_from_json(
             &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("cycle.json"),
         ) {
@@ -131,7 +132,7 @@ impl<'a> Dispatcher<'a> {
             Err(_) => None,
         };
 
-        // Get the bundled cycle
+        // Get the bundled cycle (if it exists)
         let bundled_cycle = match meta::get_installed_cycle_from_json(
             &Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION).join("cycle.json"),
         ) {
@@ -139,8 +140,8 @@ impl<'a> Dispatcher<'a> {
             Err(_) => None,
         };
 
+        // Determine if we are bundled ONLY and the bundled cycle is newer than the installed (old bundled) cycle
         let bundled_updated = if is_bundled.is_some() && is_bundled.unwrap() {
-            // If we are bundled, we need to check if the bundled cycle is newer than the installed cycle
             if installed_cycle.is_some() && bundled_cycle.is_some() {
                 bundled_cycle.unwrap() > installed_cycle.unwrap()
             } else {
@@ -150,16 +151,17 @@ impl<'a> Dispatcher<'a> {
             false
         };
 
+        // If there is no addon config, we can assume that we need to copy the bundled database to the work location
         let need_to_copy = is_bundled.is_none();
 
         // If we are bundled and the installed cycle is older than the bundled cycle, we need to copy the bundled database to the work location. Or if we haven't installed anything yet, we need to copy the bundled database to the work location
         if bundled_updated || need_to_copy {
-            // we need to copy to the work location
             match util::copy_files_to_folder(
                 &Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION),
                 &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION),
             ) {
                 Ok(_) => {
+                    // Set the internal state to bundled
                     let res = meta::set_internal_state(InternalState { is_bundled: true });
                     if let Err(e) = res {
                         println!("[NAVIGRAPH] Failed to set internal state: {}", e);
@@ -176,22 +178,17 @@ impl<'a> Dispatcher<'a> {
         }
 
         // Finally, set the active database
-        let found_work = self
-            .set_database_if_exists(consts::NAVIGATION_DATA_WORK_LOCATION)
-            .is_ok();
-
-        if found_work {
-            println!("[NAVIGRAPH] Loaded database");
+        if path_exists(&Path::new(consts::NAVIGATION_DATA_WORK_LOCATION)) {
+            match self.database.set_active_database(consts::NAVIGATION_DATA_WORK_LOCATION.to_owned()) {
+                Ok(_) => {
+                    println!("[NAVIGRAPH] Loaded database");
+                },
+                Err(e) => {
+                    println!("[NAVIGRAPH] Failed to load database: {}", e);
+                },
+            }
         } else {
-            println!("[NAVIGRAPH] Failed to load database");
-        }
-    }
-
-    fn set_database_if_exists(&mut self, path: &str) -> Result<(), Box<dyn Error>> {
-        if path_exists(&Path::new(path)) {
-            self.database.set_active_database(path.to_owned())
-        } else {
-            Err("Path does not exist".into())
+            println!("[NAVIGRAPH] Failed to load database: there is no installed database");
         }
     }
 
