@@ -5,7 +5,6 @@ import {
   FSComponent,
   MappedSubject,
   Subject,
-  SubscribableMapFunctions,
   VNode,
 } from "@microsoft/msfs-sdk"
 import {
