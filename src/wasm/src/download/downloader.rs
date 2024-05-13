@@ -7,6 +7,7 @@ use crate::{
     dispatcher::{Dispatcher, Task, TaskStatus},
     download::zip_handler::{BatchReturn, ZipFileHandler},
     json_structs::{events, params},
+    meta::{self, InternalState},
 };
 
 pub struct DownloadOptions {
@@ -63,6 +64,11 @@ impl NavigationDataDownloader {
                         borrowed_task.status = TaskStatus::Success(None);
                     }
                     self.download_status.replace(DownloadStatus::Downloaded);
+                    // Update the internal state
+                    let res = meta::set_internal_state(InternalState { is_bundled: false });
+                    if let Err(e) = res {
+                        println!("[NAVIGRAPH] Failed to set internal state: {}", e);
+                    }
                 },
                 Ok(BatchReturn::MoreFilesToDelete) => {
                     self.download_status.replace(DownloadStatus::CleaningDestination);
@@ -181,7 +187,7 @@ impl NavigationDataDownloader {
             return;
         }
 
-        let path = PathBuf::from(consts::NAVIGATION_DATA_DOWNLOADED_LOCATION);
+        let path = PathBuf::from(consts::NAVIGATION_DATA_WORK_LOCATION);
 
         // Check the data from the request
         let data = request.data();
