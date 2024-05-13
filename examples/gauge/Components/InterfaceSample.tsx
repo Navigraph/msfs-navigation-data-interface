@@ -123,7 +123,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
           <h4 style="text-align: center;">Step 3 - Query the database</h4>
           <div class="horizontal">
             <div class="vertical">
-              <Input ref={this.icaoInputRef} value="ESSA" class="text-field" />
+              <Input ref={this.icaoInputRef} value="TNCM" class="text-field" />
               <div ref={this.executeIcaoButtonRef} class="button">
                 Fetch Airport
               </div>
@@ -131,7 +131,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
               <Input
                 ref={this.sqlInputRef}
                 textarea
-                value="SELECT airport_name FROM tbl_airports WHERE airport_identifier = 'ESSA'"
+                value="SELECT airport_name FROM tbl_airports WHERE airport_identifier = 'TNCM'"
                 class="text-field"
               />
               <div ref={this.executeSqlButtonRef} class="button">
