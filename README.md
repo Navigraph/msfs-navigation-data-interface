@@ -7,7 +7,7 @@ The Navigraph Navigation Data Interface enables developers to download and integ
 - Navigraph DFD Format: Leverage specialized support for Navigraph's DFD format, based on SQLite, which includes an SQL interface on the commbus for efficient data handling.
 - Javascript and WASM support: The navdata interface is accessible from both Javascript (Coherent) and WASM, providing flexibility for developers.
 - Supports updating of custom data formats.
-- Xbox compability: Works on PC and Xbox.
+- Xbox compatibility: Works on PC and Xbox.
 - Persistance: All data is persisted in the `work` folder of the aircraft.
 
 ## Repository Structure
