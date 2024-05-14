@@ -4,7 +4,7 @@ The Navigraph Navigation Data Interface enables developers to download and integ
 
 
 ## Key Features
-- Navigraph DFD Format: Leverage specialized support for Navigraph's DFD format, based on SQLite, which includes an SQL interface on the commbusfor efficient data handling.
+- Navigraph DFD Format: Leverage specialized support for Navigraph's DFD format, based on SQLite, which includes an SQL interface on the commbus for efficient data handling.
 - Javascript and WASM support: The navdata interface is accessible from both Javascript (Coherent) and WASM, providing flexibility for developers.
 - Supports updating of custom data formats.
 - Xbox compability: Works on PC and Xbox.
