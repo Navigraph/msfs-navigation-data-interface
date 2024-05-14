@@ -7,9 +7,9 @@ export enum InstallStatus {
 export interface NavigationDataStatus {
   status: InstallStatus
   installedFormat: string | null
-  installedRegion: string | null
+  installedRevision: string | null
   installedCycle: string | null
   installedPath: string | null
   validityPeriod: string | null
-  lastestCycle: string | null
+  latestCycle: string | null
 }
