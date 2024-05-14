@@ -1,6 +1,14 @@
-# Navigraph Navigation Data Interface in MSFS
+# Navigraph Navigation Data Interface for MSFS
 
-This is a barebones implementation to be able to download up-to-date Navigraph navigation data into MSFS (more specifically into the `work` folder of the aircraft).
+The Navigraph Navigation Data Interface enables developers to download and integrate navigation data from Navigraph directly into add-on aircraft in MSFS.
+
+
+## Key Features
+- Navigraph DFD Format: Leverage specialized support for Navigraph's DFD format, based on SQLite, which includes an SQL interface on the commbus for efficient data handling.
+- Javascript and WASM support: The navdata interface is accessible from both Javascript (Coherent) and WASM, providing flexibility for developers.
+- Supports updating of custom data formats.
+- Xbox compatibility: Works on PC and Xbox.
+- Persistence: All data is persisted in the `work` folder of the aircraft.
 
 ## Repository Structure
 
@@ -42,12 +50,15 @@ The default location for navigation data is `work/NavigationData`. If you have b
 
 Before building, make sure you have properly created and set an `.env` file in `examples/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials
 
-1. [Download](https://nodejs.org/en/download) Node.js
-2. Open the `examples/gauge` folder in a terminal
+1. [Download](https://nodejs.org/en/download) and install Node.js
+2. Open the `msfs-navigation-data-interface` folder in a terminal
 3. Run `npm i` the first time you build, in order to install dependencies
-4. Run `npm run build` to build into the `PackageSources` folder of the aircraft sample (or `npm run dev` to build into the `Packages` folder of the aircraft and listen to changes in the source).
-5. Make sure the WASM module is included in the [`panel`](examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel) folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) for info on that
-6. Open the `examples/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build there
+4. Change directory to `src/js` using `cd src/js`
+5. Run `npm run build` to build the interface.
+6. Change directory to `examples/gauge` using `cd ../../examples/gauge/`
+7. Run `npm run build` to build into the `PackageSources` folder of the aircraft sample (or `npm run dev` to build into the `Packages` folder of the aircraft and listen to changes in the source).
+8. Make sure the WASM module is included in the [`panel`](examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel) folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) for info on that
+9. Open the `examples/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build there
 
 ## Building the WASM Module Yourself
 
