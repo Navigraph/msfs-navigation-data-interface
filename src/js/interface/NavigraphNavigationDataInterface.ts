@@ -18,6 +18,7 @@ import {
   VhfNavaid,
   Waypoint,
 } from "../types"
+import { NavigationDataStatus } from "../types/meta"
 import {
   Callback,
   CommBusMessage,
@@ -69,11 +70,10 @@ export class NavigraphNavigationDataInterface {
    * Downloads the navigation data from the given URL to the given path
    *
    * @param url - A valid signed URL to download the navigation data from
-   * @param path - The path to download the navigation data to
    * @returns A promise that resolves when the download is complete
    */
-  public async download_navigation_data(url: string, path: string): Promise<void> {
-    return await this.callWasmFunction("DownloadNavigationData", { url, path })
+  public async download_navigation_data(url: string): Promise<void> {
+    return await this.callWasmFunction("DownloadNavigationData", { url })
   }
 
   /**
@@ -87,16 +87,12 @@ export class NavigraphNavigationDataInterface {
   }
 
   /**
-   * Sets the active DFD database to the one at the given path
+   * Gets the installation status of the navigation data
    *
-   * @remarks
-   * The path must be a valid path to a folder that contains a DFD file.
-   *
-   * @param path - The path to the folder that contains the DFD file
-   * @returns A promise that resolves when the function is complete
+   * @returns A promise that resolves with the installation status
    */
-  public async set_active_database(path: string): Promise<void> {
-    return await this.callWasmFunction("SetActiveDatabase", { path })
+  public async get_navigation_data_install_status(): Promise<NavigationDataStatus> {
+    return await this.callWasmFunction("GetNavigationDataInstallStatus", {})
   }
 
   /**

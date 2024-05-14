@@ -1,16 +1,19 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, path::Path, rc::Rc};
 
-use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
+use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::database::Database;
 
 use crate::{
-    download::downloader::NavigationDataDownloader,
+    consts,
+    download::downloader::{DownloadStatus, NavigationDataDownloader},
     json_structs::{
         events,
         functions::{CallFunction, FunctionResult, FunctionStatus, FunctionType},
         params,
     },
-    util,
+    meta::{self, InternalState},
+    network_helper::NetworkHelper,
+    util::{self, path_exists},
 };
 
 #[derive(PartialEq, Eq)]
@@ -26,6 +29,7 @@ pub struct Task {
     pub id: String,
     pub data: Option<serde_json::Value>,
     pub status: TaskStatus,
+    pub associated_network_request: Option<NetworkHelper>,
 }
 
 impl Task {
@@ -76,20 +80,19 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn handle_initialized(&mut self) {
-        {
-            // We need to clone twice because we need to move the queue into the closure and then clone it again
-            // whenever it gets called
-            let captured_queue = Rc::clone(&self.queue);
-            self.commbus
-                .register("NAVIGRAPH_CallFunction", move |args| {
-                    // TODO: maybe send error back to sim?
-                    match Dispatcher::add_to_queue(Rc::clone(&captured_queue), args) {
-                        Ok(_) => (),
-                        Err(e) => println!("[NAVIGRAPH] Failed to add to queue: {}", e),
-                    }
-                })
-                .expect("Failed to register NAVIGRAPH_CallFunction");
-        }
+        self.load_database();
+        // We need to clone twice because we need to move the queue into the closure and then clone it again
+        // whenever it gets called
+        let captured_queue = Rc::clone(&self.queue);
+        self.commbus
+            .register("NAVIGRAPH_CallFunction", move |args| {
+                // TODO: maybe send error back to sim?
+                match Dispatcher::add_to_queue(Rc::clone(&captured_queue), args) {
+                    Ok(_) => (),
+                    Err(e) => println!("[NAVIGRAPH] Failed to add to queue: {}", e),
+                }
+            })
+            .expect("Failed to register NAVIGRAPH_CallFunction");
     }
 
     fn handle_update(&mut self, data: &sGaugeDrawData) {
@@ -104,6 +107,103 @@ impl<'a> Dispatcher<'a> {
 
         self.process_queue();
         self.downloader.on_update();
+
+        // Because the download process doesn't finish in the function call, we need to check if the download is finished to call the on_download_finish function
+        if *self.downloader.download_status.borrow() == DownloadStatus::Downloaded {
+            self.on_download_finish();
+            self.downloader.acknowledge_download();
+        }
+    }
+    fn load_database(&mut self) {
+        println!("[NAVIGRAPH] Loading database");
+
+        // Go through logic to determine which database to load
+
+        // Are we bundled? None means we haven't installed anything yet
+        let is_bundled = meta::get_internal_state()
+            .map(|internal_state| Some(internal_state.is_bundled))
+            .unwrap_or(None);
+
+        // Get the installed cycle (if it exists)
+        let installed_cycle = match meta::get_installed_cycle_from_json(
+            &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("cycle.json"),
+        ) {
+            Ok(cycle) => Some(cycle.cycle),
+            Err(_) => None,
+        };
+
+        // Get the bundled cycle (if it exists)
+        let bundled_cycle = match meta::get_installed_cycle_from_json(
+            &Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION).join("cycle.json"),
+        ) {
+            Ok(cycle) => Some(cycle.cycle),
+            Err(_) => None,
+        };
+
+        // Determine if we are bundled ONLY and the bundled cycle is newer than the installed (old bundled) cycle
+        let bundled_updated = if is_bundled.is_some() && is_bundled.unwrap() {
+            if installed_cycle.is_some() && bundled_cycle.is_some() {
+                bundled_cycle.unwrap() > installed_cycle.unwrap()
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+
+        // If there is no addon config, we can assume that we need to copy the bundled database to the work location
+        let need_to_copy = is_bundled.is_none();
+
+        // If we are bundled and the installed cycle is older than the bundled cycle, we need to copy the bundled database to the work location. Or if we haven't installed anything yet, we need to copy the bundled database to the work location
+        if bundled_updated || need_to_copy {
+            match util::copy_files_to_folder(
+                &Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION),
+                &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION),
+            ) {
+                Ok(_) => {
+                    // Set the internal state to bundled
+                    let res = meta::set_internal_state(InternalState { is_bundled: true });
+                    if let Err(e) = res {
+                        println!("[NAVIGRAPH] Failed to set internal state: {}", e);
+                    }
+                },
+                Err(e) => {
+                    println!(
+                        "[NAVIGRAPH] Failed to copy database from default location to work location: {}",
+                        e
+                    );
+                    return;
+                },
+            }
+        }
+
+        // Finally, set the active database
+        if path_exists(&Path::new(consts::NAVIGATION_DATA_WORK_LOCATION)) {
+            match self.database.set_active_database(consts::NAVIGATION_DATA_WORK_LOCATION.to_owned()) {
+                Ok(_) => {
+                    println!("[NAVIGRAPH] Loaded database");
+                },
+                Err(e) => {
+                    println!("[NAVIGRAPH] Failed to load database: {}", e);
+                },
+            }
+        } else {
+            println!("[NAVIGRAPH] Failed to load database: there is no installed database");
+        }
+    }
+
+    fn on_download_finish(&mut self) {
+        match navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_WORK_LOCATION) {
+            Ok(path) => {
+                match self.database.set_active_database(path) {
+                    Ok(_) => {},
+                    Err(e) => {
+                        println!("[NAVIGRAPH] Failed to set active database: {}", e);
+                    },
+                };
+            },
+            Err(_) => {},
+        }
     }
 
     fn process_queue(&mut self) {
@@ -128,19 +228,18 @@ impl<'a> Dispatcher<'a> {
                     self.database.close_connection();
 
                     // Now we can download the navigation data
-                    self.downloader.download(Rc::clone(task))
+                    self.downloader.download(Rc::clone(task));
                 },
                 FunctionType::SetDownloadOptions => {
                     Dispatcher::execute_task(task.clone(), |t| self.downloader.set_download_options(t))
                 },
-                FunctionType::SetActiveDatabase => Dispatcher::execute_task(task.clone(), |t| {
-                    let params = t.borrow().parse_data_as::<params::SetActiveDatabaseParams>()?;
-                    self.database.set_active_database(params.path)?;
+                FunctionType::GetNavigationDataInstallStatus => {
+                    // We can't use the execute_task function here because the download process doesn't finish in the
+                    // function call, which results in slightly "messier" code
 
-                    t.borrow_mut().status = TaskStatus::Success(None);
-
-                    Ok(())
-                }),
+                    // We first need to initialize the network request and then wait for the response
+                    meta::start_network_request(Rc::clone(task))
+                },
                 FunctionType::ExecuteSQLQuery => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::ExecuteSQLQueryParams>()?;
                     let data = self.database.execute_sql_query(params.sql, params.params)?;
@@ -357,6 +456,33 @@ impl<'a> Dispatcher<'a> {
             }
         }
 
+        // Network request tasks
+        for task in queue
+            .iter()
+            .filter(|task| task.borrow().status == TaskStatus::InProgress)
+        {
+            let response_state = match task.borrow().associated_network_request {
+                Some(ref request) => request.response_state(),
+                None => continue,
+            };
+            let function_type = task.borrow().function_type;
+            if response_state == NetworkRequestState::DataReady {
+                match function_type {
+                    FunctionType::GetNavigationDataInstallStatus => {
+                        println!("[NAVIGRAPH] Network request completed, getting install status");
+                        meta::get_navigation_data_install_status(Rc::clone(task));
+                        println!("[NAVIGRAPH] Install status task completed");
+                    },
+                    _ => {
+                        // Should not happen for now
+                        println!("[NAVIGRAPH] Network request completed but no handler for this type of request");
+                    },
+                }
+            } else if response_state == NetworkRequestState::Failed {
+                task.borrow_mut().status = TaskStatus::Failure("Network request failed".to_owned());
+            }
+        }
+
         // Process completed tasks (everything should at least be in progress at this point)
         queue.retain(|task| {
             if let TaskStatus::InProgress = task.borrow().status {
@@ -416,6 +542,7 @@ impl<'a> Dispatcher<'a> {
             id: json_result.id,
             data: json_result.data,
             status: TaskStatus::NotStarted,
+            associated_network_request: None,
         })));
 
         Ok(())

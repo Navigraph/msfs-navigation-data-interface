@@ -3,9 +3,11 @@ use std::{cell::RefCell, io::Cursor, path::PathBuf, rc::Rc};
 use msfs::network::*;
 
 use crate::{
+    consts,
     dispatcher::{Dispatcher, Task, TaskStatus},
     download::zip_handler::{BatchReturn, ZipFileHandler},
     json_structs::{events, params},
+    meta::{self, InternalState},
 };
 
 pub struct DownloadOptions {
@@ -18,12 +20,13 @@ pub enum DownloadStatus {
     Downloading,
     CleaningDestination,
     Extracting,
+    Downloaded,
     Failed(String),
 }
 
 pub struct NavigationDataDownloader {
     zip_handler: RefCell<Option<ZipFileHandler<Cursor<Vec<u8>>>>>,
-    download_status: RefCell<DownloadStatus>,
+    pub download_status: RefCell<DownloadStatus>,
     options: RefCell<DownloadOptions>,
     task: RefCell<Option<Rc<RefCell<Task>>>>,
 }
@@ -60,8 +63,12 @@ impl NavigationDataDownloader {
                         let mut borrowed_task = borrowed_task.as_ref().unwrap().borrow_mut();
                         borrowed_task.status = TaskStatus::Success(None);
                     }
-
-                    self.reset_download();
+                    self.download_status.replace(DownloadStatus::Downloaded);
+                    // Update the internal state
+                    let res = meta::set_internal_state(InternalState { is_bundled: false });
+                    if let Err(e) = res {
+                        println!("[NAVIGRAPH] Failed to set internal state: {}", e);
+                    }
                 },
                 Ok(BatchReturn::MoreFilesToDelete) => {
                     self.download_status.replace(DownloadStatus::CleaningDestination);
@@ -133,7 +140,7 @@ impl NavigationDataDownloader {
         match NetworkRequestBuilder::new(&params.url)
             .unwrap()
             .with_callback(move |network_request, status_code| {
-                captured_self.request_finished_callback(network_request, status_code, params.path)
+                captured_self.request_finished_callback(network_request, status_code)
             })
             .get()
         {
@@ -170,7 +177,7 @@ impl NavigationDataDownloader {
         Dispatcher::send_event(events::EventType::DownloadProgress, Some(serialized_data));
     }
 
-    fn request_finished_callback(&self, request: NetworkRequest, status_code: i32, folder: String) {
+    fn request_finished_callback(&self, request: NetworkRequest, status_code: i32) {
         // Fail if the status code is not 200
         if status_code != 200 {
             self.download_status.replace(DownloadStatus::Failed(format!(
@@ -180,7 +187,7 @@ impl NavigationDataDownloader {
             return;
         }
 
-        let path = PathBuf::from(format!("\\work/{}", folder));
+        let path = PathBuf::from(consts::NAVIGATION_DATA_WORK_LOCATION);
 
         // Check the data from the request
         let data = request.data();
@@ -226,6 +233,13 @@ impl NavigationDataDownloader {
 
         // Clear our task
         self.task.replace(None);
+    }
+
+    /// This must be called to clear the download status and reset the download
+    pub fn acknowledge_download(&self) {
+        self.download_status.replace(DownloadStatus::NoDownload);
+
+        self.reset_download();
     }
 
     fn check_failed_and_get_message(&self) -> Option<String> {

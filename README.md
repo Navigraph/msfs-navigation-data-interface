@@ -30,6 +30,14 @@ Here's an overview on the structure of this repository, which is designed to be 
    ```
    - Note that if you already have a `VCockpit` with `NO_TEXTURE` you can just add another `htmlgauge` to it, while making sure to increase the index
 
+## Dealing with Bundled Navigation Data
+
+If you bundle outdated navigation data in your aircraft and you want this module to handle updating it for users with subscriptions, place the navigation data into the `NavigationData` directory in `PackageSources`. You can see an example [here](examples/aircraft/PackageSources/NavigationData/)
+
+## Where is the Navigation Data Stored?
+
+The default location for navigation data is `work/NavigationData`. If you have bundled navigation data, its located in the `NavigationData` folder in the root of your project. (although it gets copied into the `work` directory at runtime)
+
 ## Building the Sample Aircraft
 
 Before building, make sure you have properly created and set an `.env` file in `examples/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials
