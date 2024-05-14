@@ -8,7 +8,7 @@ The Navigraph Navigation Data Interface enables developers to download and integ
 - Javascript and WASM support: The navdata interface is accessible from both Javascript (Coherent) and WASM, providing flexibility for developers.
 - Supports updating of custom data formats.
 - Xbox compatibility: Works on PC and Xbox.
-- Persistance: All data is persisted in the `work` folder of the aircraft.
+- Persistence: All data is persisted in the `work` folder of the aircraft.
 
 ## Repository Structure
 
