@@ -1,6 +1,6 @@
 @echo off
 
-set image="ghcr.io/flybywiresim/dev-env@sha256:cb436009c99e1c86ff075f137f870201f6e04de08e0b6364d38b83a2f81dc58e"
+set image="ghcr.io/flybywiresim/dev-env@sha256:aa36c0e4b8c66c2ec0195a104f8ae04a8ffbf45e8ddb6a8aca4f7237436bd876"
 
 cd %~dp0
 
