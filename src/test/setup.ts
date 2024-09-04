@@ -160,7 +160,9 @@ const promiseResults = new Map<bigint, [number, number]>()
 const failedRequests: bigint[] = []
 
 wasmInstance = new WebAssembly.Instance(wasmModule, {
-  wasi_snapshot_preview1: wasiSystem.wasiImport,
+  wasi_snapshot_preview1: Object.assign(wasiSystem.wasiImport, {
+    commit_pages: () => { }, // Empty implementation of this function as it is needed for the WASM module to properly load
+  }),
   env: {
     fsCommBusCall: (eventNamePointer: number, args: number) => {
       const eventName = readString(eventNamePointer)
@@ -236,8 +238,7 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
         return 3 // FS_NETWORK_HTTP_REQUEST_STATE_DATA_READY
       }
       return 2 // FS_NETWORK_HTTP_REQUEST_STATE_WAITING_FOR_DATA
-    },
-    commit_pages: () => { }, // Empty implementation of this function as it is needed for the WASM module to properly load
+    }
   },
 }) as WasmInstance
 
