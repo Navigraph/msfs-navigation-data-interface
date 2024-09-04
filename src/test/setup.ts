@@ -237,6 +237,7 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
       }
       return 2 // FS_NETWORK_HTTP_REQUEST_STATE_WAITING_FOR_DATA
     },
+    commit_pages: () => { }, // Empty implementation of this function as it is needed for the WASM module to properly load
   },
 }) as WasmInstance
 
