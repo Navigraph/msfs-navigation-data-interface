@@ -1,10 +1,10 @@
-use std::{cell::RefCell, error::Error, path::Path, rc::Rc};
+use std::{cell::RefCell, error::Error, fs, io::Read, path::Path, rc::Rc};
 
 use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::{
-    database::{DatabaseV1, InstalledNavigationDataCycleInfo},
+    database::DatabaseV1,
     enums::InterfaceFormat,
-    traits::DatabaseTrait,
+    traits::{DatabaseTrait, InstalledNavigationDataCycleInfo, PackageInfo},
 };
 
 use crate::{
@@ -80,27 +80,49 @@ impl<'a> Dispatcher<'a> {
         }
     }
 
-    fn list_packages(&self) -> Vec<InstalledNavigationDataCycleInfo> {
-        vec![]
+    fn list_packages(&self) -> Vec<PackageInfo> {
+        let navigation_data_folder =
+            fs::read_dir(Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("navigation-data"));
+
+        let mut packages = vec![];
+
+        for file in navigation_data_folder.unwrap() {
+            let file_path = file.unwrap().path();
+
+            let cycle_file = fs::File::open(file_path.join("cycle.json"));
+            match cycle_file {
+                Ok(cycle_file) => {
+                    let cycle: InstalledNavigationDataCycleInfo = serde_json::from_reader(cycle_file).unwrap();
+                    packages.push(PackageInfo {
+                        path: String::from(file_path.to_string_lossy()),
+                        cycle,
+                    })
+                },
+                Err(err) => eprintln!("{:?}", err),
+            }
+        }
+
+        return packages;
     }
 
-    fn set_package(&self, uuid: String) -> Result<String, Box<dyn Error>> {
+    fn set_package(&mut self, uuid: String) -> Result<String, Box<dyn Error>> {
         // TODO: Find package path
 
-        let path = String::from("");
+        let uuid_path = &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION)
+            .join("navigation-data")
+            .join(uuid);
 
-        // There is a problem with Box dyn which makes it so we have to set up the data
-        // using methods on the trait. With that, we need to figure out how to init,
-        // then actually set up the connection, or whatever it uses internally.
-        // maybe a setup() function that gets called on init, similarly to how
-        // it starts currently.
+        let cycle: InstalledNavigationDataCycleInfo =
+            serde_json::from_reader(fs::File::open(uuid_path.join("cycle.json")).unwrap()).unwrap();
 
-        // self.database = match self.db_type {
-        //     InterfaceFormat::DFDv1 => Some(Box::new(DatabaseV1::default())),
-        //     InterfaceFormat::DFDv2 => Some(Box::new(DatabaseV1::default())),
-        // };
+        let package: PackageInfo = PackageInfo {
+            path: String::from(uuid_path.to_str().unwrap()),
+            cycle,
+        };
 
-        Ok(String::from(path))
+        self.database.change_cycle(package);
+
+        Ok(String::from(uuid_path.to_str().unwrap()))
     }
 
     pub fn on_msfs_event(&mut self, event: MSFSEvent) {
@@ -154,98 +176,10 @@ impl<'a> Dispatcher<'a> {
             self.downloader.acknowledge_download();
         }
     }
-    // fn load_database(&mut self) {
-    //     println!("[NAVIGRAPH] Loading database");
-
-    //     // Go through logic to determine which database to load
-
-    //     // Are we bundled? None means we haven't installed anything yet
-    //     let is_bundled = meta::get_internal_state()
-    //         .map(|internal_state| Some(internal_state.is_bundled))
-    //         .unwrap_or(None);
-
-    //     // Get the installed cycle (if it exists)
-    //     let installed_cycle = match meta::get_installed_cycle_from_json(
-    //         &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("cycle.json"),
-    //     ) {
-    //         Ok(cycle) => Some(cycle.cycle),
-    //         Err(_) => None,
-    //     };
-
-    //     // Get the bundled cycle (if it exists)
-    //     let bundled_cycle = match meta::get_installed_cycle_from_json(
-    //         &Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION).join("cycle.json"),
-    //     ) {
-    //         Ok(cycle) => Some(cycle.cycle),
-    //         Err(_) => None,
-    //     };
-
-    //     // Determine if we are bundled ONLY and the bundled cycle is newer than the installed (old bundled) cycle
-    //     let bundled_updated = if is_bundled.is_some() && is_bundled.unwrap() {
-    //         if installed_cycle.is_some() && bundled_cycle.is_some() {
-    //             bundled_cycle.unwrap() > installed_cycle.unwrap()
-    //         } else {
-    //             false
-    //         }
-    //     } else {
-    //         false
-    //     };
-
-    //     // If there is no addon config, we can assume that we need to copy the bundled database to the work location
-    //     let need_to_copy = is_bundled.is_none();
-
-    //     // If we are bundled and the installed cycle is older than the bundled cycle, we need to copy the bundled database to the work location. Or if we haven't installed anything yet, we need to copy the bundled database to the work location
-    //     if bundled_updated || need_to_copy {
-    //         match util::copy_files_to_folder(
-    //             &Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION),
-    //             &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION),
-    //         ) {
-    //             Ok(_) => {
-    //                 // Set the internal state to bundled
-    //                 let res = meta::set_internal_state(InternalState { is_bundled: true });
-    //                 if let Err(e) = res {
-    //                     println!("[NAVIGRAPH] Failed to set internal state: {}", e);
-    //                 }
-    //             },
-    //             Err(e) => {
-    //                 println!(
-    //                     "[NAVIGRAPH] Failed to copy database from default location to work location: {}",
-    //                     e
-    //                 );
-    //                 return;
-    //             },
-    //         }
-    //     }
-
-    //     // Finally, set the active database
-    //     if path_exists(&Path::new(consts::NAVIGATION_DATA_WORK_LOCATION)) {
-    //         match self
-    //             .database
-    //             .unwrap()
-    //             .set_active_database(consts::NAVIGATION_DATA_WORK_LOCATION.to_owned())
-    //         {
-    //             Ok(_) => {
-    //                 println!("[NAVIGRAPH] Loaded database");
-    //             },
-    //             Err(e) => {
-    //                 println!("[NAVIGRAPH] Failed to load database: {}", e);
-    //             },
-    //         }
-    //     } else {
-    //         println!("[NAVIGRAPH] Failed to load database: there is no installed database");
-    //     }
-    // }
 
     fn on_download_finish(&mut self) {
         match navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_WORK_LOCATION) {
-            Ok(path) => {
-                // match self.database.unwrap().set_active_database(path) {
-                //     Ok(_) => {},
-                //     Err(e) => {
-                //         println!("[NAVIGRAPH] Failed to set active database: {}", e);
-                //     },
-                // };
-            },
+            Ok(path) => {},
             Err(_) => {},
         }
     }

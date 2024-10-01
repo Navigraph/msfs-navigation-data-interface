@@ -1,6 +1,8 @@
 use std::{
     error::Error,
     fmt::{Display, Formatter},
+    fs,
+    path::Path,
 };
 
 use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags, Result};
@@ -33,14 +35,6 @@ use crate::{
     util,
 };
 
-#[derive(Serialize, Debug)]
-pub struct InstalledNavigationDataCycleInfo {
-    pub cycle: String,
-    pub revision: String,
-    pub name: String,
-    pub format: String,
-}
-
 pub struct DatabaseV1 {
     connection: Option<Connection>,
     pub path: Option<String>,
@@ -68,60 +62,6 @@ impl Error for NoDatabaseOpen {}
 
 impl Error for DatabaseNotCompat {}
 
-// Probably should instantiate when you actually need a connection,
-// rather than having this as the host
-impl DatabaseV1 {
-    pub fn set_active_database(&mut self, path: String) -> Result<(), Box<dyn Error>> {
-        let path = match util::find_sqlite_file(&path) {
-            Ok(new_path) => new_path,
-            Err(_) => path,
-        };
-        println!("[NAVIGRAPH] Setting active database to {}", path);
-        self.close_connection();
-        if util::is_sqlite_file(&path)? {
-            self.open_connection(path.clone())?;
-        }
-        self.path = Some(path);
-
-        Ok(())
-    }
-
-    pub fn open_connection(&mut self, path: String) -> Result<(), Box<dyn Error>> {
-        // We have to open with flags because the SQLITE_OPEN_CREATE flag with the default open causes the file to
-        // be overwritten
-        let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-        let conn = Connection::open_with_flags(path, flags)?;
-        self.connection = Some(conn);
-
-        Ok(())
-    }
-
-    fn fetch_row<T>(stmt: &mut rusqlite::Statement, params: impl rusqlite::Params) -> Result<T, Box<dyn Error>>
-    where
-        T: for<'r> serde::Deserialize<'r>,
-    {
-        let mut rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
-        let row = rows.next().ok_or("No row found")??;
-        Ok(row)
-    }
-
-    fn fetch_rows<T>(stmt: &mut rusqlite::Statement, params: impl rusqlite::Params) -> Result<Vec<T>, Box<dyn Error>>
-    where
-        T: for<'r> serde::Deserialize<'r>,
-    {
-        let mut rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
-        let mut data = Vec::new();
-        while let Some(row) = rows.next() {
-            data.push(row.map_err(|e| e.to_string())?);
-        }
-        Ok(data)
-    }
-
-    pub fn close_connection(&mut self) {
-        self.connection = None;
-    }
-}
-
 impl DatabaseTrait for DatabaseV1 {
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
         self.connection.as_ref().ok_or(NoDatabaseOpen)
@@ -133,11 +73,22 @@ impl DatabaseTrait for DatabaseV1 {
         Ok(String::from(uuid))
     }
 
-    fn change_cycle(&self, cycle: String) -> Result<String, Box<dyn Error>> {
-        // TODO: This should be what the package changer uses, if the change
-        // does not actually change the format (it never should).
+    fn change_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {
+        let db_path = Path::new("")
+            .join(package.path.clone())
+            .join(format!("e_dfd_{}.s3db", package.cycle.cycle));
 
-        Ok(String::from(cycle))
+        println!("[NAVIGRAPH] Setting active database to {:?}", db_path);
+
+        self.connection = None;
+
+        let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+        let conn = Connection::open_with_flags(db_path.clone(), flags)?;
+
+        self.connection = Some(conn);
+        self.path = Some(String::from(db_path.to_str().unwrap()));
+
+        Ok(String::from(serde_json::to_string(&package).unwrap()))
     }
 
     fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> {

@@ -14,6 +14,8 @@ use crate::{
     util::path_exists,
 };
 
+use navigation_database::traits::InstalledNavigationDataCycleInfo;
+
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct InternalState {
     pub is_bundled: bool,
@@ -55,16 +57,6 @@ pub struct CurrentCycleResponse {
     pub version: String,
     pub configuration: String,
     pub cycle: String,
-}
-
-#[derive(serde::Deserialize)]
-pub struct InstalledNavigationDataCycleInfo {
-    pub cycle: String,
-    pub revision: String,
-    pub name: String,
-    pub format: String,
-    #[serde(rename = "validityPeriod")]
-    pub validity_period: String,
 }
 
 pub fn get_internal_state() -> Result<InternalState, Box<dyn Error>> {

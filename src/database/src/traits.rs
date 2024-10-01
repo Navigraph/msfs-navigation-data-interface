@@ -3,7 +3,7 @@ use serde_json::{Number, Value};
 
 use super::output::{airport::Airport, airway::map_airways, procedure::departure::map_departures};
 use crate::{
-    database::{DatabaseNotCompat, InstalledNavigationDataCycleInfo, NoDatabaseOpen},
+    database::{DatabaseNotCompat, NoDatabaseOpen},
     math::{Coordinates, NauticalMiles},
     output::{
         airspace::{map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace, RestrictiveAirspace},
@@ -27,6 +27,22 @@ use crate::{
 };
 use std::error::Error;
 
+#[derive(serde::Serialize)]
+pub struct PackageInfo {
+    pub path: String,
+    pub cycle: InstalledNavigationDataCycleInfo,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct InstalledNavigationDataCycleInfo {
+    pub cycle: String,
+    pub revision: String,
+    pub name: String,
+    pub format: String,
+    #[serde(rename = "validityPeriod")]
+    pub validity_period: String,
+}
+
 pub trait InterfaceTrait {
     fn new() -> Self;
 }
@@ -36,9 +52,11 @@ pub trait DatabaseTrait {
     // Included for legacy reasons
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen>;
 
+    // Called after the gauge intializes
     fn setup(&self, uuid: String) -> Result<String, Box<dyn Error>>;
 
-    fn change_cycle(&self, cycle: String) -> Result<String, Box<dyn Error>>;
+    // Takes a pacakge and switches the 'active' connection to the requested package.
+    fn change_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>>;
 
     fn execute_sql_query(&self, sql: String, params: Vec<String>) -> Result<Value, Box<dyn Error>> {
         // Execute query
