@@ -327,3 +327,8 @@ pub enum ApproachTypeIdentifier {
     #[serde(rename = "LP")]
     LocalizerPerformance,
 }
+
+pub enum InterfaceFormat {
+    DFDv1,
+    DFDv2,
+}

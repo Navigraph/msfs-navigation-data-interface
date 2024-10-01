@@ -15,6 +15,10 @@ pub mod functions {
 
         /// no Params
         GetDatabaseInfo,
+        /// `ListAvailablePackages`
+        ListAvailablePackages,
+        /// `SetActivePackage`
+        SetActivePackage,
 
         /// `GetByIdentParams`
         GetAirport,
@@ -146,6 +150,11 @@ pub mod params {
     pub struct SetDownloadOptionsParams {
         /// Batch size for deleting/extracting files
         pub batch_size: usize,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct SetActivePackage {
+        pub uuid: String,
     }
 
     #[derive(serde::Deserialize)]

@@ -1,7 +1,11 @@
-use std::{cell::RefCell, path::Path, rc::Rc};
+use std::{cell::RefCell, error::Error, path::Path, rc::Rc};
 
 use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEvent};
-use navigation_database::database::Database;
+use navigation_database::{
+    database::{DatabaseV1, InstalledNavigationDataCycleInfo},
+    enums::InterfaceFormat,
+    traits::DatabaseTrait,
+};
 
 use crate::{
     consts,
@@ -46,21 +50,46 @@ impl Task {
 pub struct Dispatcher<'a> {
     commbus: CommBus<'a>,
     downloader: Rc<NavigationDataDownloader>,
-    database: Database,
+    database: Option<Box<dyn DatabaseTrait>>,
     delta_time: std::time::Duration,
     queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
+    db_type: InterfaceFormat,
 }
 
 impl<'a> Dispatcher<'a> {
-    pub fn new() -> Self {
+    pub fn new(format: InterfaceFormat) -> Dispatcher<'a> {
         Dispatcher {
             commbus: CommBus::default(),
             downloader: Rc::new(NavigationDataDownloader::new()),
-            database: Database::new(),
+            database: None,
             delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
                                                                    * the first update */
             queue: Rc::new(RefCell::new(Vec::new())),
+            db_type: format,
         }
+    }
+
+    fn list_packages(&self) -> Vec<InstalledNavigationDataCycleInfo> {
+        vec![]
+    }
+
+    fn set_package(&mut self, uuid: String) -> Result<String, Box<dyn Error>> {
+        // TODO: Find package path
+
+        let path = String::from("");
+
+        // There is a problem with Box dyn which makes it so we have to set up the data
+        // using methods on the trait. With that, we need to figure out how to init,
+        // then actually set up the connection, or whatever it uses internally.
+        // maybe a setup() function that gets called on init, similarly to how
+        // it starts currently.
+
+        self.database = match self.db_type {
+            InterfaceFormat::DFDv1 => Some(Box::new(DatabaseV1::default())),
+            InterfaceFormat::DFDv2 => Some(Box::new(DatabaseV1::default())),
+        };
+
+        Ok(String::from(path))
     }
 
     pub fn on_msfs_event(&mut self, event: MSFSEvent) {
@@ -179,7 +208,11 @@ impl<'a> Dispatcher<'a> {
 
         // Finally, set the active database
         if path_exists(&Path::new(consts::NAVIGATION_DATA_WORK_LOCATION)) {
-            match self.database.set_active_database(consts::NAVIGATION_DATA_WORK_LOCATION.to_owned()) {
+            match self
+                .database
+                .unwrap()
+                .set_active_database(consts::NAVIGATION_DATA_WORK_LOCATION.to_owned())
+            {
                 Ok(_) => {
                     println!("[NAVIGRAPH] Loaded database");
                 },
@@ -195,7 +228,7 @@ impl<'a> Dispatcher<'a> {
     fn on_download_finish(&mut self) {
         match navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_WORK_LOCATION) {
             Ok(path) => {
-                match self.database.set_active_database(path) {
+                match self.database.unwrap().set_active_database(path) {
                     Ok(_) => {},
                     Err(e) => {
                         println!("[NAVIGRAPH] Failed to set active database: {}", e);
@@ -225,7 +258,7 @@ impl<'a> Dispatcher<'a> {
 
                     // Close the database connection if it's open so we don't get any errors if we are replacing the
                     // database
-                    self.database.close_connection();
+                    self.database.unwrap().close_connection();
 
                     // Now we can download the navigation data
                     self.downloader.download(Rc::clone(task));
@@ -240,16 +273,31 @@ impl<'a> Dispatcher<'a> {
                     // We first need to initialize the network request and then wait for the response
                     meta::start_network_request(Rc::clone(task))
                 },
+                FunctionType::ListAvailablePackages => Dispatcher::execute_task(task.clone(), |t| {
+                    let packages = self.list_packages();
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(packages)?));
+
+                    Ok(())
+                }),
+                FunctionType::SetActivePackage => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::SetActivePackage>()?;
+                    let data = self.set_package(params.uuid)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::Value::String(data)));
+
+                    Ok(())
+                }),
                 FunctionType::ExecuteSQLQuery => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::ExecuteSQLQueryParams>()?;
-                    let data = self.database.execute_sql_query(params.sql, params.params)?;
+                    let data = self.database.unwrap().execute_sql_query(params.sql, params.params)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(data));
 
                     Ok(())
                 }),
                 FunctionType::GetDatabaseInfo => Dispatcher::execute_task(task.clone(), |t| {
-                    let info = self.database.get_database_info()?;
+                    let info = self.database.unwrap().get_database_info()?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(info)?));
 
@@ -257,7 +305,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
-                    let airport = self.database.get_airport(params.ident)?;
+                    let airport = self.database.unwrap().get_airport(params.ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airport)?));
 
@@ -265,7 +313,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetWaypoints => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
-                    let waypoints = self.database.get_waypoints(params.ident)?;
+                    let waypoints = self.database.unwrap().get_waypoints(params.ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(waypoints)?));
 
@@ -273,7 +321,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetVhfNavaids => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
-                    let vhf_navaids = self.database.get_vhf_navaids(params.ident)?;
+                    let vhf_navaids = self.database.unwrap().get_vhf_navaids(params.ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(vhf_navaids)?));
 
@@ -281,7 +329,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetNdbNavaids => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
-                    let ndb_navaids = self.database.get_ndb_navaids(params.ident)?;
+                    let ndb_navaids = self.database.unwrap().get_ndb_navaids(params.ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(ndb_navaids)?));
 
@@ -289,7 +337,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetAirways => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetByIdentParas>()?;
-                    let airways = self.database.get_airways(params.ident)?;
+                    let airways = self.database.unwrap().get_airways(params.ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));
 
@@ -299,6 +347,7 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::GetAtFixParams>()?;
                     let airways = self
                         .database
+                        .unwrap()
                         .get_airways_at_fix(params.fix_ident, params.fix_icao_code)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));
@@ -307,7 +356,10 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetAirportsInRange => Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                    let airports = self.database.get_airports_in_range(params.center, params.range)?;
+                    let airports = self
+                        .database
+                        .unwrap()
+                        .get_airports_in_range(params.center, params.range)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airports)?));
 
@@ -315,7 +367,10 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetWaypointsInRange => Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                    let waypoints = self.database.get_waypoints_in_range(params.center, params.range)?;
+                    let waypoints = self
+                        .database
+                        .unwrap()
+                        .get_waypoints_in_range(params.center, params.range)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(waypoints)?));
 
@@ -323,7 +378,10 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetVhfNavaidsInRange => Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                    let navaids = self.database.get_vhf_navaids_in_range(params.center, params.range)?;
+                    let navaids = self
+                        .database
+                        .unwrap()
+                        .get_vhf_navaids_in_range(params.center, params.range)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
 
@@ -331,7 +389,10 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetNdbNavaidsInRange => Dispatcher::execute_task(task.clone(), |t: Rc<RefCell<Task>>| {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                    let navaids = self.database.get_ndb_navaids_in_range(params.center, params.range)?;
+                    let navaids = self
+                        .database
+                        .unwrap()
+                        .get_ndb_navaids_in_range(params.center, params.range)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
 
@@ -339,7 +400,10 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetAirwaysInRange => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                    let airways = self.database.get_airways_in_range(params.center, params.range)?;
+                    let airways = self
+                        .database
+                        .unwrap()
+                        .get_airways_in_range(params.center, params.range)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airways)?));
 
@@ -349,6 +413,7 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
                     let airspaces = self
                         .database
+                        .unwrap()
                         .get_controlled_airspaces_in_range(params.center, params.range)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airspaces)?));
@@ -359,6 +424,7 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
                     let airspaces = self
                         .database
+                        .unwrap()
                         .get_restrictive_airspaces_in_range(params.center, params.range)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(airspaces)?));
@@ -367,7 +433,10 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetCommunicationsInRange => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetInRangeParams>()?;
-                    let communications = self.database.get_communications_in_range(params.center, params.range)?;
+                    let communications = self
+                        .database
+                        .unwrap()
+                        .get_communications_in_range(params.center, params.range)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(communications)?));
 
@@ -375,7 +444,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetRunwaysAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
-                    let runways = self.database.get_runways_at_airport(params.airport_ident)?;
+                    let runways = self.database.unwrap().get_runways_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(runways)?));
 
@@ -383,7 +452,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetDeparturesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
-                    let departures = self.database.get_departures_at_airport(params.airport_ident)?;
+                    let departures = self.database.unwrap().get_departures_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(departures)?));
 
@@ -391,7 +460,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetArrivalsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
-                    let arrivals = self.database.get_arrivals_at_airport(params.airport_ident)?;
+                    let arrivals = self.database.unwrap().get_arrivals_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(arrivals)?));
 
@@ -399,7 +468,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetApproachesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
-                    let arrivals = self.database.get_approaches_at_airport(params.airport_ident)?;
+                    let arrivals = self.database.unwrap().get_approaches_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(arrivals)?));
 
@@ -407,7 +476,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetWaypointsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
-                    let waypoints = self.database.get_waypoints_at_airport(params.airport_ident)?;
+                    let waypoints = self.database.unwrap().get_waypoints_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(waypoints)?));
 
@@ -415,7 +484,10 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetNdbNavaidsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
-                    let navaids = self.database.get_ndb_navaids_at_airport(params.airport_ident)?;
+                    let navaids = self
+                        .database
+                        .unwrap()
+                        .get_ndb_navaids_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
 
@@ -423,7 +495,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetGatesAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
-                    let gates = self.database.get_gates_at_airport(params.airport_ident)?;
+                    let gates = self.database.unwrap().get_gates_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(gates)?));
 
@@ -431,7 +503,10 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetCommunicationsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
-                    let communications = self.database.get_communications_at_airport(params.airport_ident)?;
+                    let communications = self
+                        .database
+                        .unwrap()
+                        .get_communications_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(communications)?));
 
@@ -439,7 +514,10 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetGlsNavaidsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
-                    let navaids = self.database.get_gls_navaids_at_airport(params.airport_ident)?;
+                    let navaids = self
+                        .database
+                        .unwrap()
+                        .get_gls_navaids_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(navaids)?));
 
@@ -447,7 +525,10 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::GetPathPointsAtAirport => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::GetAtAirportParams>()?;
-                    let pathpoints = self.database.get_path_points_at_airport(params.airport_ident)?;
+                    let pathpoints = self
+                        .database
+                        .unwrap()
+                        .get_path_points_at_airport(params.airport_ident)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(pathpoints)?));
 
