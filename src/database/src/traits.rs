@@ -36,9 +36,9 @@ pub trait DatabaseTrait {
     // Included for legacy reasons
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen>;
 
-    fn setup(&self, uuid: String) -> Result<(), Box<dyn Error>>;
+    fn setup(&self, uuid: String) -> Result<String, Box<dyn Error>>;
 
-    fn change_cycle(&self, cycle: String) -> Result<(), Box<dyn Error>>;
+    fn change_cycle(&self, cycle: String) -> Result<String, Box<dyn Error>>;
 
     fn execute_sql_query(&self, sql: String, params: Vec<String>) -> Result<Value, Box<dyn Error>> {
         // Execute query
