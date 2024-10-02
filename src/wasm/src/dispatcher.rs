@@ -98,6 +98,7 @@ impl<'a> Dispatcher<'a> {
                     let cycle: InstalledNavigationDataCycleInfo = serde_json::from_reader(cycle_file).unwrap();
                     packages.push(PackageInfo {
                         path: String::from(file_path.to_string_lossy()),
+                        uuid: String::from(file_path.file_name().unwrap().to_string_lossy()),
                         cycle,
                     })
                 },
@@ -117,7 +118,8 @@ impl<'a> Dispatcher<'a> {
             serde_json::from_reader(fs::File::open(uuid_path.join("cycle.json")).unwrap()).unwrap();
 
         let package: PackageInfo = PackageInfo {
-            path: String::from(uuid_path.to_str().unwrap()),
+            path: String::from(uuid_path.to_string_lossy()),
+            uuid: String::from(uuid_path.file_name().unwrap().to_string_lossy()),
             cycle,
         };
 
@@ -127,6 +129,12 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn setup_packages(&self) -> Result<String, Box<dyn Error>> {
+        self.copy_bundles()?;
+
+        Ok(String::from("Packages Setup"))
+    }
+
+    fn copy_bundles(&self) -> Result<bool, Box<dyn Error>> {
         let bundled_path = Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION);
 
         let package_list = self.list_packages();
@@ -142,29 +150,30 @@ impl<'a> Dispatcher<'a> {
             })
             .collect();
 
-        println!("\n\n\n\n\n\n{:?}\n\n\n\n\n\n", uuid_list);
-        println!("\n\n\n\n\n\n{:?}\n\n\n\n\n\n", bundled_path.to_string_lossy());
-
         let Ok(bundled_dir) = fs::read_dir(bundled_path) else {
             println!("[NAVIGRAPH]: No Bundled Data");
-            return Ok(String::from("No Bundled Data"));
+            return Ok(false);
         };
 
         for file in bundled_dir {
             let Ok(file) = file else {
-                println!("\n\n\n\n\n\n[Skip]\n\n\n\n\n\n");
                 continue;
             };
 
-            println!("\n\n\n\n\n\n{}\n\n\n\n\n\n", file.path().to_string_lossy());
-
             let cycle_path = file.path().join("cycle.json");
+
+            if !Path::exists(&cycle_path) {
+                println!(
+                    "[Navigraph]: Can't find cycle.json in {}",
+                    file.path().to_string_lossy()
+                );
+                continue;
+            }
+
             let cycle_uuid: Uuid =
                 Uuid::new_v3(&Uuid::NAMESPACE_URL, fs::read_to_string(cycle_path).unwrap().as_bytes());
 
             let cycle_hypenated = cycle_uuid.hyphenated().to_string();
-
-            println!("\n\n\n\n\n\n{}\n\n\n\n\n\n", cycle_hypenated.clone());
 
             if uuid_list.contains(&cycle_hypenated) {
                 continue;
@@ -172,12 +181,10 @@ impl<'a> Dispatcher<'a> {
 
             let work_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(cycle_hypenated);
 
-            // fs::create_dir(work_path.clone()).unwrap();
-
             util::copy_files_to_folder(&file.path(), &work_path).unwrap();
         }
 
-        Ok(String::from("Win!"))
+        Ok(true)
     }
 
     pub fn on_msfs_event(&mut self, event: MSFSEvent) {

@@ -300,7 +300,12 @@ beforeAll(async () => {
 
   await waitForReady(navigationDataInterface)
 
+  let packages = await navigationDataInterface.list_available_packages()
+
+  console.log(packages)
+
   if (downloadUrl === "local") {
+    navigationDataInterface.set_active_package(packages[0].uuid)
     return;
   } 
 

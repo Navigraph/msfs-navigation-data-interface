@@ -30,6 +30,7 @@ use std::error::Error;
 #[derive(serde::Serialize)]
 pub struct PackageInfo {
     pub path: String,
+    pub uuid: String,
     pub cycle: InstalledNavigationDataCycleInfo,
 }
 

@@ -12,6 +12,7 @@ import {
   GlsNavaid,
   NauticalMiles,
   NdbNavaid,
+  PackageInfo,
   PathPoint,
   RestrictiveAirspace,
   RunwayThreshold,
@@ -84,6 +85,25 @@ export class NavigraphNavigationDataInterface {
    */
   public async set_download_options(batch_size: number): Promise<void> {
     return await this.callWasmFunction("SetDownloadOptions", batch_size)
+  }
+
+  /**
+   * Lists the available navigation data packages
+   *
+   * @returns A promise that resolves with the list of packages
+   */
+  public async list_available_packages(): Promise<PackageInfo[]> {
+    return await this.callWasmFunction("ListAvailablePackages", {})
+  }
+
+  /**
+   * Sets the active package in the database
+   *
+   * @param uuid - Sets active package to the uuid
+   * @returns A promise that returns the uuid (string) to show that it was properly activated
+   */
+  public async set_active_package(uuid: string): Promise<string> {
+    return await this.callWasmFunction("SetActivePackage", uuid)
   }
 
   /**

@@ -26,6 +26,8 @@ export enum NavigraphFunction {
   DownloadNavigationData = "DownloadNavigationData",
   SetDownloadOptions = "SetDownloadOptions",
   GetNavigationDataInstallStatus = "GetNavigationDataInstallStatus",
+  ListAvailablePackages = "ListPackages",
+  SetActivePackage = "SetActivePackage",
   ExecuteSQLQuery = "ExecuteSQLQuery",
   GetDatabaseInfo = "GetDatabaseInfo",
   GetAirport = "GetAirport",

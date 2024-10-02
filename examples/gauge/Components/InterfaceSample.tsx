@@ -33,6 +33,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly downloadButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly icaoInputRef = FSComponent.createRef<Input>()
   private readonly executeIcaoButtonRef = FSComponent.createRef<HTMLButtonElement>()
+  private readonly loadDbRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly sqlInputRef = FSComponent.createRef<Input>()
   private readonly executeSqlButtonRef = FSComponent.createRef<HTMLButtonElement>()
   private readonly outputRef = FSComponent.createRef<HTMLPreElement>()
@@ -127,6 +128,9 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
               <div ref={this.executeIcaoButtonRef} class="button">
                 Fetch Airport
               </div>
+              <div ref={this.loadDbRef} class="button">
+                Load DB
+              </div>
               <div style="height:30px;"></div>
               <Input
                 ref={this.sqlInputRef}
@@ -176,6 +180,8 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
         .catch(e => console.error(e))
         .finally(() => console.timeEnd("query"))
     })
+
+    this.loadDbRef.instance.addEventListener("click", () => this.handleLoadDbClick())
 
     this.executeSqlButtonRef.instance.addEventListener("click", () => {
       console.time("query")
@@ -265,6 +271,14 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       if (err instanceof Error) this.displayError(err.message)
       else this.displayError(`Unknown error: ${String(err)}`)
     }
+  }
+
+  private async handleLoadDbClick() {
+    let data_packages = await this.navigationDataInterface.list_available_packages()
+
+    console.log(data_packages)
+
+    await this.navigationDataInterface.set_active_package(data_packages[0].uuid)
   }
 
   private displayMessage(message: string) {

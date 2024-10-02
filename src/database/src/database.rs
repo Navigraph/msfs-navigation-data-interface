@@ -88,6 +88,8 @@ impl DatabaseTrait for DatabaseV1 {
         self.connection = Some(conn);
         self.path = Some(String::from(db_path.to_str().unwrap()));
 
+        println!("[Navigraph]: Set active database to {:?}", db_path);
+
         Ok(String::from(serde_json::to_string(&package).unwrap()))
     }
 
