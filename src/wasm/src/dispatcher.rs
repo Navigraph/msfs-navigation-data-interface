@@ -6,6 +6,7 @@ use navigation_database::{
     enums::InterfaceFormat,
     traits::{DatabaseTrait, InstalledNavigationDataCycleInfo, PackageInfo},
 };
+use uuid::Uuid;
 
 use crate::{
     consts,
@@ -58,37 +59,38 @@ pub struct Dispatcher<'a> {
 
 impl<'a> Dispatcher<'a> {
     pub fn new(format: InterfaceFormat) -> Dispatcher<'a> {
-        match format {
-            InterfaceFormat::DFDv1 => Dispatcher {
-                commbus: CommBus::default(),
-                downloader: Rc::new(NavigationDataDownloader::new()),
-                database: RefCell::new(Box::new(DatabaseV1::default())),
-                delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
-                                                                       * the first update */
-                queue: Rc::new(RefCell::new(Vec::new())),
-                db_type: format,
+        Dispatcher {
+            commbus: CommBus::default(),
+            downloader: Rc::new(NavigationDataDownloader::new()),
+            database: match format {
+                InterfaceFormat::DFDv1 => RefCell::new(Box::new(DatabaseV1::default())),
+                // TODO: Implement for v2 when written
+                InterfaceFormat::DFDv2 => RefCell::new(Box::new(DatabaseV1::default())),
             },
-            // TODO: Implement for v2 when written
-            InterfaceFormat::DFDv2 => Dispatcher {
-                commbus: CommBus::default(),
-                downloader: Rc::new(NavigationDataDownloader::new()),
-                database: RefCell::new(Box::new(DatabaseV1::default())),
-                delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
-                                                                       * the first update */
-                queue: Rc::new(RefCell::new(Vec::new())),
-                db_type: format,
-            },
+            delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
+                                                                   * the first update */
+            queue: Rc::new(RefCell::new(Vec::new())),
+            db_type: format,
         }
     }
 
     fn list_packages(&self) -> Vec<PackageInfo> {
-        let navigation_data_folder =
-            fs::read_dir(Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("navigation-data"));
+        let navigation_data_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
+
+        if !Path::exists(&navigation_data_path) {
+            fs::create_dir(navigation_data_path).unwrap();
+        }
+
+        let navigation_data_folder = fs::read_dir(navigation_data_path);
 
         let mut packages = vec![];
 
         for file in navigation_data_folder.unwrap() {
-            let file_path = file.unwrap().path();
+            let Ok(file) = file else {
+                continue;
+            };
+
+            let file_path = file.path();
 
             let cycle_file = fs::File::open(file_path.join("cycle.json"));
             match cycle_file {
@@ -109,9 +111,7 @@ impl<'a> Dispatcher<'a> {
     fn set_package(&self, uuid: String) -> Result<String, Box<dyn Error>> {
         // TODO: Find package path
 
-        let uuid_path = &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION)
-            .join("navigation-data")
-            .join(uuid);
+        let uuid_path = &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(uuid);
 
         let cycle: InstalledNavigationDataCycleInfo =
             serde_json::from_reader(fs::File::open(uuid_path.join("cycle.json")).unwrap()).unwrap();
@@ -121,9 +121,63 @@ impl<'a> Dispatcher<'a> {
             cycle,
         };
 
-        self.database.borrow_mut().change_cycle(package);
+        self.database.borrow_mut().change_cycle(package).unwrap();
 
         Ok(String::from(uuid_path.to_str().unwrap()))
+    }
+
+    fn setup_packages(&self) -> Result<String, Box<dyn Error>> {
+        let bundled_path = Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION);
+
+        let package_list = self.list_packages();
+
+        let uuid_list: Vec<String> = package_list
+            .iter()
+            .map(|package| {
+                return Path::new(&package.path)
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string();
+            })
+            .collect();
+
+        println!("\n\n\n\n\n\n{:?}\n\n\n\n\n\n", uuid_list);
+        println!("\n\n\n\n\n\n{:?}\n\n\n\n\n\n", bundled_path.to_string_lossy());
+
+        let Ok(bundled_dir) = fs::read_dir(bundled_path) else {
+            println!("[NAVIGRAPH]: No Bundled Data");
+            return Ok(String::from("No Bundled Data"));
+        };
+
+        for file in bundled_dir {
+            let Ok(file) = file else {
+                println!("\n\n\n\n\n\n[Skip]\n\n\n\n\n\n");
+                continue;
+            };
+
+            println!("\n\n\n\n\n\n{}\n\n\n\n\n\n", file.path().to_string_lossy());
+
+            let cycle_path = file.path().join("cycle.json");
+            let cycle_uuid: Uuid =
+                Uuid::new_v3(&Uuid::NAMESPACE_URL, fs::read_to_string(cycle_path).unwrap().as_bytes());
+
+            let cycle_hypenated = cycle_uuid.hyphenated().to_string();
+
+            println!("\n\n\n\n\n\n{}\n\n\n\n\n\n", cycle_hypenated.clone());
+
+            if uuid_list.contains(&cycle_hypenated) {
+                continue;
+            }
+
+            let work_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(cycle_hypenated);
+
+            // fs::create_dir(work_path.clone()).unwrap();
+
+            util::copy_files_to_folder(&file.path(), &work_path).unwrap();
+        }
+
+        Ok(String::from("Win!"))
     }
 
     pub fn on_msfs_event(&mut self, event: MSFSEvent) {
@@ -143,7 +197,10 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn handle_initialized(&mut self) {
-        // self.load_database();
+        self.setup_packages().unwrap();
+
+        // Runs before everything, used to set up the navdata in the right places.
+        self.database.borrow().setup().unwrap();
         // We need to clone twice because we need to move the queue into the closure and then clone it again
         // whenever it gets called
         let captured_queue = Rc::clone(&self.queue);

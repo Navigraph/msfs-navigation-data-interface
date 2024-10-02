@@ -3,7 +3,7 @@ import { argv, env } from "node:process"
 import { WASI } from "wasi"
 import { v4 } from "uuid"
 import { NavigraphNavigationDataInterface } from "../js"
-import { WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
+import { DEFAULT_DATA_PATH, WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
 import "dotenv/config"
 import { random } from "./randomBigint"
 
@@ -144,6 +144,7 @@ const wasiSystem = new WASI({
   env,
   preopens: {
     "\\work": WORK_FOLDER_PATH,
+    ".\\bundled-navigation-data": DEFAULT_DATA_PATH,
   },
 })
 
@@ -298,6 +299,10 @@ beforeAll(async () => {
   }
 
   await waitForReady(navigationDataInterface)
+
+  if (downloadUrl === "local") {
+    return;
+  } 
 
   await navigationDataInterface.download_navigation_data(downloadUrl)
 }, 30000)

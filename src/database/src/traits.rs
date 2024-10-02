@@ -53,7 +53,7 @@ pub trait DatabaseTrait {
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen>;
 
     // Called after the gauge intializes
-    fn setup(&self, uuid: String) -> Result<String, Box<dyn Error>>;
+    fn setup(&self) -> Result<String, Box<dyn Error>>;
 
     // Takes a pacakge and switches the 'active' connection to the requested package.
     fn change_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>>;

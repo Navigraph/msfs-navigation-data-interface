@@ -67,10 +67,10 @@ impl DatabaseTrait for DatabaseV1 {
         self.connection.as_ref().ok_or(NoDatabaseOpen)
     }
 
-    fn setup(&self, uuid: String) -> Result<String, Box<dyn Error>> {
+    fn setup(&self) -> Result<String, Box<dyn Error>> {
         // TODO: This shoud replace the load_database function
-
-        Ok(String::from(uuid))
+        // Nothing goes here preferrably
+        Ok(String::from("Setup Complete"))
     }
 
     fn change_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {
