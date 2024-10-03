@@ -6,6 +6,7 @@ use navigation_database::{
     enums::InterfaceFormat,
     traits::{DatabaseTrait, InstalledNavigationDataCycleInfo, PackageInfo},
 };
+use serde_json::Value;
 use uuid::Uuid;
 
 use crate::{
@@ -204,10 +205,12 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn handle_initialized(&mut self) {
+        // Runs before everything, used to set up the navdata in the right places.
         self.setup_packages().unwrap();
 
-        // Runs before everything, used to set up the navdata in the right places.
+        // Runs extra setup on the configured database format handler
         self.database.borrow().setup().unwrap();
+
         // We need to clone twice because we need to move the queue into the closure and then clone it again
         // whenever it gets called
         let captured_queue = Rc::clone(&self.queue);
@@ -294,7 +297,7 @@ impl<'a> Dispatcher<'a> {
                     let params = t.borrow().parse_data_as::<params::SetActivePackage>()?;
                     let data = self.set_package(params.uuid)?;
 
-                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::Value::String(data)));
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(data)?));
 
                     Ok(())
                 }),

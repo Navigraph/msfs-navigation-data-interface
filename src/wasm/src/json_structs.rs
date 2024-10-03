@@ -154,6 +154,7 @@ pub mod params {
 
     #[derive(serde::Deserialize)]
     pub struct SetActivePackage {
+        /// UUID that the package is stored as
         pub uuid: String,
     }
 

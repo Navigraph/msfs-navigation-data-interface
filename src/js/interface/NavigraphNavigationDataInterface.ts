@@ -100,10 +100,10 @@ export class NavigraphNavigationDataInterface {
    * Sets the active package in the database
    *
    * @param uuid - Sets active package to the uuid
-   * @returns A promise that returns the uuid (string) to show that it was properly activated
+   * @returns A promise that returns the uuid (an object with a uuid field) to show that it was properly activated
    */
   public async set_active_package(uuid: string): Promise<string> {
-    return await this.callWasmFunction("SetActivePackage", uuid)
+    return await this.callWasmFunction("SetActivePackage", { uuid })
   }
 
   /**

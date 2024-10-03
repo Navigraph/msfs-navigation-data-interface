@@ -274,7 +274,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   }
 
   private async handleLoadDbClick() {
-    let data_packages = await this.navigationDataInterface.list_available_packages()
+    const data_packages = await this.navigationDataInterface.list_available_packages()
 
     console.log(data_packages)
 
