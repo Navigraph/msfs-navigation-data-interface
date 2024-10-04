@@ -4,6 +4,7 @@
     "src/js/*"
   ],
   "scripts": {
+    "docker": ".\\scripts\\run_docker_cmd.bat",
     "format": "prettier --write .",
     "lint:js": "eslint \"src/js/**/*.ts\"",
     "build:gauge": ".\\scripts\\build_gauge.bat",

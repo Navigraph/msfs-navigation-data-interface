@@ -3,7 +3,6 @@ use serde_json::{Number, Value};
 
 use super::output::{airport::Airport, airway::map_airways, procedure::departure::map_departures};
 use crate::{
-    database::{DatabaseNotCompat, NoDatabaseOpen},
     math::{Coordinates, NauticalMiles},
     output::{
         airspace::{map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace, RestrictiveAirspace},
@@ -25,7 +24,32 @@ use crate::{
     },
     sql_structs, util,
 };
-use std::error::Error;
+use std::{
+    error::Error,
+    fmt::{Display, Formatter},
+};
+
+#[derive(Debug)]
+pub struct NoDatabaseOpen;
+
+impl Display for NoDatabaseOpen {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "No database open")
+    }
+}
+
+#[derive(Debug)]
+pub struct DatabaseNotCompat;
+
+impl Display for DatabaseNotCompat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Function not implemented in database type")
+    }
+}
+
+impl Error for NoDatabaseOpen {}
+
+impl Error for DatabaseNotCompat {}
 
 #[derive(serde::Serialize)]
 pub struct PackageInfo {

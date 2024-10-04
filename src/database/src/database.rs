@@ -32,6 +32,7 @@ use crate::{
     },
     sql_structs,
     traits::*,
+    traits::{DatabaseNotCompat, NoDatabaseOpen},
     util,
 };
 
@@ -39,28 +40,6 @@ pub struct DatabaseV1 {
     connection: Option<Connection>,
     pub path: Option<String>,
 }
-
-#[derive(Debug)]
-pub struct NoDatabaseOpen;
-
-impl Display for NoDatabaseOpen {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "No database open")
-    }
-}
-
-#[derive(Debug)]
-pub struct DatabaseNotCompat;
-
-impl Display for DatabaseNotCompat {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Function not implemented in database type")
-    }
-}
-
-impl Error for NoDatabaseOpen {}
-
-impl Error for DatabaseNotCompat {}
 
 impl DatabaseTrait for DatabaseV1 {
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
