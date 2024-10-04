@@ -5,6 +5,7 @@ use navigation_database::{
     database::DatabaseV1,
     enums::InterfaceFormat,
     traits::{DatabaseTrait, InstalledNavigationDataCycleInfo, PackageInfo},
+    v2::database::DatabaseV2,
 };
 use serde_json::Value;
 use uuid::Uuid;
@@ -65,8 +66,7 @@ impl<'a> Dispatcher<'a> {
             downloader: Rc::new(NavigationDataDownloader::new()),
             database: match format {
                 InterfaceFormat::DFDv1 => RefCell::new(Box::new(DatabaseV1::default())),
-                // TODO: Implement for v2 when written
-                InterfaceFormat::DFDv2 => RefCell::new(Box::new(DatabaseV1::default())),
+                InterfaceFormat::DFDv2 => RefCell::new(Box::new(DatabaseV2::default())),
             },
             delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
                                                                    * the first update */

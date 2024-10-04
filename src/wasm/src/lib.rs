@@ -19,7 +19,7 @@ async fn navigation_data_interface(mut gauge: msfs::Gauge) -> Result<(), Box<dyn
         )
     );
     let mut dispatcher: dispatcher::Dispatcher<'_> =
-        dispatcher::Dispatcher::new(navigation_database::enums::InterfaceFormat::DFDv1);
+        dispatcher::Dispatcher::new(navigation_database::enums::InterfaceFormat::DFDv2);
     while let Some(event) = gauge.next_event().await {
         dispatcher.on_msfs_event(event);
     }

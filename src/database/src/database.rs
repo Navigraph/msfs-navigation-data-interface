@@ -47,7 +47,6 @@ impl DatabaseTrait for DatabaseV1 {
     }
 
     fn setup(&self) -> Result<String, Box<dyn Error>> {
-        // TODO: This shoud replace the load_database function
         // Nothing goes here preferrably
         Ok(String::from("Setup Complete"))
     }
