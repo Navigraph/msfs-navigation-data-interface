@@ -274,9 +274,9 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   }
 
   private async handleLoadDbClick() {
-    const data_packages = await this.navigationDataInterface.list_available_packages()
+    const data_packages = await this.navigationDataInterface.list_available_packages(true, false)
 
-    console.log(data_packages)
+    this.outputRef.instance.textContent = JSON.stringify(data_packages, null, 2)
 
     await this.navigationDataInterface.set_active_package(data_packages[0].uuid)
   }

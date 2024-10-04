@@ -75,7 +75,7 @@ impl<'a> Dispatcher<'a> {
         }
     }
 
-    fn list_packages(&self) -> Vec<PackageInfo> {
+    fn list_packages(&self, sort: bool, filter: bool) -> Vec<PackageInfo> {
         let navigation_data_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
 
         if !Path::exists(&navigation_data_path) {
@@ -94,6 +94,7 @@ impl<'a> Dispatcher<'a> {
             let file_path = file.path();
 
             let cycle_file = fs::File::open(file_path.join("cycle.json"));
+
             match cycle_file {
                 Ok(cycle_file) => {
                     let cycle: InstalledNavigationDataCycleInfo = serde_json::from_reader(cycle_file).unwrap();
@@ -105,6 +106,24 @@ impl<'a> Dispatcher<'a> {
                 },
                 Err(err) => eprintln!("{:?}", err),
             }
+        }
+
+        if filter {
+            let db_type = self.db_type.as_str().to_string();
+
+            packages = packages
+                .into_iter()
+                .filter(|package| *package.cycle.format == db_type)
+                .collect();
+        }
+
+        if sort {
+            packages.sort_by(|a, b| {
+                b.cycle
+                    .cycle
+                    .cmp(&a.cycle.cycle)
+                    .then(b.cycle.revision.cmp(&a.cycle.revision))
+            });
         }
 
         return packages;
@@ -138,7 +157,7 @@ impl<'a> Dispatcher<'a> {
     fn copy_bundles(&self) -> Result<bool, Box<dyn Error>> {
         let bundled_path = Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION);
 
-        let package_list = self.list_packages();
+        let package_list = self.list_packages(false, false);
 
         let uuid_list: Vec<String> = package_list
             .iter()
@@ -287,7 +306,9 @@ impl<'a> Dispatcher<'a> {
                     meta::start_network_request(Rc::clone(task))
                 },
                 FunctionType::ListAvailablePackages => Dispatcher::execute_task(task.clone(), |t| {
-                    let packages = self.list_packages();
+                    let params = t.borrow().parse_data_as::<params::ListAvailablePackages>()?;
+
+                    let packages = self.list_packages(params.sort.unwrap_or(false), params.filter.unwrap_or(false));
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(packages)?));
 

@@ -332,3 +332,12 @@ pub enum InterfaceFormat {
     DFDv1,
     DFDv2,
 }
+
+impl InterfaceFormat {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::DFDv1 => "dfd",
+            Self::DFDv2 => "dfdv2",
+        }
+    }
+}

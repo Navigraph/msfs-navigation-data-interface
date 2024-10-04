@@ -92,8 +92,8 @@ export class NavigraphNavigationDataInterface {
    *
    * @returns A promise that resolves with the list of packages
    */
-  public async list_available_packages(): Promise<PackageInfo[]> {
-    return await this.callWasmFunction("ListAvailablePackages", {})
+  public async list_available_packages(sort?: boolean, filter?: boolean): Promise<PackageInfo[]> {
+    return await this.callWasmFunction("ListAvailablePackages", { sort, filter })
   }
 
   /**

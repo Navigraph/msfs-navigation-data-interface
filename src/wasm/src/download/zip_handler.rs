@@ -76,7 +76,7 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
 
                 let cycle_path = temp_dir.join("cycle.json");
 
-                let Ok(cycle_file) = fs::read(cycle_path.clone()) else {
+                if !Path::exists(&cycle_path) {
                     return Err("cycle.json not found".into());
                 };
 
@@ -86,7 +86,7 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
                 fs::rename(
                     temp_dir,
                     Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(cycle_uuid.hyphenated().to_string()),
-                );
+                )?;
 
                 return Ok(BatchReturn::Finished);
             }
