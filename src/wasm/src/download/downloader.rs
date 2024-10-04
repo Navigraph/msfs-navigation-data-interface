@@ -1,4 +1,10 @@
-use std::{cell::RefCell, io::Cursor, path::PathBuf, rc::Rc};
+use std::{
+    cell::RefCell,
+    fs,
+    io::Cursor,
+    path::{Path, PathBuf},
+    rc::Rc,
+};
 
 use msfs::network::*;
 
@@ -187,7 +193,7 @@ impl NavigationDataDownloader {
             return;
         }
 
-        let path = PathBuf::from(consts::NAVIGATION_DATA_WORK_LOCATION);
+        let path = PathBuf::from(consts::NAVIGATION_DATA_WORK_LOCATION).join("temp");
 
         // Check the data from the request
         let data = request.data();

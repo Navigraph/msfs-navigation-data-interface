@@ -1,6 +1,10 @@
-use std::{fs, io, path::PathBuf};
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
+use uuid::Uuid;
 
-use crate::util;
+use crate::{consts, util};
 
 #[derive(PartialEq, Eq)]
 
@@ -67,6 +71,23 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
             if self.current_file_index >= self.zip_file_count {
                 // Done extracting, drop the zip archive
                 self.zip_archive = None;
+
+                let temp_dir = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("temp");
+
+                let cycle_path = temp_dir.join("cycle.json");
+
+                let Ok(cycle_file) = fs::read(cycle_path.clone()) else {
+                    return Err("cycle.json not found".into());
+                };
+
+                let cycle_uuid: Uuid =
+                    Uuid::new_v3(&Uuid::NAMESPACE_URL, fs::read_to_string(cycle_path).unwrap().as_bytes());
+
+                fs::rename(
+                    temp_dir,
+                    Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(cycle_uuid.hyphenated().to_string()),
+                );
+
                 return Ok(BatchReturn::Finished);
             }
 
