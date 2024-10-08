@@ -278,7 +278,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
     this.outputRef.instance.textContent = JSON.stringify(data_packages, null, 2)
 
-    await this.navigationDataInterface.set_active_package(data_packages[0].uuid)
+    await this.navigationDataInterface.set_active_package(data_packages[1].uuid)
   }
 
   private displayMessage(message: string) {

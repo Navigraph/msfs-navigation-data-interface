@@ -264,6 +264,7 @@ impl<'a> Dispatcher<'a> {
         }
     }
 
+    // Currently does nothing
     fn on_download_finish(&mut self) {
         match navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_WORK_LOCATION) {
             Ok(path) => {},

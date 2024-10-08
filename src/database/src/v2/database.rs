@@ -34,7 +34,7 @@ use crate::{
     sql_structs,
     traits::*,
     traits::{DatabaseNotCompat, NoDatabaseOpen},
-    util,
+    util, v2,
 };
 
 pub struct DatabaseV2 {
@@ -87,7 +87,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_pa_airports WHERE airport_identifier = (?1)")?;
 
-        let airport_data = util::fetch_row::<sql_structs::Airports>(&mut stmt, params![ident])?;
+        let airport_data = util::fetch_row::<v2::sql_structs::Airports>(&mut stmt, params![ident])?;
 
         Ok(Airport::from(airport_data))
     }

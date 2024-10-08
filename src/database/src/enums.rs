@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub enum IfrCapability {
     #[serde(rename = "Y")]
     Yes,
+    #[default]
     #[serde(rename = "N")]
     No,
 }

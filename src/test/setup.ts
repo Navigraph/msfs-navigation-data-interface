@@ -249,13 +249,11 @@ wasiSystem.initialize(wasmInstance)
 
 const fsContext = BigInt(0)
 
-// Run the initialisation functions to setup the gauge
-wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.PRE_INSTALL, 0)
-wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.POST_INITIALIZE, 0)
-
-const drawRate = 30
+const navigationDataInterface = new NavigraphNavigationDataInterface()
 
 let runLifecycle = true
+
+const drawRate = 30
 
 /**
  * Runs the life cycle loop for the gauge
@@ -281,11 +279,15 @@ async function lifeCycle() {
   }
 }
 
+// Run the initialisation functions to setup the gauge
+wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.PRE_INSTALL, 0)
+wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.POST_INITIALIZE, 0)
+
 // This will run once for each test file
 beforeAll(async () => {
-  const navigationDataInterface = new NavigraphNavigationDataInterface()
-
   const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
+
+  console.log("Did")
 
   if (!downloadUrl) {
     throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL`")
@@ -300,16 +302,18 @@ beforeAll(async () => {
 
   await waitForReady(navigationDataInterface)
 
-  let packages = await navigationDataInterface.list_available_packages()
+  console.log("it")
 
-  console.log(packages)
+  if (downloadUrl !== "local") {
+    await navigationDataInterface.download_navigation_data(downloadUrl)
+    return
+  }
 
-  if (downloadUrl === "local") {
-    navigationDataInterface.set_active_package(packages[0].uuid)
-    return;
-  } 
+  let packages = await navigationDataInterface.list_available_packages(true, false)
 
-  await navigationDataInterface.download_navigation_data(downloadUrl)
+  console.log(JSON.stringify(packages, null, 2))
+
+  await navigationDataInterface.set_active_package(packages[0].uuid)
 }, 30000)
 
 void lifeCycle()

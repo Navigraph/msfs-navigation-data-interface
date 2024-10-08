@@ -14,7 +14,7 @@ pub(crate) fn feet_to_meters(metres: Meters) -> Feet {
     metres / 3.28084
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub struct Coordinates {
     pub lat: Degrees,
     pub long: Degrees,
