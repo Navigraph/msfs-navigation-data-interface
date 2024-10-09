@@ -14,7 +14,7 @@ use crate::{
     output::{
         airport::Airport,
         airspace::{map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace, RestrictiveAirspace},
-        airway::{map_airways, Airway},
+        airway::{map_airways_v2, Airway},
         communication::Communication,
         database_info::DatabaseInfo,
         gate::Gate,
@@ -82,6 +82,7 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(DatabaseInfo::from(header_data))
     }
 
+    // v2 Compat
     fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -92,6 +93,7 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(Airport::from(airport_data))
     }
 
+    // v2 Compat
     fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -100,8 +102,8 @@ impl DatabaseTrait for DatabaseV2 {
         let mut terminal_stmt =
             conn.prepare("SELECT * FROM tbl_pc_terminal_waypoints WHERE waypoint_identifier = (?1)")?;
 
-        let enroute_data = util::fetch_rows::<sql_structs::Waypoints>(&mut enroute_stmt, params![ident])?;
-        let terminal_data = util::fetch_rows::<sql_structs::Waypoints>(&mut terminal_stmt, params![ident])?;
+        let enroute_data = util::fetch_rows::<v2::sql_structs::Waypoints>(&mut enroute_stmt, params![ident])?;
+        let terminal_data = util::fetch_rows::<v2::sql_structs::Waypoints>(&mut terminal_stmt, params![ident])?;
 
         Ok(enroute_data
             .into_iter()
@@ -110,24 +112,26 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
+    // v2 Compat
     fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_d_vhfnavaids WHERE vor_identifier = (?1)")?;
 
-        let navaids_data = util::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, params![ident])?;
+        let navaids_data = util::fetch_rows::<v2::sql_structs::VhfNavaids>(&mut stmt, params![ident])?;
 
         Ok(navaids_data.into_iter().map(VhfNavaid::from).collect())
     }
 
+    // v2 Compat
     fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut enroute_stmt = conn.prepare("SELECT * FROM tbl_db_enroute_ndbnavaids WHERE ndb_identifier = (?1)")?;
         let mut terminal_stmt = conn.prepare("SELECT * FROM tbl_pn_terminal_ndbnavaids WHERE ndb_identifier = (?1)")?;
 
-        let enroute_data = util::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, params![ident])?;
-        let terminal_data = util::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, params![ident])?;
+        let enroute_data = util::fetch_rows::<v2::sql_structs::NdbNavaids>(&mut enroute_stmt, params![ident])?;
+        let terminal_data = util::fetch_rows::<v2::sql_structs::NdbNavaids>(&mut terminal_stmt, params![ident])?;
 
         Ok(enroute_data
             .into_iter()
@@ -141,9 +145,9 @@ impl DatabaseTrait for DatabaseV2 {
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_er_enroute_airways WHERE route_identifier = (?1)")?;
 
-        let airways_data = util::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, params![ident])?;
+        let airways_data = util::fetch_rows::<v2::sql_structs::EnrouteAirways>(&mut stmt, params![ident])?;
 
-        Ok(map_airways(airways_data))
+        Ok(map_airways_v2(airways_data))
     }
 
     fn get_airways_at_fix(&self, fix_ident: String, fix_icao_code: String) -> Result<Vec<Airway>, Box<dyn Error>> {

@@ -19,13 +19,13 @@ pub struct Airport {
     /// `LF` for `LFPG`.
     ///
     // TODO: FIND WHAT THIS MEANS
-    /// Airport type
+    /// Airport type (v2 only)
     pub airport_type: String,
     /// The notable exceptions to this are airports in the US, Canada, and Australia.
     pub icao_code: String,
     /// The geographic location of the airport's reference point
     pub location: Coordinates,
-    /// The airport's general area
+    /// The airport's general area (v2 only)
     city: Option<String>,
     continent: Option<String>,
     country: Option<String>,
@@ -40,7 +40,7 @@ pub struct Airport {
     /// The elevation in feet of the airport's reference point
     pub elevation: Feet,
     // TODO: Find what this means (elaborate)
-    /// Magnetic Variation
+    /// Magnetic Variation (v2 only)
     pub magnetic_variation: Option<Degrees>,
     /// The altitude in feet where aircraft transition from `QNH/QFE` to `STD` barometer settings
     ///

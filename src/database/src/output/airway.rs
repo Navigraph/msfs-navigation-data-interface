@@ -3,7 +3,7 @@ use serde::Serialize;
 use super::fix::Fix;
 use crate::{
     enums::{AirwayDirection, AirwayLevel, AirwayRouteType},
-    sql_structs,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
@@ -62,6 +62,33 @@ pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway>
             airway_row.waypoint_longitude,
             airway_row.id,
         ));
+
+        if airway_row.waypoint_description_code.chars().nth(1) == Some('E') {
+            airway_complete = true;
+        }
+
+        airways
+    })
+}
+
+pub(crate) fn map_airways_v2(data: Vec<v2::sql_structs::EnrouteAirways>) -> Vec<Airway> {
+    let mut airway_complete = false;
+    data.into_iter().fold(Vec::new(), |mut airways, airway_row| {
+        if airways.len() == 0 || airway_complete {
+            airways.push(Airway {
+                ident: airway_row.route_identifier.unwrap_or_default(),
+                fixes: Vec::new(),
+                route_type: airway_row.route_type.unwrap_or(default),
+                level: airway_row.flightlevel.unwrap_or(default),
+                direction: airway_row.direction_restriction,
+            });
+
+            airway_complete = false;
+        }
+
+        let target_airway = airways.last_mut().unwrap();
+
+        target_airway.fixes.push(Fix::from_id(&self, airway_row.id));
 
         if airway_row.waypoint_description_code.chars().nth(1) == Some('E') {
             airway_complete = true;

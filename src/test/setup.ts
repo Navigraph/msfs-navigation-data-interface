@@ -306,7 +306,6 @@ beforeAll(async () => {
 
   if (downloadUrl !== "local") {
     await navigationDataInterface.download_navigation_data(downloadUrl)
-    return
   }
 
   let packages = await navigationDataInterface.list_available_packages(true, false)

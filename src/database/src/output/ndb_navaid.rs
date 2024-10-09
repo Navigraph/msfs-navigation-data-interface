@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::{
     math::{Coordinates, KiloHertz},
-    sql_structs,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
@@ -22,6 +22,8 @@ pub struct NdbNavaid {
     pub frequency: KiloHertz,
     /// The geographic location of thie NdbNavaid
     pub location: Coordinates,
+    /// The id thats associated with the waypoint (used for some internal functions)
+    pub id: String,
 }
 
 impl From<sql_structs::NdbNavaids> for NdbNavaid {
@@ -37,6 +39,25 @@ impl From<sql_structs::NdbNavaids> for NdbNavaid {
                 lat: navaid.ndb_latitude,
                 long: navaid.ndb_longitude,
             },
+            id: navaid.id,
+        }
+    }
+}
+
+impl From<v2::sql_structs::NdbNavaids> for NdbNavaid {
+    fn from(navaid: v2::sql_structs::NdbNavaids) -> Self {
+        Self {
+            area_code: navaid.area_code,
+            airport_ident: navaid.airport_identifier,
+            icao_code: navaid.icao_code,
+            ident: navaid.ndb_identifier,
+            name: navaid.ndb_name,
+            frequency: navaid.ndb_frequency,
+            location: Coordinates {
+                lat: navaid.ndb_latitude,
+                long: navaid.ndb_longitude,
+            },
+            id: navaid.id,
         }
     }
 }
