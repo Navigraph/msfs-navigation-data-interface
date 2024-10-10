@@ -1,8 +1,15 @@
 use serde::Serialize;
 
-use std::cell::RefCell;
+use rusqlite::params;
 
-use crate::{math::Coordinates, traits::DatabaseTrait};
+use std::{cell::RefCell, error::Error};
+
+use crate::{
+    math::Coordinates,
+    traits::DatabaseTrait,
+    util,
+    v2::{self, database::DatabaseV2},
+};
 
 #[derive(Serialize, Copy, Clone)]
 pub enum FixType {
@@ -83,57 +90,93 @@ impl Fix {
     }
 
     /// Used for finding the fix in v2 (only supports v2)
-    pub fn from_id(database: &RefCell<Box<dyn DatabaseTrait>>, id: String) -> Self {
+    pub fn from_id(database: &DatabaseV2, id: String) -> Result<Self, Box<dyn Error>> {
         let id = id.split("=").nth(0).unwrap();
-        let fix_type_raw = id.split("=").nth(1).unwrap();
+        let fix_type = id.split("=").nth(1).unwrap();
 
-        let fix_type = match fix_type_raw {
-            "PA" => FixType::Airport,
-            "PN" | "DB" => FixType::NdbNavaid,
-            "PG" => FixType::RunwayThreshold,
-            "PT" => FixType::GlsNavaid,
-            "PI" => FixType::IlsNavaid,
-            "D" => FixType::VhfNavaid,
-            "EA" | "PC" => FixType::Waypoint,
+        // SQL String Builder, used to generate the queries to fetch the data.
+        // Deemed better to use this than write out the whole function for each one.
+        let (fix_type, ident_field, airport_ident_field, lat_field, long_field, tbl) = match fix_type {
+            "PA" => (
+                FixType::Airport,
+                "airport_identifier",
+                "airport_identifier",
+                "airport_ref_latitude",
+                "airport_ref_longitude",
+                "tbl_pa_airports",
+            ),
+            "PN" | "DB" => (
+                FixType::NdbNavaid,
+                "navaid_identifier",
+                "airport_identifier",
+                "navaid_latitude",
+                "navaid_longitude",
+                match fix_type {
+                    "PN" => "tbl_pn_terminal_ndbnavaids",
+                    _ => "tbl_db_enroute_ndbnavaids",
+                },
+            ),
+            "PG" => (
+                FixType::RunwayThreshold,
+                "runway_identifier",
+                "airport_identifier",
+                "runway_latitude",
+                "runway_longitude",
+                "tbl_pg_runways",
+            ),
+            "PT" => (
+                FixType::GlsNavaid,
+                "gls_ref_path_identifier",
+                "airport_identifier",
+                "station_latitude",
+                "station_longitude",
+                "tbl_pt_gls",
+            ),
+            "PI" => (
+                FixType::IlsNavaid,
+                "llz_identifier",
+                "airport_identifier",
+                "llz_latitude",
+                "llz_longitude",
+                "tbl_pi_localizers_glideslopes",
+            ),
+            "D" => (
+                FixType::VhfNavaid,
+                "navaid_identifier",
+                "airport_identifier",
+                "navaid_latitude",
+                "navaid_longitude",
+                "tbl_d_vhfnavaids",
+            ),
+            "EA" | "PC" => (
+                FixType::Waypoint,
+                "waypoint_identifier",
+                "NULL",
+                "waypoint_latitude",
+                "waypoint_longitude",
+                match fix_type {
+                    "EA" => "tbl_ea_enroute_waypoints",
+                    _ => "tbl_pc_terminal_waypoints",
+                },
+            ),
             x => panic!("Unexpected table: '{x}'"),
         };
 
-        let fix_location = match fix_type_raw {
-            "PA" => database.get_airport(ident).map(|op| op.location).unwrap_or_default(),
-            "PN" | "DB" => database
-                .get_ndb_navaids(ident)
-                .map(|op| op.iter().filter(|f| f.id == id).map(|f| f.location).collect()[0])
-                .unwrap_or_default(),
-            "PG" => database
-                .get_runways_at_airport(ident)
-                .map(|op| op.iter_mut().filter(|f| f.id == id).map(|f| f.location).collect()[0])
-                .unwrap_or_default(),
-            "PT" => database
-                .get_gls_navaids_at_airport(ident)
-                .map(|op| op.iter_mut().filter(|f| f.id == id).map(|f| f.location).collect()[0])
-                .unwrap_or_default(),
-            "PI" => todo!(),
-            "D" => database
-                .get_vhf_navaids(ident)
-                .map(|op| op.iter_mut().filter(|f| f.id == id).map(|f| f.location).collect()[0])
-                .unwrap_or_default(),
-            "EA" | "PC" => database
-                .get_waypoints(ident)
-                .map(|op| op.iter_mut().filter(|f| f.id == id).map(|f| f.location).collect()[0])
-                .unwrap_or_default(),
-            x => panic!("Unexpected table: '{x}'"),
-        };
+        let conn = database.get_database()?;
+        let mut stmt = conn.prepare(&format!(
+                "SELECT {ident_field} AS ident, icao_code, {airport_ident_field} as airport_ident, {lat_field} AS lat, {long_field} AS long FROM {tbl} WHERE id = (?1)"
+            ))?;
+        let data = util::fetch_row::<v2::sql_structs::FixHelper>(&mut stmt, params![id])?;
 
-        Self {
-            fix_type,
-            ident: ident.to_string(),
-            icao_code: icao_code.to_string(),
-            location: fix_location,
-            // TODO: Not too sure what this means
-            airport_ident: match fix_type_raw {
-                "PC" | "PI" | "PT" => ident,
-                _ => None,
+        Ok(Self {
+            location: Coordinates {
+                lat: data.lat,
+                long: data.long,
             },
-        }
+            fix_type,
+            ident: data.ident,
+            icao_code: data.icao_code,
+            airport_ident: data.airport_ident,
+        })
     }
 }

@@ -22,8 +22,6 @@ pub struct NdbNavaid {
     pub frequency: KiloHertz,
     /// The geographic location of thie NdbNavaid
     pub location: Coordinates,
-    /// The id thats associated with the waypoint (used for some internal functions)
-    pub id: String,
 }
 
 impl From<sql_structs::NdbNavaids> for NdbNavaid {
@@ -39,7 +37,6 @@ impl From<sql_structs::NdbNavaids> for NdbNavaid {
                 lat: navaid.ndb_latitude,
                 long: navaid.ndb_longitude,
             },
-            id: navaid.id,
         }
     }
 }
@@ -57,7 +54,6 @@ impl From<v2::sql_structs::NdbNavaids> for NdbNavaid {
                 lat: navaid.ndb_latitude,
                 long: navaid.ndb_longitude,
             },
-            id: navaid.id,
         }
     }
 }

@@ -32,7 +32,6 @@ pub struct VhfNavaid {
     pub station_declination: Option<Degrees>,
     /// Magnetic variation
     pub magnetic_variation: Option<Degrees>,
-    pub id: String,
 }
 
 impl From<sql_structs::VhfNavaids> for VhfNavaid {
@@ -50,7 +49,6 @@ impl From<sql_structs::VhfNavaids> for VhfNavaid {
             },
             station_declination: navaid.station_declination,
             magnetic_variation: Some(navaid.magnetic_variation),
-            id: navaid.id,
             ..Default::default()
         }
     }
@@ -74,7 +72,6 @@ impl From<v2::sql_structs::VhfNavaids> for VhfNavaid {
             continent: navaid.continent,
             country: navaid.country,
             magnetic_variation: navaid.magnetic_variation,
-            id: navaid.id,
         }
     }
 }

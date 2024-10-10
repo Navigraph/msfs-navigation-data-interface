@@ -27,7 +27,6 @@ pub struct RunwayThreshold {
     pub location: Coordinates,
     /// The elevation of the landing threshold of this runway in feet
     pub elevation: Feet,
-    pub id: String,
 }
 
 impl From<sql_structs::Runways> for RunwayThreshold {
@@ -45,7 +44,6 @@ impl From<sql_structs::Runways> for RunwayThreshold {
                 long: runway.runway_longitude,
             },
             elevation: runway.landing_threshold_elevation,
-            id: runway.id,
         }
     }
 }

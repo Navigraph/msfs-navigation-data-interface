@@ -1,9 +1,14 @@
 use serde::Serialize;
 
-use super::fix::Fix;
+use std::cell::RefCell;
+
+use super::fix::{Fix, FixType};
 use crate::{
     enums::{AirwayDirection, AirwayLevel, AirwayRouteType},
-    sql_structs, v2,
+    math::Coordinates,
+    sql_structs,
+    traits::DatabaseTrait,
+    v2::{self, database::DatabaseV2},
 };
 
 #[serde_with::skip_serializing_none]
@@ -71,15 +76,17 @@ pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway>
     })
 }
 
-pub(crate) fn map_airways_v2(data: Vec<v2::sql_structs::EnrouteAirways>) -> Vec<Airway> {
+// TODO: Implement error propigation, need to rewrite logic
+pub(crate) fn map_airways_v2(database: &DatabaseV2, data: Vec<v2::sql_structs::EnrouteAirways>) -> Vec<Airway> {
     let mut airway_complete = false;
     data.into_iter().fold(Vec::new(), |mut airways, airway_row| {
         if airways.len() == 0 || airway_complete {
             airways.push(Airway {
                 ident: airway_row.route_identifier.unwrap_or_default(),
                 fixes: Vec::new(),
-                route_type: airway_row.route_type.unwrap_or(default),
-                level: airway_row.flightlevel.unwrap_or(default),
+                // These defaults are completely random
+                route_type: airway_row.route_type.unwrap_or(AirwayRouteType::UndesignatedAtsRoute),
+                level: airway_row.flightlevel.unwrap_or(AirwayLevel::Both),
                 direction: airway_row.direction_restriction,
             });
 
@@ -88,9 +95,23 @@ pub(crate) fn map_airways_v2(data: Vec<v2::sql_structs::EnrouteAirways>) -> Vec<
 
         let target_airway = airways.last_mut().unwrap();
 
-        target_airway.fixes.push(Fix::from_id(&self, airway_row.id));
+        target_airway
+            .fixes
+            .push(Fix::from_id(database, airway_row.waypoint_id).unwrap_or(Fix {
+                fix_type: FixType::Waypoint,
+                ident: "ERROR".to_string(),
+                icao_code: "ERROR".to_string(),
+                location: Coordinates::default(),
+                airport_ident: None,
+            }));
 
-        if airway_row.waypoint_description_code.chars().nth(1) == Some('E') {
+        if airway_row
+            .waypoint_description_code
+            .unwrap_or("   ".to_string())
+            .chars()
+            .nth(1)
+            == Some('E')
+        {
             airway_complete = true;
         }
 

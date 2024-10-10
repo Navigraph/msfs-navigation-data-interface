@@ -74,7 +74,6 @@ pub trait InterfaceTrait {
 
 #[allow(unused_variables)]
 pub trait DatabaseTrait {
-    // Included for legacy reasons
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen>;
 
     // Called after the gauge intializes

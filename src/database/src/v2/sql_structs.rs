@@ -557,3 +557,12 @@ pub struct VhfNavaids {
     pub range: f64,
     pub station_declination: Option<f64>,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct FixHelper {
+    pub ident: String,
+    pub icao_code: String,
+    pub lat: f64,
+    pub long: f64,
+    pub airport_ident: Option<String>,
+}

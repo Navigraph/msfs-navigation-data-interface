@@ -32,7 +32,6 @@ pub struct GlsNavaid {
     pub magnetic_variation: f64,
     /// The elevation of this navaid
     pub elevation: Feet,
-    pub id: String,
 }
 
 impl From<sql_structs::Gls> for GlsNavaid {
@@ -53,7 +52,6 @@ impl From<sql_structs::Gls> for GlsNavaid {
             approach_angle: gls.gls_approach_slope,
             magnetic_variation: gls.magentic_variation,
             elevation: gls.station_elevation,
-            id: gls.id,
         }
     }
 }

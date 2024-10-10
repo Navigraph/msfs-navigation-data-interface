@@ -32,8 +32,7 @@ use crate::{
         waypoint::Waypoint,
     },
     sql_structs,
-    traits::*,
-    traits::{DatabaseNotCompat, NoDatabaseOpen},
+    traits::{DatabaseNotCompat, DatabaseTrait, NoDatabaseOpen, PackageInfo},
     util, v2,
 };
 
@@ -147,7 +146,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         let airways_data = util::fetch_rows::<v2::sql_structs::EnrouteAirways>(&mut stmt, params![ident])?;
 
-        Ok(map_airways_v2(airways_data))
+        Ok(map_airways_v2(self, airways_data))
     }
 
     fn get_airways_at_fix(&self, fix_ident: String, fix_icao_code: String) -> Result<Vec<Airway>, Box<dyn Error>> {
@@ -158,9 +157,9 @@ impl DatabaseTrait for DatabaseV2 {
              tbl_er_enroute_airways WHERE waypoint_identifier = (?1) AND icao_code = (?2))",
         )?;
         let all_airways =
-            util::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, params![fix_ident, fix_icao_code])?;
+            util::fetch_rows::<v2::sql_structs::EnrouteAirways>(&mut stmt, params![fix_ident, fix_icao_code])?;
 
-        Ok(map_airways(all_airways)
+        Ok(map_airways_v2(self, all_airways)
             .into_iter()
             .filter(|airway| {
                 airway
@@ -268,9 +267,9 @@ impl DatabaseTrait for DatabaseV2 {
             .as_str(),
         )?;
 
-        let airways_data = util::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, [])?;
+        let airways_data = util::fetch_rows::<v2::sql_structs::EnrouteAirways>(&mut stmt, [])?;
 
-        Ok(map_airways(airways_data)
+        Ok(map_airways_v2(self, airways_data)
             .into_iter()
             .filter(|airway| {
                 airway
