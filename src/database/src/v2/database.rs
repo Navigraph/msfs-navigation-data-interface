@@ -150,6 +150,7 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(map_airways_v2(self, airways_data))
     }
 
+    // v2 Compat, might have performance issue
     fn get_airways_at_fix(&self, fix_ident: String, fix_icao_code: String) -> Result<Vec<Airway>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -171,6 +172,7 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
+    // should work, untested
     fn get_airports_in_range(&self, center: Coordinates, range: NauticalMiles) -> Result<Vec<Airport>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -178,7 +180,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         let mut stmt = conn.prepare(format!("SELECT * FROM tbl_pa_airports WHERE {where_string}").as_str())?;
 
-        let airports_data = util::fetch_rows::<sql_structs::Airports>(&mut stmt, [])?;
+        let airports_data = util::fetch_rows::<v2::sql_structs::Airports>(&mut stmt, [])?;
 
         // Filter into a circle of range
         Ok(airports_data
@@ -188,6 +190,7 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
+    // should work, untested
     fn get_waypoints_in_range(
         &self, center: Coordinates, range: NauticalMiles,
     ) -> Result<Vec<Waypoint>, Box<dyn Error>> {
@@ -200,8 +203,8 @@ impl DatabaseTrait for DatabaseV2 {
         let mut terminal_stmt =
             conn.prepare(format!("SELECT * FROM tbl_pc_terminal_waypoints WHERE {where_string}").as_str())?;
 
-        let enroute_data = util::fetch_rows::<sql_structs::Waypoints>(&mut enroute_stmt, [])?;
-        let terminal_data = util::fetch_rows::<sql_structs::Waypoints>(&mut terminal_stmt, [])?;
+        let enroute_data = util::fetch_rows::<v2::sql_structs::Waypoints>(&mut enroute_stmt, [])?;
+        let terminal_data = util::fetch_rows::<v2::sql_structs::Waypoints>(&mut terminal_stmt, [])?;
 
         // Filter into a circle of range
         Ok(enroute_data
@@ -212,6 +215,7 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
+    // should work, untested
     fn get_ndb_navaids_in_range(
         &self, center: Coordinates, range: NauticalMiles,
     ) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
@@ -224,8 +228,8 @@ impl DatabaseTrait for DatabaseV2 {
         let mut terminal_stmt =
             conn.prepare(format!("SELECT * FROM tbl_pn_terminal_ndbnavaids WHERE {where_string}").as_str())?;
 
-        let enroute_data = util::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, [])?;
-        let terminal_data = util::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, [])?;
+        let enroute_data = util::fetch_rows::<v2::sql_structs::NdbNavaids>(&mut enroute_stmt, [])?;
+        let terminal_data = util::fetch_rows::<v2::sql_structs::NdbNavaids>(&mut terminal_stmt, [])?;
 
         // Filter into a circle of range
         Ok(enroute_data
@@ -236,6 +240,7 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
+    // should work, untested
     fn get_vhf_navaids_in_range(
         &self, center: Coordinates, range: NauticalMiles,
     ) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
@@ -245,7 +250,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         let mut stmt = conn.prepare(format!("SELECT * FROM tbl_d_vhfnavaids WHERE {where_string}").as_str())?;
 
-        let navaids_data = util::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, [])?;
+        let navaids_data = util::fetch_rows::<v2::sql_structs::VhfNavaids>(&mut stmt, [])?;
 
         // Filter into a circle of range
         Ok(navaids_data
@@ -255,6 +260,7 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
+    // should work, untested
     fn get_airways_in_range(&self, center: Coordinates, range: NauticalMiles) -> Result<Vec<Airway>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
