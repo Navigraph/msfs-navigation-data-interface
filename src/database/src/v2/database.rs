@@ -139,6 +139,7 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
+    // v2 Compat
     fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn Error>> {
         let conn = self.get_database()?;
 

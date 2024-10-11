@@ -90,13 +90,12 @@ impl Fix {
     }
 
     /// Used for finding the fix in v2 (only supports v2)
-    pub fn from_id(database: &DatabaseV2, id: String) -> Result<Self, Box<dyn Error>> {
-        let id = id.split("=").nth(0).unwrap();
-        let fix_type = id.split("=").nth(1).unwrap();
+    pub fn from_id(database: &DatabaseV2, id_raw: String) -> Result<Self, Box<dyn Error>> {
+        let db_type = id_raw.trim().split("=").nth(1).unwrap_or_default();
 
         // SQL String Builder, used to generate the queries to fetch the data.
         // Deemed better to use this than write out the whole function for each one.
-        let (fix_type, ident_field, airport_ident_field, lat_field, long_field, tbl) = match fix_type {
+        let (fix_type, ident_field, airport_ident_field, lat_field, long_field, tbl) = match db_type {
             "PA" => (
                 FixType::Airport,
                 "airport_identifier",
@@ -108,10 +107,13 @@ impl Fix {
             "PN" | "DB" => (
                 FixType::NdbNavaid,
                 "navaid_identifier",
-                "airport_identifier",
+                match db_type {
+                    "PN" => "airport_identifier",
+                    _ => "NULL",
+                },
                 "navaid_latitude",
                 "navaid_longitude",
-                match fix_type {
+                match db_type {
                     "PN" => "tbl_pn_terminal_ndbnavaids",
                     _ => "tbl_db_enroute_ndbnavaids",
                 },
@@ -151,22 +153,26 @@ impl Fix {
             "EA" | "PC" => (
                 FixType::Waypoint,
                 "waypoint_identifier",
-                "NULL",
+                match db_type {
+                    "PC" => "region_code",
+                    _ => "NULL",
+                },
                 "waypoint_latitude",
                 "waypoint_longitude",
-                match fix_type {
+                match db_type {
                     "EA" => "tbl_ea_enroute_waypoints",
                     _ => "tbl_pc_terminal_waypoints",
                 },
             ),
-            x => panic!("Unexpected table: '{x}'"),
+            x => panic!("Unexpected table: '{}'", &id_raw),
         };
 
         let conn = database.get_database()?;
-        let mut stmt = conn.prepare(&format!(
-                "SELECT {ident_field} AS ident, icao_code, {airport_ident_field} as airport_ident, {lat_field} AS lat, {long_field} AS long FROM {tbl} WHERE id = (?1)"
-            ))?;
-        let data = util::fetch_row::<v2::sql_structs::FixHelper>(&mut stmt, params![id])?;
+        let query = format!(
+            "SELECT {ident_field} AS ident, icao_code, {airport_ident_field} as airport_ident, {lat_field} AS lat, {long_field} AS long FROM {tbl} WHERE id = (?1)"
+        );
+        let mut stmt = conn.prepare(&query)?;
+        let data = util::fetch_row::<v2::sql_structs::FixHelper>(&mut stmt, params![id_raw])?;
 
         Ok(Self {
             location: Coordinates {

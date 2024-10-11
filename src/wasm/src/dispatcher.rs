@@ -143,9 +143,9 @@ impl<'a> Dispatcher<'a> {
             cycle,
         };
 
-        self.database.borrow_mut().change_cycle(package).unwrap();
+        self.database.borrow_mut().change_cycle(package)?;
 
-        Ok(String::from(uuid_path.to_str().unwrap()))
+        Ok(String::from(uuid_path.to_str().unwrap_or_default()))
     }
 
     fn setup_packages(&self) -> Result<String, Box<dyn Error>> {

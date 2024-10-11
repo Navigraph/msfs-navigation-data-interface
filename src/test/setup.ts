@@ -279,6 +279,8 @@ async function lifeCycle() {
   }
 }
 
+void lifeCycle()
+
 // Run the initialisation functions to setup the gauge
 wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.PRE_INSTALL, 0)
 wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.POST_INITIALIZE, 0)
@@ -312,10 +314,18 @@ beforeAll(async () => {
 
   console.log(JSON.stringify(packages, null, 2))
 
-  await navigationDataInterface.set_active_package(packages[0].uuid)
-}, 30000)
+  await navigationDataInterface.set_active_package(packages[0].uuid).catch(err => {
+    console.error(err)
+  })
 
-void lifeCycle()
+  console.log("Set ext")
+
+  let airways = await navigationDataInterface.get_airways("A305").catch(err => {
+    console.error(err)
+  })
+
+  console.log(JSON.stringify(airways, null, 2))
+}, 30000)
 
 // Cancel the lifeCycle after all tests have completed
 afterAll(() => {

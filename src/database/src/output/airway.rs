@@ -95,15 +95,18 @@ pub(crate) fn map_airways_v2(database: &DatabaseV2, data: Vec<v2::sql_structs::E
 
         let target_airway = airways.last_mut().unwrap();
 
-        target_airway
-            .fixes
-            .push(Fix::from_id(database, airway_row.waypoint_id).unwrap_or(Fix {
-                fix_type: FixType::Waypoint,
-                ident: "ERROR".to_string(),
-                icao_code: "ERROR".to_string(),
-                location: Coordinates::default(),
-                airport_ident: None,
-            }));
+        target_airway.fixes.push(
+            Fix::from_id(database, airway_row.waypoint_id).unwrap_or_else(|op| -> Fix {
+                eprintln!("Error getting fix from id: {op}");
+                Fix {
+                    fix_type: FixType::Waypoint,
+                    ident: "ERROR".to_string(),
+                    icao_code: "ERROR".to_string(),
+                    location: Coordinates::default(),
+                    airport_ident: None,
+                }
+            }),
+        );
 
         if airway_row
             .waypoint_description_code

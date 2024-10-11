@@ -142,9 +142,11 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
                 Execute SQL
               </div>
             </div>
-            <pre ref={this.outputRef} id="output">
-              The output of the query will show up here
-            </pre>
+            <div class="scrollable">
+              <pre ref={this.outputRef} id="output">
+                The output of the query will show up here
+              </pre>
+            </div>
           </div>
         </div>
       </>

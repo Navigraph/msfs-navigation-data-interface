@@ -52,6 +52,11 @@
   align-items: center;
 }
 
+.scrollable {
+  overflow: scroll;
+  height: 400px;
+}
+
 .text-field {
   width: fit-content;
   height: 50px;
