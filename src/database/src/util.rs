@@ -1,6 +1,8 @@
+use rusqlite::types::Value;
+
 use crate::math::{Coordinates, NauticalMiles};
 
-use std::{error::Error, fs, io::Read, path::Path};
+use std::{error::Error, fs, io::Read, path::Path, rc::Rc};
 
 // From 1.3.1 of https://www.sqlite.org/fileformat.html
 const SQLITE_HEADER: [u8; 16] = [
@@ -114,3 +116,15 @@ where
     }
     Ok(data)
 }
+
+// pub fn map_rows<T>(stmt: &mut rusqlite::Statement, params: [Rc<Vec<Value>>; 9]) -> Result<Vec<T>, Box<dyn Error>>
+// where
+//     T: for<'r> serde::Deserialize<'r>,
+// {
+//     let mut rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
+//     let mut data = Vec::new();
+//     while let Some(row) = rows.next() {
+//         data.push(row.map_err(|e| e.to_string())?);
+//     }
+//     Ok(data)
+// }

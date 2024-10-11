@@ -1,6 +1,8 @@
 use serde::Serialize;
 
-use std::cell::RefCell;
+use serde_json::Value;
+
+use std::{cell::RefCell, collections::HashMap};
 
 use super::fix::{Fix, FixType};
 use crate::{
@@ -8,7 +10,7 @@ use crate::{
     math::Coordinates,
     sql_structs,
     traits::DatabaseTrait,
-    v2::{self, database::DatabaseV2},
+    v2::{self, database::DatabaseV2, sql_structs::FixHelper},
 };
 
 #[serde_with::skip_serializing_none]
@@ -78,13 +80,26 @@ pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway>
 
 // TODO: Implement error propigation, need to rewrite logic
 pub(crate) fn map_airways_v2(database: &DatabaseV2, data: Vec<v2::sql_structs::EnrouteAirways>) -> Vec<Airway> {
+    let ids = data.iter().map(|f| f.waypoint_id.clone()).collect();
+
+    let fixes = Fix::from_ids(database, ids).unwrap_or_else(|op| {
+        eprintln!("Error getting fixes: {}", op);
+        vec![]
+    });
+
+    let mut fix_hash = HashMap::new();
+
+    for fix in fixes {
+        fix_hash.insert(fix.id.clone(), fix);
+    }
+
     let mut airway_complete = false;
+
     data.into_iter().fold(Vec::new(), |mut airways, airway_row| {
         if airways.len() == 0 || airway_complete {
             airways.push(Airway {
-                ident: airway_row.route_identifier.unwrap_or_default(),
+                ident: airway_row.route_identifier.unwrap_or("ERROR".to_string()),
                 fixes: Vec::new(),
-                // These defaults are completely random
                 route_type: airway_row.route_type.unwrap_or(AirwayRouteType::UndesignatedAtsRoute),
                 level: airway_row.flightlevel.unwrap_or(AirwayLevel::Both),
                 direction: airway_row.direction_restriction,
@@ -95,18 +110,7 @@ pub(crate) fn map_airways_v2(database: &DatabaseV2, data: Vec<v2::sql_structs::E
 
         let target_airway = airways.last_mut().unwrap();
 
-        target_airway.fixes.push(
-            Fix::from_id(database, airway_row.waypoint_id).unwrap_or_else(|op| -> Fix {
-                eprintln!("Error getting fix from id: {op}");
-                Fix {
-                    fix_type: FixType::Waypoint,
-                    ident: "ERROR".to_string(),
-                    icao_code: "ERROR".to_string(),
-                    location: Coordinates::default(),
-                    airport_ident: None,
-                }
-            }),
-        );
+        target_airway.fixes.push(fix_hash[&airway_row.waypoint_id].clone());
 
         if airway_row
             .waypoint_description_code

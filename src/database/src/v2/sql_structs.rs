@@ -1,9 +1,12 @@
 use serde::Deserialize;
 
-use crate::enums::{
-    AirwayDirection, AirwayLevel, AirwayRouteType, AltitudeDescriptor, ApproachTypeIdentifier, CommunicationType,
-    ControlledAirspaceType, FrequencyUnits, IfrCapability, LegType, RestrictiveAirspaceType, RunwaySurfaceCode,
-    SpeedDescriptor, TurnDirection,
+use crate::{
+    enums::{
+        AirwayDirection, AirwayLevel, AirwayRouteType, AltitudeDescriptor, ApproachTypeIdentifier, CommunicationType,
+        ControlledAirspaceType, FrequencyUnits, IfrCapability, LegType, RestrictiveAirspaceType, RunwaySurfaceCode,
+        SpeedDescriptor, TurnDirection,
+    },
+    output::fix::FixType,
 };
 
 #[derive(Deserialize, Debug)]
@@ -560,9 +563,11 @@ pub struct VhfNavaids {
 
 #[derive(Deserialize, Debug)]
 pub struct FixHelper {
+    pub fix_type: FixType,
     pub ident: String,
     pub icao_code: String,
     pub lat: f64,
     pub long: f64,
     pub airport_ident: Option<String>,
+    pub id: String,
 }
