@@ -20,7 +20,7 @@ use crate::{
     },
     meta::{self, InternalState},
     network_helper::NetworkHelper,
-    util::{self, path_exists},
+    util::{self, generate_uuid_from_cycle, generate_uuid_from_path, path_exists},
 };
 
 #[derive(PartialEq, Eq)]
@@ -98,11 +98,17 @@ impl<'a> Dispatcher<'a> {
             match cycle_file {
                 Ok(cycle_file) => {
                     let cycle: InstalledNavigationDataCycleInfo = serde_json::from_reader(cycle_file).unwrap();
-                    packages.push(PackageInfo {
+
+                    let uuid = match file_path.file_name().unwrap().to_string_lossy().to_string().as_str() {
+                        "active" => generate_uuid_from_cycle(&cycle),
+                        x => String::from(x),
+                    };
+
+                    let uuid = packages.push(PackageInfo {
                         path: String::from(file_path.to_string_lossy()),
-                        uuid: String::from(file_path.file_name().unwrap().to_string_lossy()),
+                        uuid,
                         cycle,
-                    })
+                    });
                 },
                 Err(err) => eprintln!("{:?}", err),
             }
@@ -123,6 +129,7 @@ impl<'a> Dispatcher<'a> {
                     .cycle
                     .cmp(&a.cycle.cycle)
                     .then(b.cycle.revision.cmp(&a.cycle.revision))
+                    .then(a.cycle.format.cmp(&b.cycle.format))
             });
         }
 
@@ -132,24 +139,73 @@ impl<'a> Dispatcher<'a> {
     fn set_package(&self, uuid: String) -> Result<String, Box<dyn Error>> {
         // TODO: Find package path
 
-        let uuid_path = &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(uuid);
+        let base_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
+
+        let active_path = base_path.join("active");
+
+        let uuid_path = base_path.join(uuid.clone());
+
+        if path_exists(&active_path) {
+            let cycle: InstalledNavigationDataCycleInfo =
+                serde_json::from_reader(fs::File::open(active_path.join("cycle.json")).unwrap()).unwrap();
+
+            let hash = generate_uuid_from_cycle(&cycle);
+
+            if (hash == uuid) {
+                return Ok(uuid);
+            }
+
+            let package: PackageInfo = PackageInfo {
+                path: String::from(uuid_path.to_string_lossy()),
+                uuid: String::from(uuid.clone()),
+                cycle,
+            };
+
+            // Disables the old path
+            fs::rename(active_path.clone(), base_path.join(hash))?;
+
+            self.database.borrow_mut().disable_cycle(package)?;
+        }
+
+        if !path_exists(&uuid_path) {
+            return Err("Package does not exist".into());
+        }
 
         let cycle: InstalledNavigationDataCycleInfo =
             serde_json::from_reader(fs::File::open(uuid_path.join("cycle.json")).unwrap()).unwrap();
 
         let package: PackageInfo = PackageInfo {
-            path: String::from(uuid_path.to_string_lossy()),
-            uuid: String::from(uuid_path.file_name().unwrap().to_string_lossy()),
+            path: String::from(active_path.to_string_lossy()),
+            uuid: String::from(uuid),
             cycle,
         };
 
-        self.database.borrow_mut().change_cycle(package)?;
+        fs::rename(uuid_path.clone(), active_path)?;
+
+        self.database.borrow_mut().enable_cycle(package)?;
 
         Ok(String::from(uuid_path.to_str().unwrap_or_default()))
     }
 
     fn setup_packages(&self) -> Result<String, Box<dyn Error>> {
         self.copy_bundles()?;
+
+        let active_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("active");
+
+        if path_exists(&active_path) {
+            let cycle: InstalledNavigationDataCycleInfo =
+                serde_json::from_reader(fs::File::open(active_path.join("cycle.json")).unwrap()).unwrap();
+
+            let hash = generate_uuid_from_cycle(&cycle);
+
+            let package: PackageInfo = PackageInfo {
+                path: String::from(active_path.to_string_lossy()),
+                uuid: String::from(hash),
+                cycle,
+            };
+
+            self.database.borrow_mut().enable_cycle(package)?;
+        }
 
         Ok(String::from("Packages Setup"))
     }
@@ -159,16 +215,15 @@ impl<'a> Dispatcher<'a> {
 
         let package_list = self.list_packages(false, false);
 
-        let uuid_list: Vec<String> = package_list
-            .iter()
-            .map(|package| {
-                return Path::new(&package.path)
-                    .file_name()
-                    .unwrap()
-                    .to_string_lossy()
-                    .to_string();
-            })
-            .collect();
+        let uuid_list: Vec<String> = package_list.iter().map(|package| package.uuid.clone()).collect();
+
+        let mut active_uuid: String = String::new();
+
+        let active_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("active");
+
+        if path_exists(&active_path) {
+            active_uuid = generate_uuid_from_path(active_path.join("cycle.json"))?;
+        }
 
         let Ok(bundled_dir) = fs::read_dir(bundled_path) else {
             println!("[NAVIGRAPH]: No Bundled Data");
@@ -184,18 +239,21 @@ impl<'a> Dispatcher<'a> {
 
             if !Path::exists(&cycle_path) {
                 println!(
-                    "[Navigraph]: Can't find cycle.json in {}",
+                    "[NAVIGRAPH]: Can't find cycle.json in {}",
                     file.path().to_string_lossy()
                 );
                 continue;
             }
 
-            let cycle_uuid: Uuid =
-                Uuid::new_v3(&Uuid::NAMESPACE_URL, fs::read_to_string(cycle_path).unwrap().as_bytes());
+            let cycle_hypenated = generate_uuid_from_path(cycle_path)?;
 
-            let cycle_hypenated = cycle_uuid.hyphenated().to_string();
-
+            // This should work, however it does not
             if uuid_list.contains(&cycle_hypenated) {
+                continue;
+            }
+
+            // This shall exist until I fix the copying bug, crashes sim, hard to debug manually.
+            if cycle_hypenated == active_uuid {
                 continue;
             }
 

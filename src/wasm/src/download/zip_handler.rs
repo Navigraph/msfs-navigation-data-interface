@@ -4,7 +4,10 @@ use std::{
 };
 use uuid::Uuid;
 
-use crate::{consts, util};
+use crate::{
+    consts,
+    util::{self, generate_uuid_from_path},
+};
 
 #[derive(PartialEq, Eq)]
 
@@ -80,12 +83,11 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
                     return Err("cycle.json not found".into());
                 };
 
-                let cycle_uuid: Uuid =
-                    Uuid::new_v3(&Uuid::NAMESPACE_URL, fs::read_to_string(cycle_path).unwrap().as_bytes());
+                let cycle_uuid = generate_uuid_from_path(cycle_path)?;
 
                 fs::rename(
                     temp_dir,
-                    Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(cycle_uuid.hyphenated().to_string()),
+                    Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(cycle_uuid),
                 )?;
 
                 return Ok(BatchReturn::Finished);

@@ -51,14 +51,14 @@ impl Error for NoDatabaseOpen {}
 
 impl Error for DatabaseNotCompat {}
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Clone)]
 pub struct PackageInfo {
     pub path: String,
     pub uuid: String,
     pub cycle: InstalledNavigationDataCycleInfo,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct InstalledNavigationDataCycleInfo {
     pub cycle: String,
     pub revision: String,
@@ -80,7 +80,9 @@ pub trait DatabaseTrait {
     fn setup(&self) -> Result<String, Box<dyn Error>>;
 
     // Takes a pacakge and switches the 'active' connection to the requested package.
-    fn change_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>>;
+    fn enable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>>;
+
+    fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>>;
 
     fn execute_sql_query(&self, sql: String, params: Vec<String>) -> Result<Value, Box<dyn Error>> {
         // Execute query
