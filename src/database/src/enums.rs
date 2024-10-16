@@ -1,3 +1,5 @@
+use std::default;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -218,7 +220,7 @@ pub enum RestrictiveAirspaceType {
     Unknown,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub enum CommunicationType {
     #[serde(rename = "ACC")]
     AreaControlCenter,
@@ -302,13 +304,14 @@ pub enum CommunicationType {
     Tower,
     #[serde(rename = "UAC")]
     UpperAreaControl,
+    #[default]
     #[serde(rename = "UNI")]
     Unicom,
     #[serde(rename = "VOL")]
     Volmet,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub enum FrequencyUnits {
     #[serde(rename = "H")]
     High,
@@ -316,6 +319,7 @@ pub enum FrequencyUnits {
     VeryHigh,
     #[serde(rename = "U")]
     UltraHigh,
+    #[default]
     #[serde(rename = "C")]
     /// Communication channel for 8.33 kHz spacing
     CommChannel,
@@ -341,4 +345,36 @@ impl InterfaceFormat {
             Self::DFDv2 => "dfdv2",
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum TrafficPattern {
+    #[serde(rename = "L")]
+    Left,
+    #[serde(rename = "R")]
+    Right,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum RunwayLights {
+    #[serde(rename = "Y")]
+    Yes,
+    #[serde(rename = "N")]
+    No,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum RunwaySurface {
+    #[serde(rename = "ASPH")]
+    Asphalt,
+    #[serde(rename = "TURF")]
+    Turf,
+    #[serde(rename = "GRVL")]
+    Gravel,
+    #[serde(rename = "CONC")]
+    Concrete,
+    #[serde(rename = "WATE")]
+    Water,
+    #[serde(rename = "UNPV")]
+    Unpaved,
 }

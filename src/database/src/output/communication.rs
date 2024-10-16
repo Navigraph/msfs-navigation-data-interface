@@ -3,11 +3,11 @@ use serde::Serialize;
 use crate::{
     enums::{CommunicationType, FrequencyUnits},
     math::Coordinates,
-    sql_structs,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Default)]
 /// Represents a communication station at an airport or in an enroute fir
 pub struct Communication {
     /// The Geographic region where this communication is
@@ -28,6 +28,14 @@ pub struct Communication {
     pub name: Option<String>,
     /// The location of this communication
     pub location: Coordinates,
+    /// Facility in which an RCO will be transmitting through
+    pub remote_facility: Option<String>, // new
+    pub remote_facility_icao_code: Option<String>, // new
+    /// Sector associated with the communication
+    pub sector_facility: Option<String>, // new
+    pub sector_facility_icao_code: Option<String>, // new
+    /// Bearings from the sector facility is applicable to the communication
+    pub sectorization: Option<String>, // new
 }
 
 impl From<sql_structs::AirportCommunication> for Communication {
@@ -45,6 +53,7 @@ impl From<sql_structs::AirportCommunication> for Communication {
                 lat: row.latitude,
                 long: row.longitude,
             },
+            ..Default::default()
         }
     }
 }
@@ -64,6 +73,53 @@ impl From<sql_structs::EnrouteCommunication> for Communication {
                 lat: row.latitude,
                 long: row.longitude,
             },
+            ..Default::default()
+        }
+    }
+}
+
+impl From<v2::sql_structs::AirportCommunication> for Communication {
+    fn from(row: v2::sql_structs::AirportCommunication) -> Self {
+        Self {
+            area_code: row.area_code,
+            communication_type: row.communication_type,
+            airport_ident: Some(row.airport_identifier),
+            fir_rdo_ident: None,
+            frequency: row.communication_frequency,
+            frequency_units: row.frequency_units,
+            callsign: row.callsign,
+            name: None,
+            location: Coordinates {
+                lat: row.latitude,
+                long: row.longitude,
+            },
+            remote_facility: row.remote_facility,
+            remote_facility_icao_code: row.remote_facility_icao_code,
+            sector_facility: row.sector_facility,
+            sector_facility_icao_code: row.sector_facility_icao_code,
+            sectorization: row.sectorization,
+        }
+    }
+}
+
+impl From<v2::sql_structs::EnrouteCommunication> for Communication {
+    fn from(row: v2::sql_structs::EnrouteCommunication) -> Self {
+        Self {
+            area_code: row.area_code,
+            communication_type: row.communication_type,
+            airport_ident: None,
+            fir_rdo_ident: Some(row.fir_rdo_ident),
+            frequency: row.communication_frequency,
+            frequency_units: row.frequency_units,
+            callsign: row.callsign,
+            name: None,
+            location: Coordinates {
+                lat: row.latitude,
+                long: row.longitude,
+            },
+            remote_facility: row.remote_facility,
+            remote_facility_icao_code: row.remote_facility_icao_code,
+            ..Default::default()
         }
     }
 }

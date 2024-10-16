@@ -295,6 +295,7 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
+    // should work, untested
     fn get_controlled_airspaces_in_range(
         &self, center: Coordinates, range: NauticalMiles,
     ) -> Result<Vec<ControlledAirspace>, Box<dyn Error>> {
@@ -315,11 +316,13 @@ impl DatabaseTrait for DatabaseV2 {
             .as_str(),
         )?;
 
+        // No changes since v1, able to use same struct
         let airspaces_data = util::fetch_rows::<sql_structs::ControlledAirspace>(&mut stmt, [])?;
 
         Ok(map_controlled_airspaces(airspaces_data))
     }
 
+    // should work, untested
     fn get_restrictive_airspaces_in_range(
         &self, center: Coordinates, range: NauticalMiles,
     ) -> Result<Vec<RestrictiveAirspace>, Box<dyn Error>> {
@@ -341,11 +344,13 @@ impl DatabaseTrait for DatabaseV2 {
             .as_str(),
         )?;
 
+        // No changes since v1, able to use same struct
         let airspaces_data = util::fetch_rows::<sql_structs::RestrictiveAirspace>(&mut stmt, [])?;
 
         Ok(map_restrictive_airspaces(airspaces_data))
     }
 
+    // should work, untested
     fn get_communications_in_range(
         &self, center: Coordinates, range: NauticalMiles,
     ) -> Result<Vec<Communication>, Box<dyn Error>> {
@@ -359,8 +364,8 @@ impl DatabaseTrait for DatabaseV2 {
         let mut terminal_stmt =
             conn.prepare(format!("SELECT * FROM tbl_pv_airport_communication WHERE {where_string}").as_str())?;
 
-        let enroute_data = util::fetch_rows::<sql_structs::EnrouteCommunication>(&mut enroute_stmt, [])?;
-        let terminal_data = util::fetch_rows::<sql_structs::AirportCommunication>(&mut terminal_stmt, [])?;
+        let enroute_data = util::fetch_rows::<v2::sql_structs::EnrouteCommunication>(&mut enroute_stmt, [])?;
+        let terminal_data = util::fetch_rows::<v2::sql_structs::AirportCommunication>(&mut terminal_stmt, [])?;
 
         Ok(enroute_data
             .into_iter()
@@ -375,7 +380,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_pg_runways WHERE airport_identifier = (?1)")?;
 
-        let runways_data = util::fetch_rows::<sql_structs::Runways>(&mut stmt, params![airport_ident])?;
+        let runways_data = util::fetch_rows::<v2::sql_structs::Runways>(&mut stmt, params![airport_ident])?;
 
         Ok(runways_data.into_iter().map(Into::into).collect())
     }

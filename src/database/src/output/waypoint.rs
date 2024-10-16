@@ -26,7 +26,6 @@ pub struct Waypoint {
     pub location: Coordinates,
     /// Magnetic variation (v2 only)
     pub magnetic_variation: Option<Degrees>,
-    pub id: String,
 }
 
 impl From<sql_structs::Waypoints> for Waypoint {
@@ -41,7 +40,6 @@ impl From<sql_structs::Waypoints> for Waypoint {
                 lat: waypoint.waypoint_latitude,
                 long: waypoint.waypoint_longitude,
             },
-            id: waypoint.id,
             ..Default::default()
         }
     }
@@ -63,7 +61,6 @@ impl From<v2::sql_structs::Waypoints> for Waypoint {
             continent: waypoint.continent,
             country: waypoint.country,
             magnetic_variation: waypoint.magnetic_varation,
-            id: waypoint.id,
         }
     }
 }

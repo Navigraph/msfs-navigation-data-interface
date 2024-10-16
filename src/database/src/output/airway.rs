@@ -10,7 +10,7 @@ use crate::{
     math::Coordinates,
     sql_structs,
     traits::DatabaseTrait,
-    v2::{self, database::DatabaseV2, sql_structs::FixHelper},
+    v2::{self, database::DatabaseV2},
 };
 
 #[serde_with::skip_serializing_none]

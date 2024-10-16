@@ -1,11 +1,12 @@
 use serde::Serialize;
 
 use crate::{
+    enums::{RunwayLights, RunwaySurface, RunwaySurfaceCode, TrafficPattern},
     math::{Coordinates, Degrees, Feet},
-    sql_structs,
+    sql_structs, v2,
 };
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Default)]
 pub struct RunwayThreshold {
     /// The identifier of this runway, such as `RW18L` or `RW36R`
     pub ident: String,
@@ -27,6 +28,12 @@ pub struct RunwayThreshold {
     pub location: Coordinates,
     /// The elevation of the landing threshold of this runway in feet
     pub elevation: Feet,
+    /// Whether or not the runway has lights
+    pub lights: Option<RunwayLights>,
+    /// Material that the runway is made out of
+    pub surface: Option<RunwaySurface>,
+    /// The traffic pattern of the runway
+    pub traffic_pattern: Option<TrafficPattern>,
 }
 
 impl From<sql_structs::Runways> for RunwayThreshold {
@@ -44,6 +51,29 @@ impl From<sql_structs::Runways> for RunwayThreshold {
                 long: runway.runway_longitude,
             },
             elevation: runway.landing_threshold_elevation,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<v2::sql_structs::Runways> for RunwayThreshold {
+    fn from(runway: v2::sql_structs::Runways) -> Self {
+        Self {
+            ident: runway.runway_identifier,
+            icao_code: runway.icao_code.unwrap_or("UNK".to_string()),
+            length: runway.runway_length,
+            width: runway.runway_width,
+            true_bearing: runway.runway_true_bearing.unwrap_or_default(),
+            magnetic_bearing: runway.runway_magnetic_bearing.unwrap_or_default(),
+            gradient: runway.runway_gradient.unwrap_or_default(),
+            location: Coordinates {
+                lat: runway.runway_latitude.unwrap_or_default(),
+                long: runway.runway_longitude.unwrap_or_default(),
+            },
+            elevation: runway.landing_threshold_elevation,
+            surface: runway.surface_code,
+            traffic_pattern: runway.traffic_pattern,
+            lights: runway.runway_lights,
         }
     }
 }

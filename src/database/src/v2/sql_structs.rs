@@ -3,24 +3,38 @@ use serde::Deserialize;
 use crate::{
     enums::{
         AirwayDirection, AirwayLevel, AirwayRouteType, AltitudeDescriptor, ApproachTypeIdentifier, CommunicationType,
-        ControlledAirspaceType, FrequencyUnits, IfrCapability, LegType, RestrictiveAirspaceType, RunwaySurfaceCode,
-        SpeedDescriptor, TurnDirection,
+        ControlledAirspaceType, FrequencyUnits, IfrCapability, LegType, RestrictiveAirspaceType, RunwayLights,
+        RunwaySurface, RunwaySurfaceCode, SpeedDescriptor, TrafficPattern, TurnDirection,
     },
     output::fix::FixType,
 };
 
 #[derive(Deserialize, Debug)]
 pub struct AirportCommunication {
-    pub area_code: String,
-    pub icao_code: String,
     pub airport_identifier: String,
-    pub communication_type: CommunicationType,
-    pub communication_frequency: f64,
-    pub frequency_units: FrequencyUnits,
-    pub service_indicator: Option<String>,
+    pub area_code: String,
     pub callsign: Option<String>,
+    pub communication_frequency: f64,
+    pub communication_type: CommunicationType,
+    pub frequency_units: FrequencyUnits,
+    pub guard_transmit: Option<String>, // new
+    pub icao_code: String,
     pub latitude: f64,
     pub longitude: f64,
+    pub narritive: Option<String>,                 // new
+    pub remote_facility_icao_code: Option<String>, // new
+    pub remote_facility: Option<String>,           // new
+    pub sector_facility_icao_code: Option<String>, // new
+    pub sector_facility: Option<String>,           // new
+    pub sectorization: Option<String>,             // new
+    pub service_indicator: Option<String>,
+    pub time_of_operation_1: Option<String>, // new
+    pub time_of_operation_2: Option<String>, // new
+    pub time_of_operation_3: Option<String>, // new
+    pub time_of_operation_4: Option<String>, // new
+    pub time_of_operation_5: Option<String>, // new
+    pub time_of_operation_6: Option<String>, // new
+    pub time_of_operation_7: Option<String>, // new
 }
 
 #[derive(Deserialize, Debug)]
@@ -61,7 +75,6 @@ pub struct Airports {
     pub country_3letter: Option<String>,
     pub elevation: f64,
     pub icao_code: String,
-    pub id: String,
     pub ifr_capability: Option<IfrCapability>,
     pub longest_runway_surface_code: RunwaySurfaceCode,
     pub magnetic_variation: Option<f64>,
@@ -72,31 +85,6 @@ pub struct Airports {
     pub transition_altitude: Option<f64>,
     pub transition_level: Option<f64>,
     pub airport_identifier_3letter: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ControlledAirspace {
-    pub area_code: String,
-    pub icao_code: String,
-    pub airspace_center: String,
-    pub controlled_airspace_name: Option<String>,
-    pub airspace_type: ControlledAirspaceType,
-    pub airspace_classification: Option<String>,
-    pub multiple_code: Option<String>,
-    pub time_code: Option<String>,
-    pub seqno: f64,
-    pub flightlevel: Option<String>,
-    pub boundary_via: String,
-    pub latitude: Option<f64>,
-    pub longitude: Option<f64>,
-    pub arc_origin_latitude: Option<f64>,
-    pub arc_origin_longitude: Option<f64>,
-    pub arc_distance: Option<f64>,
-    pub arc_bearing: Option<f64>,
-    pub unit_indicator_lower_limit: Option<String>,
-    pub lower_limit: Option<String>,
-    pub unit_indicator_upper_limit: Option<String>,
-    pub upper_limit: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -179,16 +167,18 @@ pub struct EnrouteAirways {
 #[derive(Deserialize, Debug)]
 pub struct EnrouteCommunication {
     pub area_code: String,
+    pub callsign: Option<String>,
+    pub communication_frequency: f64,
+    pub communication_type: CommunicationType,
     pub fir_rdo_ident: String,
     pub fir_uir_indicator: Option<String>,
-    pub communication_type: CommunicationType,
-    pub communication_frequency: f64,
     pub frequency_units: FrequencyUnits,
-    pub service_indicator: Option<String>,
-    pub remote_name: Option<String>,
-    pub callsign: Option<String>,
     pub latitude: f64,
     pub longitude: f64,
+    pub remote_facility_icao_code: Option<String>, // new
+    pub remote_facility: Option<String>,           // new
+    pub remote_name: Option<String>,
+    pub service_indicator: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -245,8 +235,6 @@ pub struct Gls {
     pub magentic_variation: f64,
     pub station_elevation: f64,
     pub station_type: Option<String>,
-
-    pub id: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -369,7 +357,6 @@ pub struct LocalizerMarker {
     pub marker_type: String,
     pub marker_latitude: f64,
     pub marker_longitude: f64,
-    pub id: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -390,7 +377,6 @@ pub struct LocalizersGlideslopes {
     pub gs_angle: Option<f64>,
     pub gs_elevation: Option<f64>,
     pub station_declination: Option<f64>,
-    pub id: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -422,48 +408,27 @@ pub struct Pathpoints {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct RestrictiveAirspace {
-    pub area_code: String,
-    pub icao_code: String,
-    pub restrictive_airspace_designation: String,
-    pub restrictive_airspace_name: Option<String>,
-    pub restrictive_type: RestrictiveAirspaceType,
-    pub multiple_code: Option<String>,
-    pub seqno: f64,
-    pub boundary_via: String,
-    pub flightlevel: Option<String>,
-    pub latitude: Option<f64>,
-    pub longitude: Option<f64>,
-    pub arc_origin_latitude: Option<f64>,
-    pub arc_origin_longitude: Option<f64>,
-    pub arc_distance: Option<f64>,
-    pub arc_bearing: Option<f64>,
-    pub unit_indicator_lower_limit: Option<String>,
-    pub lower_limit: Option<String>,
-    pub unit_indicator_upper_limit: Option<String>,
-    pub upper_limit: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
 pub struct Runways {
-    pub area_code: String,
-    pub icao_code: String,
     pub airport_identifier: String,
-    pub runway_identifier: String,
-    pub runway_latitude: f64,
-    pub runway_longitude: f64,
-    pub runway_gradient: f64,
-    pub runway_magnetic_bearing: f64,
-    pub runway_true_bearing: f64,
+    pub area_code: Option<String>,
+    pub displaced_threshold_distance: Option<f64>,
+    pub icao_code: Option<String>,
     pub landing_threshold_elevation: f64,
-    pub displaced_threshold_distance: f64,
-    pub threshold_crossing_height: f64,
-    pub runway_length: f64,
-    pub runway_width: f64,
     pub llz_identifier: Option<String>,
     pub llz_mls_gls_category: Option<String>,
-    pub surface_code: f64,
-    pub id: String,
+    pub part_time_lights: Option<String>,
+    pub runway_gradient: Option<f64>,
+    pub runway_identifier: String,
+    pub runway_latitude: Option<f64>,
+    pub runway_length: f64,
+    pub runway_lights: Option<RunwayLights>, // new
+    pub runway_longitude: Option<f64>,
+    pub runway_magnetic_bearing: Option<f64>,
+    pub runway_true_bearing: Option<f64>,
+    pub runway_width: f64,
+    pub surface_code: Option<RunwaySurface>,
+    pub threshold_crossing_height: Option<f64>,
+    pub traffic_pattern: Option<TrafficPattern>, // new
 }
 
 #[derive(Deserialize, Debug)]
@@ -519,7 +484,6 @@ pub struct NdbNavaids {
     pub ndb_latitude: f64,
     pub ndb_longitude: f64,
     pub range: f64,
-    pub id: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -528,7 +492,6 @@ pub struct Waypoints {
     pub continent: Option<String>,
     pub country: Option<String>,
     pub icao_code: Option<String>,
-    pub id: String,
     pub magnetic_varation: Option<f64>,
     pub region_code: Option<String>,
     pub waypoint_identifier: String,
@@ -550,7 +513,6 @@ pub struct VhfNavaids {
     pub dme_latitude: Option<f64>,
     pub dme_longitude: Option<f64>,
     pub icao_code: Option<String>,
-    pub id: String,
     pub ilsdme_bias: Option<f64>,
     pub magnetic_variation: Option<f64>,
     pub navaid_class: String,
@@ -561,15 +523,4 @@ pub struct VhfNavaids {
     pub navaid_name: String,
     pub range: f64,
     pub station_declination: Option<f64>,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct FixHelper {
-    pub fix_type: FixType,
-    pub ident: String,
-    pub icao_code: String,
-    pub lat: f64,
-    pub long: f64,
-    pub airport_ident: Option<String>,
-    pub id: String,
 }
