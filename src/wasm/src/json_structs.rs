@@ -19,6 +19,10 @@ pub mod functions {
         ListAvailablePackages,
         /// `SetActivePackage`
         SetActivePackage,
+        /// `DeletePackage`
+        DeletePackage,
+        /// `CleanPackages`
+        CleanPackages,
 
         /// `GetByIdentParams`
         GetAirport,
@@ -162,6 +166,16 @@ pub mod params {
     pub struct SetActivePackage {
         /// UUID that the package is stored as
         pub uuid: String,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct DeletePackage {
+        pub uuid: String,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct CleanPackages {
+        pub count: Option<i32>,
     }
 
     #[derive(serde::Deserialize)]

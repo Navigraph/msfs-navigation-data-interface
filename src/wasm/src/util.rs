@@ -1,4 +1,9 @@
-use std::{error::Error, fs, io, path::Path};
+use std::{
+    error::Error,
+    fs,
+    io::{self, BufRead, BufReader, BufWriter, Read, Seek, Write},
+    path::Path,
+};
 
 use uuid::Uuid;
 
@@ -64,9 +69,15 @@ pub fn copy_files_to_folder(from: &Path, to: &Path) -> io::Result<()> {
     // Create the directory we are copying to
     fs::create_dir(to)?;
     // Collect the entries that we will copy
-    let entries = fs::read_dir(from)?.collect::<Result<Vec<_>, _>>()?;
+    let entries = fs::read_dir(from)?;
+
     // Copy the entries
     for entry in entries {
+        let Ok(entry) = entry else {
+            eprintln!("[NAVIGRAPH]: Bugged entry");
+            continue;
+        };
+
         let path = entry.path();
         let path_type = get_path_type(&path);
 

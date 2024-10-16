@@ -1,4 +1,11 @@
-use std::{cell::RefCell, error::Error, fs, io::Read, path::Path, rc::Rc};
+use std::{
+    cell::RefCell,
+    error::Error,
+    fs,
+    io::{self, Read},
+    path::Path,
+    rc::Rc,
+};
 
 use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::{
@@ -136,7 +143,7 @@ impl<'a> Dispatcher<'a> {
         return packages;
     }
 
-    fn set_package(&self, uuid: String) -> Result<String, Box<dyn Error>> {
+    fn set_package(&self, uuid: String) -> Result<bool, Box<dyn Error>> {
         // TODO: Find package path
 
         let base_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
@@ -152,7 +159,7 @@ impl<'a> Dispatcher<'a> {
             let hash = generate_uuid_from_cycle(&cycle);
 
             if (hash == uuid) {
-                return Ok(uuid);
+                return Ok(false);
             }
 
             let package: PackageInfo = PackageInfo {
@@ -184,7 +191,7 @@ impl<'a> Dispatcher<'a> {
 
         self.database.borrow_mut().enable_cycle(package)?;
 
-        Ok(String::from(uuid_path.to_str().unwrap_or_default()))
+        Ok(true)
     }
 
     fn setup_packages(&self) -> Result<String, Box<dyn Error>> {
@@ -259,10 +266,50 @@ impl<'a> Dispatcher<'a> {
 
             let work_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(cycle_hypenated);
 
-            util::copy_files_to_folder(&file.path(), &work_path).unwrap();
+            util::copy_files_to_folder(&file.path(), &work_path)?;
         }
 
         Ok(true)
+    }
+
+    fn delete_package(&self, uuid: String) -> io::Result<()> {
+        let package_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(uuid);
+
+        util::delete_folder_recursively(&package_path, None)
+    }
+
+    fn clean_up_packages(&self, count_max: Option<i32>) -> Result<(), Box<dyn Error>> {
+        let bundle_path = Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION);
+
+        let mut bundle_ids = vec![];
+
+        for dir in bundle_path.read_dir()? {
+            let Ok(dir) = dir else {
+                continue;
+            };
+
+            bundle_ids.push(generate_uuid_from_path(dir.path().join("cycle.json"))?);
+        }
+
+        let packages = self.list_packages(true, false);
+
+        let mut count = 0;
+
+        let (keep, delete): (Vec<PackageInfo>, Vec<PackageInfo>) = packages.into_iter().partition(|pkg| {
+            if (self.db_type.as_str() == pkg.cycle.format) && (count <= count_max.unwrap_or(3)) {
+                count += 1;
+                return true;
+            } else if bundle_ids.contains(&pkg.uuid) || pkg.path.contains("active") {
+                return true;
+            }
+            false
+        });
+
+        for pkg in delete {
+            self.delete_package(pkg.uuid)?;
+        }
+
+        Ok(())
     }
 
     pub fn on_msfs_event(&mut self, event: MSFSEvent) {
@@ -283,7 +330,10 @@ impl<'a> Dispatcher<'a> {
 
     fn handle_initialized(&mut self) {
         // Runs before everything, used to set up the navdata in the right places.
-        self.setup_packages().unwrap();
+        self.setup_packages().unwrap_or_else(|x| {
+            eprintln!("Packages failed to setup, Err: {}", x);
+            String::new()
+        });
 
         // Runs extra setup on the configured database format handler
         self.database.borrow().setup().unwrap();
@@ -378,6 +428,22 @@ impl<'a> Dispatcher<'a> {
                     let data = self.set_package(params.uuid)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(data)?));
+
+                    Ok(())
+                }),
+                FunctionType::DeletePackage => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::DeletePackage>()?;
+                    let data = self.delete_package(params.uuid)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(().into()));
+
+                    Ok(())
+                }),
+                FunctionType::CleanPackages => Dispatcher::execute_task(task.clone(), |t| {
+                    let params = t.borrow().parse_data_as::<params::CleanPackages>()?;
+                    let data = self.clean_up_packages(params.count)?;
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(().into()));
 
                     Ok(())
                 }),

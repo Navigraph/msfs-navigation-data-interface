@@ -90,6 +90,8 @@ export class NavigraphNavigationDataInterface {
   /**
    * Lists the available navigation data packages
    *
+   * @param sort - Sets active package to the uuid
+   * @param filter - Sets active package to the uuid
    * @returns A promise that resolves with the list of packages
    */
   public async list_available_packages(sort?: boolean, filter?: boolean): Promise<PackageInfo[]> {
@@ -100,10 +102,30 @@ export class NavigraphNavigationDataInterface {
    * Sets the active package in the database
    *
    * @param uuid - Sets active package to the uuid
-   * @returns A promise that returns the uuid (string) to show that it was properly activated
+   * @returns A promise that returns a bool that shows whether a new package was set or not
    */
-  public async set_active_package(uuid: string): Promise<string> {
+  public async set_active_package(uuid: string): Promise<boolean> {
     return await this.callWasmFunction("SetActivePackage", { uuid })
+  }
+
+  /**
+   * Sets the active package in the database
+   *
+   * @param uuid - Sets active package to the uuid
+   * @returns A promise that returns void
+   */
+  public async delete_package(uuid: string): Promise<void> {
+    return await this.callWasmFunction("DeletePackage", { uuid })
+  }
+
+  /**
+   * Cleans up packages by deleting non activated formats (keeps bundled packages)
+   *
+   * @param count - Amount of packages of current format to leave
+   * @returns A promise that returns void
+   */
+  public async clean_packages(count?: number): Promise<void> {
+    return await this.callWasmFunction("CleanPackages", { count })
   }
 
   /**
