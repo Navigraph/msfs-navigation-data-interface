@@ -79,22 +79,8 @@ pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway>
 }
 
 // TODO: Implement error propigation, need to rewrite logic
-pub(crate) fn map_airways_v2(database: &DatabaseV2, data: Vec<v2::sql_structs::EnrouteAirways>) -> Vec<Airway> {
-    let ids = data.iter().map(|f| f.waypoint_id.clone()).collect();
-
-    let fixes = Fix::from_ids(database, ids).unwrap_or_else(|op| {
-        eprintln!("Error getting fixes: {}", op);
-        vec![]
-    });
-
-    let mut fix_hash = HashMap::new();
-
-    for fix in fixes {
-        fix_hash.insert(fix.id.clone(), fix);
-    }
-
+pub(crate) fn map_airways_v2(data: Vec<v2::sql_structs::EnrouteAirways>) -> Vec<Airway> {
     let mut airway_complete = false;
-
     data.into_iter().fold(Vec::new(), |mut airways, airway_row| {
         if airways.len() == 0 || airway_complete {
             airways.push(Airway {
@@ -110,7 +96,14 @@ pub(crate) fn map_airways_v2(database: &DatabaseV2, data: Vec<v2::sql_structs::E
 
         let target_airway = airways.last_mut().unwrap();
 
-        target_airway.fixes.push(fix_hash[&airway_row.waypoint_id].clone());
+        target_airway.fixes.push(Fix::from_row_data_v2(
+            airway_row.waypoint_latitude.unwrap_or(0.),
+            airway_row.waypoint_longitude.unwrap_or(0.),
+            airway_row.waypoint_identifier.unwrap_or("NULL".to_string()),
+            airway_row.icao_code.unwrap_or("NULL".to_string()),
+            None,
+            airway_row.waypoint_ref_table,
+        ));
 
         if airway_row
             .waypoint_description_code

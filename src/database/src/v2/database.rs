@@ -155,7 +155,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         let airways_data = util::fetch_rows::<v2::sql_structs::EnrouteAirways>(&mut stmt, params![ident])?;
 
-        Ok(map_airways_v2(self, airways_data))
+        Ok(map_airways_v2(airways_data))
     }
 
     // v2 Compat, might have performance issue
@@ -169,7 +169,7 @@ impl DatabaseTrait for DatabaseV2 {
         let all_airways =
             util::fetch_rows::<v2::sql_structs::EnrouteAirways>(&mut stmt, params![fix_ident, fix_icao_code])?;
 
-        Ok(map_airways_v2(self, all_airways)
+        Ok(map_airways_v2(all_airways)
             .into_iter()
             .filter(|airway| {
                 airway
@@ -284,7 +284,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         let airways_data = util::fetch_rows::<v2::sql_structs::EnrouteAirways>(&mut stmt, [])?;
 
-        Ok(map_airways_v2(self, airways_data)
+        Ok(map_airways_v2(airways_data)
             .into_iter()
             .filter(|airway| {
                 airway

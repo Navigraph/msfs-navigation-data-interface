@@ -171,16 +171,16 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     this.loginButtonRef.instance.addEventListener("click", () => this.handleClick())
     this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
 
-    this.executeIcaoButtonRef.instance.addEventListener("click", async () => {
+    this.executeIcaoButtonRef.instance.addEventListener("click", () => {
       console.time("query")
-      await this.navigationDataInterface.clean_packages()
-      // .get_airways_at_fix(this.icaoInputRef.instance.value, "K2")
-      // .then(airways => {
-      //   console.info(airways)
-      //   this.outputRef.instance.textContent = JSON.stringify(airways, null, 2)
-      // })
-      // .catch(e => console.error(e))
-      // .finally(() => console.timeEnd("query"))
+      this.navigationDataInterface
+        .get_airways_at_fix(this.icaoInputRef.instance.value, "K2")
+        .then(airways => {
+          console.info(airways)
+          this.outputRef.instance.textContent = JSON.stringify(airways, null, 2)
+        })
+        .catch(e => console.error(e))
+        .finally(() => console.timeEnd("query"))
     })
 
     this.loadDbRef.instance.addEventListener("click", () => this.handleLoadDbClick())
@@ -280,7 +280,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
     this.outputRef.instance.textContent = JSON.stringify(data_packages, null, 2)
 
-    await this.navigationDataInterface.set_active_package(data_packages[1].uuid)
+    await this.navigationDataInterface.set_active_package(data_packages[0].uuid)
   }
 
   private displayMessage(message: string) {

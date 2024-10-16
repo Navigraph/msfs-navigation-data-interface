@@ -170,8 +170,10 @@ pub struct EnrouteAirways {
     pub route_type: Option<AirwayRouteType>,
     pub seqno: Option<f64>,
     pub waypoint_description_code: Option<String>,
-    pub waypoint_id: String,
     pub waypoint_identifier: Option<String>,
+    pub waypoint_latitude: Option<f64>,
+    pub waypoint_longitude: Option<f64>,
+    pub waypoint_ref_table: String,
 }
 
 #[derive(Deserialize, Debug)]
