@@ -22,10 +22,9 @@ use crate::{
         ndb_navaid::NdbNavaid,
         path_point::PathPoint,
         procedure::{
-            approach::{map_approaches, Approach},
-            arrival::{map_arrivals, Arrival},
-            departure::Departure,
-            departure::{map_departures, map_departures_v2},
+            approach::{map_approaches, map_approaches_v2, Approach},
+            arrival::{map_arrivals, map_arrivals_v2, Arrival},
+            departure::{map_departures, map_departures_v2, Departure},
         },
         runway::RunwayThreshold,
         vhf_navaid::VhfNavaid,
@@ -386,6 +385,7 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(runways_data.into_iter().map(Into::into).collect())
     }
 
+    // v2 Compat
     fn get_departures_at_airport(&self, airport_ident: String) -> Result<Vec<Departure>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -400,6 +400,7 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(map_departures_v2(departures_data, runways_data))
     }
 
+    // should work, untested
     fn get_arrivals_at_airport(&self, airport_ident: String) -> Result<Vec<Arrival>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -407,38 +408,43 @@ impl DatabaseTrait for DatabaseV2 {
 
         let mut runways_stmt = conn.prepare("SELECT * FROM tbl_pg_runways WHERE airport_identifier = (?1)")?;
 
-        let arrivals_data = util::fetch_rows::<sql_structs::Procedures>(&mut arrivals_stmt, params![airport_ident])?;
-        let runways_data = util::fetch_rows::<sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
+        let arrivals_data =
+            util::fetch_rows::<v2::sql_structs::Procedures>(&mut arrivals_stmt, params![airport_ident])?;
+        let runways_data = util::fetch_rows::<v2::sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
 
-        Ok(map_arrivals(arrivals_data, runways_data))
+        Ok(map_arrivals_v2(arrivals_data, runways_data))
     }
 
+    // should work, untested
     fn get_approaches_at_airport(&self, airport_ident: String) -> Result<Vec<Approach>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut approachs_stmt = conn.prepare("SELECT * FROM tbl_pf_iaps WHERE airport_identifier = (?1)")?;
 
-        let approaches_data = util::fetch_rows::<sql_structs::Procedures>(&mut approachs_stmt, params![airport_ident])?;
+        let approaches_data =
+            util::fetch_rows::<v2::sql_structs::Procedures>(&mut approachs_stmt, params![airport_ident])?;
 
-        Ok(map_approaches(approaches_data))
+        Ok(map_approaches_v2(approaches_data))
     }
 
+    // should work, untested
     fn get_waypoints_at_airport(&self, airport_ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_pc_terminal_waypoints WHERE region_code = (?1)")?;
 
-        let waypoints_data = util::fetch_rows::<sql_structs::Waypoints>(&mut stmt, params![airport_ident])?;
+        let waypoints_data = util::fetch_rows::<v2::sql_structs::Waypoints>(&mut stmt, params![airport_ident])?;
 
         Ok(waypoints_data.into_iter().map(Waypoint::from).collect())
     }
 
+    // should work, untested
     fn get_ndb_navaids_at_airport(&self, airport_ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_pn_terminal_ndbnavaids WHERE airport_identifier = (?1)")?;
 
-        let waypoints_data = util::fetch_rows::<sql_structs::NdbNavaids>(&mut stmt, params![airport_ident])?;
+        let waypoints_data = util::fetch_rows::<v2::sql_structs::NdbNavaids>(&mut stmt, params![airport_ident])?;
 
         Ok(waypoints_data.into_iter().map(NdbNavaid::from).collect())
     }
