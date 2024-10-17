@@ -207,17 +207,6 @@ pub struct FirUir {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Gate {
-    pub area_code: String,
-    pub airport_identifier: String,
-    pub icao_code: String,
-    pub gate_identifier: String,
-    pub gate_latitude: f64,
-    pub gate_longitude: f64,
-    pub name: String,
-}
-
-#[derive(Deserialize, Debug)]
 pub struct Gls {
     pub area_code: String,
     pub airport_identifier: String,
@@ -384,30 +373,31 @@ pub struct LocalizersGlideslopes {
 
 #[derive(Deserialize, Debug)]
 pub struct Pathpoints {
-    pub area_code: String,
+    pub airport_icao_code: String,
     pub airport_identifier: String,
-    pub icao_code: String,
+    pub approach_performance_designator: Option<String>, // new
     pub approach_procedure_ident: String,
-    pub runway_identifier: String,
-    pub sbas_service_provider_identifier: f64,
-    pub reference_path_identifier: String,
+    pub approach_type_identifier: ApproachTypeIdentifier,
+    pub area_code: String,
+    pub course_width_at_threshold: f64,
+    pub flight_path_alignment_latitude: f64,
+    pub flight_path_alignment_longitude: f64,
+    pub glide_path_angle: f64,
+    pub gnss_channel_number: f64,
+    pub hal: f64,
     pub landing_threshold_latitude: f64,
     pub landing_threshold_longitude: f64,
+    pub length_offset: Option<f64>,
     pub ltp_ellipsoid_height: f64,
-    pub glidepath_angle: f64,
-    pub flightpath_alignment_latitude: f64,
-    pub flightpath_alignment_longitude: f64,
-    pub course_width_at_threshold: f64,
-    pub length_offset: f64,
+    pub operations_type: Option<f64>, // new
     pub path_point_tch: f64,
+    pub reference_path_data_selector: Option<f64>, // new
+    pub reference_path_identifier: String,
+    pub route_indicator: Option<String>,
+    pub runway_identifier: String,
+    pub sbas_service_provider_identifier: f64,
     pub tch_units_indicator: String,
-    pub hal: f64,
     pub val: f64,
-    pub fpap_ellipsoid_height: f64,
-    pub fpap_orthometric_height: Option<f64>,
-    pub ltp_orthometric_height: Option<f64>,
-    pub approach_type_identifier: ApproachTypeIdentifier,
-    pub gnss_channel_number: f64,
 }
 
 #[derive(Deserialize, Debug)]

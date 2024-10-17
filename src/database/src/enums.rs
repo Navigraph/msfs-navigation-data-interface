@@ -325,10 +325,11 @@ pub enum FrequencyUnits {
     CommChannel,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub enum ApproachTypeIdentifier {
     #[serde(rename = "LPV")]
     LocalizerPerformanceVerticalGuidance,
+    #[default]
     #[serde(rename = "LP")]
     LocalizerPerformance,
 }
