@@ -4,7 +4,7 @@ use super::fix::Fix;
 use crate::{
     enums::{AltitudeDescriptor, LegType, SpeedDescriptor, TurnDirection},
     math::{Degrees, Feet, Knots, Minutes, NauticalMiles},
-    sql_structs,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
@@ -136,6 +136,79 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
                     leg.center_waypoint_latitude.unwrap(),
                     leg.center_waypoint_longitude.unwrap(),
                     leg.center_id,
+                ))
+            } else {
+                None
+            },
+            arc_radius: leg.arc_radius,
+            leg_type: leg.path_termination,
+        }
+    }
+}
+
+impl From<v2::sql_structs::Procedures> for ProcedureLeg {
+    fn from(leg: v2::sql_structs::Procedures) -> Self {
+        ProcedureLeg {
+            overfly: leg
+                .waypoint_description_code
+                .map_or(false, |x| x.chars().nth(1) == Some('Y')),
+            altitude: leg.altitude1.map(|altitude1| AltitudeContstraint {
+                altitude1,
+                altitude2: leg.altitude2,
+                descriptor: leg.altitude_description.unwrap_or(AltitudeDescriptor::AtAlt1),
+            }),
+            speed: leg.speed_limit.map(|speed| SpeedConstraint {
+                value: speed,
+                descriptor: leg.speed_limit_description.unwrap_or(SpeedDescriptor::Mandatory),
+            }),
+            vertical_angle: leg.vertical_angle,
+            rnp: leg.rnp,
+            fix: if leg.waypoint_identifier.is_some() {
+                Some(Fix::from_row_data_v2(
+                    leg.waypoint_latitude.unwrap(),
+                    leg.waypoint_longitude.unwrap(),
+                    leg.waypoint_identifier.unwrap(),
+                    leg.waypoint_icao_code.unwrap(),
+                    Some(leg.airport_identifier.clone()),
+                    leg.waypoint_ref_table,
+                ))
+            } else {
+                None
+            },
+            recommended_navaid: if leg.recommended_navaid.is_some() {
+                Some(Fix::from_row_data_v2(
+                    leg.recommended_navaid_latitude.unwrap(),
+                    leg.recommended_navaid_longitude.unwrap(),
+                    leg.recommended_navaid.unwrap(),
+                    leg.recommended_navaid_icao_code.unwrap(),
+                    Some(leg.airport_identifier.clone()),
+                    leg.recommended_navaid_ref_table,
+                ))
+            } else {
+                None
+            },
+            theta: leg.theta,
+            rho: leg.rho,
+            magnetic_course: None,
+            length: if leg.route_distance_holding_distance_time == Some("D".to_string()) {
+                leg.distance_time
+            } else {
+                None
+            },
+            length_time: if leg.route_distance_holding_distance_time == Some("T".to_string()) {
+                leg.distance_time
+            } else {
+                None
+            },
+            turn_direction: leg.turn_direction,
+            arc_center_fix: if leg.center_waypoint.is_some() {
+                Some(Fix::from_row_data_v2(
+                    leg.center_waypoint_latitude.unwrap(),
+                    leg.center_waypoint_longitude.unwrap(),
+                    leg.center_waypoint.unwrap(),
+                    leg.center_waypoint_icao_code.unwrap(),
+                    Some(leg.airport_identifier),
+                    leg.center_waypoint_ref_table,
                 ))
             } else {
                 None

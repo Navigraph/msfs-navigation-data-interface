@@ -24,8 +24,8 @@ use crate::{
         procedure::{
             approach::{map_approaches, Approach},
             arrival::{map_arrivals, Arrival},
-            departure::map_departures,
             departure::Departure,
+            departure::{map_departures, map_departures_v2},
         },
         runway::RunwayThreshold,
         vhf_navaid::VhfNavaid,
@@ -375,6 +375,7 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
+    // should work, untested
     fn get_runways_at_airport(&self, airport_ident: String) -> Result<Vec<RunwayThreshold>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -393,10 +394,10 @@ impl DatabaseTrait for DatabaseV2 {
         let mut runways_stmt = conn.prepare("SELECT * FROM tbl_pg_runways WHERE airport_identifier = (?1)")?;
 
         let departures_data =
-            util::fetch_rows::<sql_structs::Procedures>(&mut departures_stmt, params![airport_ident])?;
-        let runways_data = util::fetch_rows::<sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
+            util::fetch_rows::<v2::sql_structs::Procedures>(&mut departures_stmt, params![airport_ident])?;
+        let runways_data = util::fetch_rows::<v2::sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
 
-        Ok(map_departures(departures_data, runways_data))
+        Ok(map_departures_v2(departures_data, runways_data))
     }
 
     fn get_arrivals_at_airport(&self, airport_ident: String) -> Result<Vec<Arrival>, Box<dyn Error>> {

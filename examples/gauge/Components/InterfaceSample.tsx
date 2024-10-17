@@ -174,10 +174,10 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     this.executeIcaoButtonRef.instance.addEventListener("click", () => {
       console.time("query")
       this.navigationDataInterface
-        .get_airways_at_fix(this.icaoInputRef.instance.value, "K2")
-        .then(airways => {
-          console.info(airways)
-          this.outputRef.instance.textContent = JSON.stringify(airways, null, 2)
+        .get_departures_at_airport(this.icaoInputRef.instance.value)
+        .then(procedures => {
+          console.info(procedures)
+          this.outputRef.instance.textContent = JSON.stringify(procedures, null, 2)
         })
         .catch(e => console.error(e))
         .finally(() => console.timeEnd("query"))
