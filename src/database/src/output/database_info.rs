@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use serde::Serialize;
 
-use crate::sql_structs;
+use crate::{sql_structs, v2};
 
 #[derive(Serialize)]
 pub struct DatabaseInfo {
@@ -40,6 +40,16 @@ impl From<sql_structs::Header> for DatabaseInfo {
             airac_cycle: header.current_airac,
             effective_from_to: parse_from_to(header.effective_fromto).unwrap(),
             previous_from_to: parse_from_to(header.previous_fromto).unwrap(),
+        }
+    }
+}
+
+impl From<v2::sql_structs::Header> for DatabaseInfo {
+    fn from(header: v2::sql_structs::Header) -> Self {
+        Self {
+            airac_cycle: header.cycle,
+            effective_from_to: parse_from_to(header.effective_fromto).unwrap(),
+            previous_from_to: ("depricated".to_string(), "depricated".to_string()),
         }
     }
 }

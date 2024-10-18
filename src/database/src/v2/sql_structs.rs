@@ -264,15 +264,14 @@ pub struct GridMora {
 
 #[derive(Deserialize, Debug)]
 pub struct Header {
-    pub version: String,
-    pub arincversion: String,
-    pub record_set: String,
-    pub current_airac: String,
-    pub revision: String,
+    pub creator: String,
+    pub cycle: String,
+    pub data_provider: String,
+    pub dataset_version: String,
+    pub dataset: String,
     pub effective_fromto: String,
-    pub previous_airac: String,
-    pub previous_fromto: String,
     pub parsed_at: String,
+    pub revision: String,
 }
 
 #[derive(Deserialize, Debug)]

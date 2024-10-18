@@ -83,7 +83,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_hdr_header")?;
 
-        let header_data = util::fetch_row::<sql_structs::Header>(&mut stmt, params![])?;
+        let header_data = util::fetch_row::<v2::sql_structs::Header>(&mut stmt, params![])?;
 
         Ok(DatabaseInfo::from(header_data))
     }
