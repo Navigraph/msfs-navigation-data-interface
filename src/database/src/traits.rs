@@ -79,6 +79,7 @@ pub enum DatabaseEnum {
     DatabaseManual,
 }
 
+#[allow(unused_variables)]
 #[enum_dispatch(DatabaseEnum)]
 pub trait DatabaseTrait {
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen>;
