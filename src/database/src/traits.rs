@@ -1,8 +1,11 @@
+use enum_dispatch::enum_dispatch;
 use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags, Result};
 use serde_json::{Number, Value};
 
 use super::output::{airport::Airport, airway::map_airways, procedure::departure::map_departures};
 use crate::{
+    database::DatabaseV1,
+    manual::database::DatabaseManual,
     math::{Coordinates, NauticalMiles},
     output::{
         airspace::{map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace, RestrictiveAirspace},
@@ -23,6 +26,7 @@ use crate::{
         waypoint::Waypoint,
     },
     sql_structs, util,
+    v2::database::DatabaseV2,
 };
 use std::{
     error::Error,
@@ -68,11 +72,14 @@ pub struct InstalledNavigationDataCycleInfo {
     pub validity_period: String,
 }
 
-pub trait InterfaceTrait {
-    fn new() -> Self;
+#[enum_dispatch]
+pub enum DatabaseEnum {
+    DatabaseV1,
+    DatabaseV2,
+    DatabaseManual,
 }
 
-#[allow(unused_variables)]
+#[enum_dispatch(DatabaseEnum)]
 pub trait DatabaseTrait {
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen>;
 

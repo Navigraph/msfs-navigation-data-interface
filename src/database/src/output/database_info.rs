@@ -16,6 +16,22 @@ pub struct DatabaseInfo {
     previous_from_to: (String, String),
 }
 
+impl DatabaseInfo {
+    pub fn new(
+        cycle: String, effective_from: String, effective_to: String, previous_from: Option<String>,
+        previous_to: Option<String>,
+    ) -> Self {
+        DatabaseInfo {
+            airac_cycle: cycle,
+            effective_from_to: (effective_from, effective_to),
+            previous_from_to: (
+                previous_from.unwrap_or("depricated".to_string()),
+                previous_to.unwrap_or("depricated".to_string()),
+            ),
+        }
+    }
+}
+
 /// Converts a string of the format `DDMMDDMMYY` into a tuple of two strings of the format `DD-MM-YYYY`.
 ///
 /// If the previous month is greater than the current month, the previous year is decremented by 1.

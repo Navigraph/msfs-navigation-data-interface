@@ -1,5 +1,5 @@
 use std::{
-    cell::RefCell,
+    cell::{Ref, RefCell},
     error::Error,
     fs,
     io::{self, Read},
@@ -11,7 +11,8 @@ use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEv
 use navigation_database::{
     database::DatabaseV1,
     enums::InterfaceFormat,
-    traits::{DatabaseTrait, InstalledNavigationDataCycleInfo, PackageInfo},
+    manual::database::DatabaseManual,
+    traits::{DatabaseEnum, DatabaseTrait, InstalledNavigationDataCycleInfo, PackageInfo},
     v2::database::DatabaseV2,
 };
 use serde_json::Value;
@@ -60,10 +61,10 @@ impl Task {
 pub struct Dispatcher<'a> {
     commbus: CommBus<'a>,
     downloader: Rc<NavigationDataDownloader>,
-    database: RefCell<Box<dyn DatabaseTrait>>,
+    database: RefCell<DatabaseEnum>,
     delta_time: std::time::Duration,
     queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
-    db_type: InterfaceFormat,
+    db_type: RefCell<InterfaceFormat>,
 }
 
 impl<'a> Dispatcher<'a> {
@@ -72,13 +73,14 @@ impl<'a> Dispatcher<'a> {
             commbus: CommBus::default(),
             downloader: Rc::new(NavigationDataDownloader::new()),
             database: match format {
-                InterfaceFormat::DFDv1 => RefCell::new(Box::new(DatabaseV1::default())),
-                InterfaceFormat::DFDv2 => RefCell::new(Box::new(DatabaseV2::default())),
+                InterfaceFormat::DFDv1 => RefCell::new(DatabaseV1::default().into()),
+                InterfaceFormat::DFDv2 => RefCell::new(DatabaseV2::default().into()),
+                InterfaceFormat::Custom => RefCell::new(DatabaseManual::default().into()),
             },
             delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
                                                                    * the first update */
             queue: Rc::new(RefCell::new(Vec::new())),
-            db_type: format,
+            db_type: RefCell::new(format),
         }
     }
 
@@ -122,7 +124,7 @@ impl<'a> Dispatcher<'a> {
         }
 
         if filter {
-            let db_type = self.db_type.as_str().to_string();
+            let db_type = self.db_type.borrow().as_str().to_string();
 
             packages = packages
                 .into_iter()
@@ -144,8 +146,6 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn set_package(&self, uuid: String) -> Result<bool, Box<dyn Error>> {
-        // TODO: Find package path
-
         let base_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
 
         let active_path = base_path.join("active");
@@ -163,15 +163,15 @@ impl<'a> Dispatcher<'a> {
             }
 
             let package: PackageInfo = PackageInfo {
-                path: String::from(uuid_path.to_string_lossy()),
+                path: String::from(active_path.to_string_lossy()),
                 uuid: String::from(uuid.clone()),
                 cycle,
             };
 
+            self.database.borrow_mut().disable_cycle(package)?;
+
             // Disables the old path
             fs::rename(active_path.clone(), base_path.join(hash))?;
-
-            self.database.borrow_mut().disable_cycle(package)?;
         }
 
         if !path_exists(&uuid_path) {
@@ -180,6 +180,18 @@ impl<'a> Dispatcher<'a> {
 
         let cycle: InstalledNavigationDataCycleInfo =
             serde_json::from_reader(fs::File::open(uuid_path.join("cycle.json")).unwrap()).unwrap();
+
+        // Check for format change and update interface
+        if &cycle.format != self.db_type.borrow().as_str() {
+            let new_format = InterfaceFormat::from(&cycle.format);
+
+            self.database.replace(match new_format {
+                InterfaceFormat::DFDv1 => DatabaseV1::default().into(),
+                InterfaceFormat::DFDv2 => DatabaseV2::default().into(),
+                InterfaceFormat::Custom => DatabaseManual::default().into(),
+            });
+            self.db_type.replace(new_format);
+        }
 
         let package: PackageInfo = PackageInfo {
             path: String::from(active_path.to_string_lossy()),
@@ -197,6 +209,7 @@ impl<'a> Dispatcher<'a> {
     fn setup_packages(&self) -> Result<String, Box<dyn Error>> {
         self.copy_bundles()?;
 
+        // Auto enable already activated cycle
         let active_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("active");
 
         if path_exists(&active_path) {
@@ -296,7 +309,7 @@ impl<'a> Dispatcher<'a> {
         let mut count = 0;
 
         let (keep, delete): (Vec<PackageInfo>, Vec<PackageInfo>) = packages.into_iter().partition(|pkg| {
-            if (self.db_type.as_str() == pkg.cycle.format) && (count <= count_max.unwrap_or(3)) {
+            if (self.db_type.borrow().as_str() == pkg.cycle.format) && (count <= count_max.unwrap_or(3)) {
                 count += 1;
                 return true;
             } else if bundle_ids.contains(&pkg.uuid) || pkg.path.contains("active") {
@@ -433,7 +446,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::DeletePackage => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::DeletePackage>()?;
-                    let data = self.delete_package(params.uuid)?;
+                    self.delete_package(params.uuid)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(().into()));
 
@@ -441,7 +454,7 @@ impl<'a> Dispatcher<'a> {
                 }),
                 FunctionType::CleanPackages => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::CleanPackages>()?;
-                    let data = self.clean_up_packages(params.count)?;
+                    self.clean_up_packages(params.count)?;
 
                     t.borrow_mut().status = TaskStatus::Success(Some(().into()));
 

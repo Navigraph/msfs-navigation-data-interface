@@ -334,9 +334,11 @@ pub enum ApproachTypeIdentifier {
     LocalizerPerformance,
 }
 
+#[derive(Debug)]
 pub enum InterfaceFormat {
     DFDv1,
     DFDv2,
+    Custom,
 }
 
 impl InterfaceFormat {
@@ -344,6 +346,17 @@ impl InterfaceFormat {
         match self {
             Self::DFDv1 => "dfd",
             Self::DFDv2 => "dfdv2",
+            Self::Custom => "custom",
+        }
+    }
+}
+
+impl From<&String> for InterfaceFormat {
+    fn from(value: &String) -> Self {
+        match value.as_str() {
+            "dfd" => Self::DFDv1,
+            "dfdv2" => Self::DFDv2,
+            _ => Self::Custom,
         }
     }
 }

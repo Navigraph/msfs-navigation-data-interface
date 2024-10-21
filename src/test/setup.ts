@@ -314,6 +314,10 @@ beforeAll(async () => {
 
   console.log(JSON.stringify(packages, null, 2))
 
+  await navigationDataInterface.set_active_package(packages[1].uuid).catch(err => {
+    console.error(err)
+  })
+
   await navigationDataInterface.set_active_package(packages[0].uuid).catch(err => {
     console.error(err)
   })
