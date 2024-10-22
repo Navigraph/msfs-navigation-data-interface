@@ -115,27 +115,39 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
         },
     };
 
-    // figure out install status
-    let found_downloaded = path_exists(Path::new(consts::NAVIGATION_DATA_WORK_LOCATION));
-
-    let found_bundled = get_internal_state()
-        .map(|internal_state| internal_state.is_bundled)
-        .unwrap_or(false);
-
-    // Check bundled first, as downloaded and bundled are both possible
-    let status = if found_bundled {
-        InstallStatus::Bundled
-    } else if found_downloaded {
-        InstallStatus::Manual
-    } else {
-        InstallStatus::None
+    // To find downloaded we can just take the length of the prebundled vs the installed.
+    let prebundled_folder = match std::fs::read_dir(Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION)) {
+        Ok(dir) => dir.count(),
+        Err(e) => {
+            task.borrow_mut().status = TaskStatus::Failure(e.to_string());
+            return;
+        },
     };
 
-    // Open JSON
-    let json_path = if status != InstallStatus::None {
-        Some(PathBuf::from(consts::NAVIGATION_DATA_WORK_LOCATION).join("cycle.json"))
+    let current_count = match std::fs::read_dir(Path::new(consts::NAVIGATION_DATA_WORK_LOCATION)) {
+        Ok(dir) => dir.count(),
+        Err(e) => {
+            task.borrow_mut().status = TaskStatus::Failure(e.to_string());
+            return;
+        },
+    };
+
+    let status = if current_count == 0 {
+        InstallStatus::None
+    } else if prebundled_folder <= current_count {
+        InstallStatus::Bundled
     } else {
-        None
+        InstallStatus::Manual
+    };
+
+    let active_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("active");
+
+    // figure out install status
+    let found_downloaded = path_exists(&active_path);
+
+    let json_path = match status {
+        InstallStatus::None => None,
+        _ => Some(&active_path.join("cycle.json")),
     };
 
     let installed_cycle_info = match json_path {
@@ -173,7 +185,7 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
             .as_ref()
             .map(|installed_cycle_info| installed_cycle_info.cycle.clone()),
         install_path: if status == InstallStatus::Manual {
-            Some(consts::NAVIGATION_DATA_WORK_LOCATION.to_string())
+            Some(active_path.to_string_lossy().to_string())
         } else {
             None
         },

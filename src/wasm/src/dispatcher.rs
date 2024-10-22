@@ -421,11 +421,7 @@ impl<'a> Dispatcher<'a> {
                     // We can't use the execute_task function here because the download process doesn't finish in the
                     // function call, which results in slightly "messier" code
 
-                    // Close the database connection if it's open so we don't get any errors if we are replacing the
-                    // database
-                    // self.database.unwrap().close_connection();
-
-                    // Now we can download the navigation data
+                    // Get params for the set active when the download is finished
                     let params = task
                         .borrow()
                         .parse_data_as::<params::DownloadNavigationDataParams>()
