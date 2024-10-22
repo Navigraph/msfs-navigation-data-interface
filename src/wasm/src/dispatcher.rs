@@ -400,6 +400,7 @@ impl<'a> Dispatcher<'a> {
     fn on_download_finish(&mut self, package_uuid: String) {
         if *self.set_active_on_finish.borrow() {
             self.set_package(package_uuid).unwrap_or_default();
+            self.set_active_on_finish.replace(false);
         }
     }
 
@@ -425,7 +426,6 @@ impl<'a> Dispatcher<'a> {
                     // self.database.unwrap().close_connection();
 
                     // Now we can download the navigation data
-
                     let params = task
                         .borrow()
                         .parse_data_as::<params::DownloadNavigationDataParams>()
