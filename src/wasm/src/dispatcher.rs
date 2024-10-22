@@ -63,6 +63,7 @@ pub struct Dispatcher<'a> {
     delta_time: std::time::Duration,
     queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
     db_type: RefCell<InterfaceFormat>,
+    set_active_on_finish: RefCell<bool>,
 }
 
 impl<'a> Dispatcher<'a> {
@@ -79,6 +80,7 @@ impl<'a> Dispatcher<'a> {
                                                                    * the first update */
             queue: Rc::new(RefCell::new(Vec::new())),
             db_type: RefCell::new(format),
+            set_active_on_finish: RefCell::new(false),
         }
     }
 
@@ -210,6 +212,17 @@ impl<'a> Dispatcher<'a> {
         if path_exists(&active_path) {
             let cycle: InstalledNavigationDataCycleInfo =
                 serde_json::from_reader(fs::File::open(active_path.join("cycle.json")).unwrap()).unwrap();
+
+            if cycle.format != self.db_type.borrow().as_str() {
+                let new_format = InterfaceFormat::from(&cycle.format);
+
+                self.database.replace(match new_format {
+                    InterfaceFormat::DFDv1 => DatabaseV1::default().into(),
+                    InterfaceFormat::DFDv2 => DatabaseV2::default().into(),
+                    InterfaceFormat::Custom => DatabaseManual::default().into(),
+                });
+                self.db_type.replace(new_format);
+            }
 
             let hash = generate_uuid_from_cycle(&cycle);
 
@@ -375,14 +388,20 @@ impl<'a> Dispatcher<'a> {
 
         // Because the download process doesn't finish in the function call, we need to check if the download is
         // finished to call the on_download_finish function
-        if *self.downloader.download_status.borrow() == DownloadStatus::Downloaded {
-            self.on_download_finish();
+        let download_status = self.downloader.download_status.borrow().clone();
+
+        if let DownloadStatus::Downloaded(package_uuid) = download_status {
+            self.on_download_finish(package_uuid);
             self.downloader.acknowledge_download();
         }
     }
 
     // TODO: Implement possible db switching on finish
-    fn on_download_finish(&mut self) {}
+    fn on_download_finish(&mut self, package_uuid: String) {
+        if *self.set_active_on_finish.borrow() {
+            self.set_package(package_uuid).unwrap_or_default();
+        }
+    }
 
     fn process_queue(&mut self) {
         let mut queue = self.queue.borrow_mut();
@@ -406,6 +425,14 @@ impl<'a> Dispatcher<'a> {
                     // self.database.unwrap().close_connection();
 
                     // Now we can download the navigation data
+
+                    let params = task
+                        .borrow()
+                        .parse_data_as::<params::DownloadNavigationDataParams>()
+                        .unwrap();
+
+                    self.set_active_on_finish.replace(params.set_active.unwrap_or(false));
+
                     self.downloader.download(Rc::clone(task));
                 },
                 FunctionType::SetDownloadOptions => {

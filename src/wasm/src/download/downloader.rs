@@ -20,7 +20,7 @@ pub enum DownloadStatus {
     Downloading,
     CleaningDestination,
     Extracting,
-    Downloaded,
+    Downloaded(String),
     Failed(String),
 }
 
@@ -51,7 +51,7 @@ impl NavigationDataDownloader {
 
         if self.should_extract_next_batch() {
             match self.unzip_batch(self.options.borrow().batch_size) {
-                Ok(BatchReturn::Finished) => {
+                Ok(BatchReturn::Finished(package_uuid)) => {
                     println!("[NAVIGRAPH] Finished extracting");
                     // Scope to drop the borrow so we can reset the download
                     {
@@ -63,7 +63,7 @@ impl NavigationDataDownloader {
                         let mut borrowed_task = borrowed_task.as_ref().unwrap().borrow_mut();
                         borrowed_task.status = TaskStatus::Success(None);
                     }
-                    self.download_status.replace(DownloadStatus::Downloaded);
+                    self.download_status.replace(DownloadStatus::Downloaded(package_uuid));
                     // Update the internal state
                     let res = meta::set_internal_state(InternalState { is_bundled: false });
                     if let Err(e) = res {

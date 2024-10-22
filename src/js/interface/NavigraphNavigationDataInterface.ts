@@ -71,10 +71,11 @@ export class NavigraphNavigationDataInterface {
    * Downloads the navigation data from the given URL to the given path
    *
    * @param url - A valid signed URL to download the navigation data from
+   * @param setActive - Sets the newly downloaded package to active when complete
    * @returns A promise that resolves when the download is complete
    */
-  public async download_navigation_data(url: string): Promise<void> {
-    return await this.callWasmFunction("DownloadNavigationData", { url })
+  public async download_navigation_data(url: string, setActive?: boolean): Promise<void> {
+    return await this.callWasmFunction("DownloadNavigationData", { url, setActive })
   }
 
   /**

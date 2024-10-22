@@ -1,6 +1,5 @@
 use std::{
-    fs,
-    io,
+    fs, io,
     path::{Path, PathBuf},
 };
 
@@ -14,7 +13,7 @@ use crate::{
 pub enum BatchReturn {
     MoreFilesToDelete,
     MoreFilesToUnzip,
-    Finished,
+    Finished(String),
 }
 
 pub struct ZipFileHandler<R: io::Read + io::Seek> {
@@ -87,10 +86,10 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
 
                 fs::rename(
                     temp_dir,
-                    Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(cycle_uuid),
+                    Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(&cycle_uuid),
                 )?;
 
-                return Ok(BatchReturn::Finished);
+                return Ok(BatchReturn::Finished(cycle_uuid));
             }
 
             let mut file = zip_archive.by_index(self.current_file_index)?;

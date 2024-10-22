@@ -259,8 +259,8 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       // Get default package for client
       const pkg = await packages.getPackage(format)
 
-      // Download navigation data to work dir
-      await this.navigationDataInterface.download_navigation_data(pkg.file.url)
+      // Download navigation data to work dir and set active
+      await this.navigationDataInterface.download_navigation_data(pkg.file.url, true)
 
       // Update navigation data status
       this.navigationDataInterface
@@ -280,7 +280,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
     this.outputRef.instance.textContent = JSON.stringify(data_packages, null, 2)
 
-    await this.navigationDataInterface.set_active_package(data_packages[0].uuid)
+    await this.navigationDataInterface.set_active_package(data_packages[1].uuid)
   }
 
   private displayMessage(message: string) {

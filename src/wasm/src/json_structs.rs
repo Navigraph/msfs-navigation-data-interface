@@ -148,6 +148,7 @@ pub mod params {
     pub struct DownloadNavigationDataParams {
         /// URL to download from
         pub url: String,
+        pub set_active: Option<bool>,
     }
 
     #[derive(serde::Deserialize)]
