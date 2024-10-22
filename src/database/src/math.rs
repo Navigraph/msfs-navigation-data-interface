@@ -10,9 +10,7 @@ pub type Minutes = f64;
 pub type KiloHertz = f64;
 pub type MegaHertz = f64;
 
-pub(crate) fn feet_to_meters(metres: Meters) -> Feet {
-    metres / 3.28084
-}
+pub(crate) fn feet_to_meters(metres: Meters) -> Feet { metres / 3.28084 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub struct Coordinates {

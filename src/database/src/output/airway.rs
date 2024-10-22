@@ -1,16 +1,10 @@
 use serde::Serialize;
 
-use serde_json::Value;
-
-use std::{cell::RefCell, collections::HashMap};
-
-use super::fix::{Fix, FixType};
+use super::fix::Fix;
 use crate::{
     enums::{AirwayDirection, AirwayLevel, AirwayRouteType},
-    math::Coordinates,
     sql_structs,
-    traits::DatabaseTrait,
-    v2::{self, database::DatabaseV2},
+    v2::{self},
 };
 
 #[serde_with::skip_serializing_none]
@@ -50,7 +44,7 @@ pub struct Airway {
 pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway> {
     let mut airway_complete = false;
     data.into_iter().fold(Vec::new(), |mut airways, airway_row| {
-        if airways.len() == 0 || airway_complete {
+        if airways.is_empty() || airway_complete {
             airways.push(Airway {
                 ident: airway_row.route_identifier,
                 fixes: Vec::new(),
@@ -82,7 +76,7 @@ pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway>
 pub(crate) fn map_airways_v2(data: Vec<v2::sql_structs::EnrouteAirways>) -> Vec<Airway> {
     let mut airway_complete = false;
     data.into_iter().fold(Vec::new(), |mut airways, airway_row| {
-        if airways.len() == 0 || airway_complete {
+        if airways.is_empty() || airway_complete {
             airways.push(Airway {
                 ident: airway_row.route_identifier.unwrap_or("ERROR".to_string()),
                 fixes: Vec::new(),

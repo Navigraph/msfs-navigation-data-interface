@@ -38,9 +38,7 @@ impl NetworkHelper {
         Ok(Self { request })
     }
 
-    pub fn response_state(&self) -> NetworkRequestState {
-        self.request.state()
-    }
+    pub fn response_state(&self) -> NetworkRequestState { self.request.state() }
 
     pub fn get_response(&self) -> Result<Vec<u8>, Box<dyn Error>> {
         if self.request.state() != NetworkRequestState::DataReady {

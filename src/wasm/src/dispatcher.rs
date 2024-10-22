@@ -1,8 +1,8 @@
 use std::{
-    cell::{Ref, RefCell},
+    cell::RefCell,
     error::Error,
     fs,
-    io::{self, Read},
+    io::{self},
     path::Path,
     rc::Rc,
 };
@@ -15,8 +15,6 @@ use navigation_database::{
     traits::{DatabaseEnum, DatabaseTrait, InstalledNavigationDataCycleInfo, PackageInfo},
     v2::database::DatabaseV2,
 };
-use serde_json::Value;
-use uuid::Uuid;
 
 use crate::{
     consts,
@@ -26,7 +24,7 @@ use crate::{
         functions::{CallFunction, FunctionResult, FunctionStatus, FunctionType},
         params,
     },
-    meta::{self, InternalState},
+    meta::{self},
     network_helper::NetworkHelper,
     util::{self, generate_uuid_from_cycle, generate_uuid_from_path, path_exists},
 };
@@ -87,7 +85,7 @@ impl<'a> Dispatcher<'a> {
     fn list_packages(&self, sort: bool, filter: bool) -> Vec<PackageInfo> {
         let navigation_data_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
 
-        if !Path::exists(&navigation_data_path) {
+        if !Path::exists(navigation_data_path) {
             fs::create_dir(navigation_data_path).unwrap();
         }
 
@@ -113,7 +111,7 @@ impl<'a> Dispatcher<'a> {
                         x => String::from(x),
                     };
 
-                    let uuid = packages.push(PackageInfo {
+                    packages.push(PackageInfo {
                         path: String::from(file_path.to_string_lossy()),
                         uuid,
                         cycle,
@@ -126,10 +124,7 @@ impl<'a> Dispatcher<'a> {
         if filter {
             let db_type = self.db_type.borrow().as_str().to_string();
 
-            packages = packages
-                .into_iter()
-                .filter(|package| *package.cycle.format == db_type)
-                .collect();
+            packages.retain(|package| *package.cycle.format == db_type);
         }
 
         if sort {
@@ -142,7 +137,7 @@ impl<'a> Dispatcher<'a> {
             });
         }
 
-        return packages;
+        packages
     }
 
     fn set_package(&self, uuid: String) -> Result<bool, Box<dyn Error>> {
@@ -158,13 +153,13 @@ impl<'a> Dispatcher<'a> {
 
             let hash = generate_uuid_from_cycle(&cycle);
 
-            if (hash == uuid) {
+            if hash == uuid {
                 return Ok(false);
             }
 
             let package: PackageInfo = PackageInfo {
                 path: String::from(active_path.to_string_lossy()),
-                uuid: String::from(uuid.clone()),
+                uuid: uuid.clone(),
                 cycle,
             };
 
@@ -182,7 +177,7 @@ impl<'a> Dispatcher<'a> {
             serde_json::from_reader(fs::File::open(uuid_path.join("cycle.json")).unwrap()).unwrap();
 
         // Check for format change and update interface
-        if &cycle.format != self.db_type.borrow().as_str() {
+        if cycle.format != self.db_type.borrow().as_str() {
             let new_format = InterfaceFormat::from(&cycle.format);
 
             self.database.replace(match new_format {
@@ -195,7 +190,7 @@ impl<'a> Dispatcher<'a> {
 
         let package: PackageInfo = PackageInfo {
             path: String::from(active_path.to_string_lossy()),
-            uuid: String::from(uuid),
+            uuid,
             cycle,
         };
 
@@ -220,7 +215,7 @@ impl<'a> Dispatcher<'a> {
 
             let package: PackageInfo = PackageInfo {
                 path: String::from(active_path.to_string_lossy()),
-                uuid: String::from(hash),
+                uuid: hash,
                 cycle,
             };
 
@@ -308,7 +303,7 @@ impl<'a> Dispatcher<'a> {
 
         let mut count = 0;
 
-        let (keep, delete): (Vec<PackageInfo>, Vec<PackageInfo>) = packages.into_iter().partition(|pkg| {
+        let (_keep, delete): (Vec<PackageInfo>, Vec<PackageInfo>) = packages.into_iter().partition(|pkg| {
             if (self.db_type.borrow().as_str() == pkg.cycle.format) && (count <= count_max.unwrap_or(3)) {
                 count += 1;
                 return true;
@@ -378,20 +373,16 @@ impl<'a> Dispatcher<'a> {
         self.process_queue();
         self.downloader.on_update();
 
-        // Because the download process doesn't finish in the function call, we need to check if the download is finished to call the on_download_finish function
+        // Because the download process doesn't finish in the function call, we need to check if the download is
+        // finished to call the on_download_finish function
         if *self.downloader.download_status.borrow() == DownloadStatus::Downloaded {
             self.on_download_finish();
             self.downloader.acknowledge_download();
         }
     }
 
-    // Currently does nothing
-    fn on_download_finish(&mut self) {
-        match navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_WORK_LOCATION) {
-            Ok(path) => {},
-            Err(_) => {},
-        }
-    }
+    // TODO: Implement possible db switching on finish
+    fn on_download_finish(&mut self) {}
 
     fn process_queue(&mut self) {
         let mut queue = self.queue.borrow_mut();

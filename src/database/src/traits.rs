@@ -1,14 +1,19 @@
+use std::{
+    error::Error,
+    fmt::{Display, Formatter},
+};
+
 use enum_dispatch::enum_dispatch;
-use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags, Result};
+use rusqlite::{params_from_iter, types::ValueRef, Connection, Result};
 use serde_json::{Number, Value};
 
-use super::output::{airport::Airport, airway::map_airways, procedure::departure::map_departures};
+use super::output::airport::Airport;
 use crate::{
     database::DatabaseV1,
     manual::database::DatabaseManual,
     math::{Coordinates, NauticalMiles},
     output::{
-        airspace::{map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace, RestrictiveAirspace},
+        airspace::{ControlledAirspace, RestrictiveAirspace},
         airway::Airway,
         communication::Communication,
         database_info::DatabaseInfo,
@@ -16,39 +21,26 @@ use crate::{
         gls_navaid::GlsNavaid,
         ndb_navaid::NdbNavaid,
         path_point::PathPoint,
-        procedure::{
-            approach::{map_approaches, Approach},
-            arrival::{map_arrivals, Arrival},
-            departure::Departure,
-        },
+        procedure::{approach::Approach, arrival::Arrival, departure::Departure},
         runway::RunwayThreshold,
         vhf_navaid::VhfNavaid,
         waypoint::Waypoint,
     },
-    sql_structs, util,
     v2::database::DatabaseV2,
-};
-use std::{
-    error::Error,
-    fmt::{Display, Formatter},
 };
 
 #[derive(Debug)]
 pub struct NoDatabaseOpen;
 
 impl Display for NoDatabaseOpen {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "No database open")
-    }
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "No database open") }
 }
 
 #[derive(Debug)]
 pub struct DatabaseNotCompat;
 
 impl Display for DatabaseNotCompat {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Function not implemented in database type")
-    }
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "Function not implemented in database type") }
 }
 
 impl Error for NoDatabaseOpen {}
@@ -130,24 +122,16 @@ pub trait DatabaseTrait {
 
         Ok(json)
     }
-    fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> {
-        Err(Box::new(DatabaseNotCompat))
-    }
-    fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn Error>> {
-        Err(Box::new(DatabaseNotCompat))
-    }
-    fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
-        Err(Box::new(DatabaseNotCompat))
-    }
+    fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
+    fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
+    fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
     fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
     fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn Error>> {
-        Err(Box::new(DatabaseNotCompat))
-    }
+    fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
     fn get_airways_at_fix(&self, fix_ident: String, fix_icao_code: String) -> Result<Vec<Airway>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }

@@ -1,42 +1,14 @@
-use std::{
-    error::Error,
-    fmt::{Display, Formatter},
-    fs,
-    iter::Cycle,
-    path::Path,
-};
+use std::{error::Error, fs, path::Path};
 
-use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags, Result};
-use serde::Serialize;
-use serde_json::{Number, Value};
+use rusqlite::{Connection, Result};
 
 use crate::{
-    math::{Coordinates, NauticalMiles},
-    output::{
-        airport::Airport,
-        airspace::{map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace, RestrictiveAirspace},
-        airway::{map_airways_v2, Airway},
-        communication::Communication,
-        database_info::DatabaseInfo,
-        gate::Gate,
-        gls_navaid::GlsNavaid,
-        ndb_navaid::NdbNavaid,
-        path_point::PathPoint,
-        procedure::{
-            approach::{map_approaches, map_approaches_v2, Approach},
-            arrival::{map_arrivals, map_arrivals_v2, Arrival},
-            departure::{map_departures, map_departures_v2, Departure},
-        },
-        runway::RunwayThreshold,
-        vhf_navaid::VhfNavaid,
-        waypoint::Waypoint,
-    },
-    sql_structs,
-    traits::{DatabaseNotCompat, DatabaseTrait, InstalledNavigationDataCycleInfo, NoDatabaseOpen, PackageInfo},
-    util, v2,
+    output::database_info::DatabaseInfo,
+    traits::{DatabaseTrait, InstalledNavigationDataCycleInfo, NoDatabaseOpen, PackageInfo},
 };
 
 /// Used for manual connections, only handles setting packages as active
+#[derive(Default)]
 pub struct DatabaseManual {
     path: String,
 }
@@ -54,9 +26,9 @@ impl DatabaseTrait for DatabaseManual {
     fn enable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {
         println!("[NAVIGRAPH]: Set active database to {:?}", &package.path);
 
-        self.path = package.path.clone();
+        self.path.clone_from(&package.path);
 
-        Ok(String::from(serde_json::to_string(&package).unwrap()))
+        Ok(serde_json::to_string(&package).unwrap())
     }
 
     fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {
@@ -72,7 +44,7 @@ impl DatabaseTrait for DatabaseManual {
 
         let validity = cycle
             .validity_period
-            .split("/")
+            .split('/')
             .map(|f| f.to_string())
             .collect::<Vec<String>>();
 
@@ -83,10 +55,3 @@ impl DatabaseTrait for DatabaseManual {
 }
 
 // Empty Connection
-impl Default for DatabaseManual {
-    fn default() -> Self {
-        Self {
-            path: Default::default(),
-        }
-    }
-}

@@ -3,7 +3,8 @@ use serde::Serialize;
 use crate::{
     enums::ApproachTypeIdentifier,
     math::{feet_to_meters, Coordinates, Degrees, Meters},
-    sql_structs, v2,
+    sql_structs,
+    v2,
 };
 
 #[derive(Serialize, Default)]
@@ -56,7 +57,7 @@ impl From<sql_structs::Pathpoints> for PathPoint {
             },
             course_width: row.course_width_at_threshold,
             length_offset: row.length_offset,
-            path_point_tch: if row.tch_units_indicator == "F".to_string() {
+            path_point_tch: if row.tch_units_indicator == *"F" {
                 feet_to_meters(row.path_point_tch)
             } else {
                 row.path_point_tch
@@ -90,7 +91,7 @@ impl From<v2::sql_structs::Pathpoints> for PathPoint {
             },
             course_width: row.course_width_at_threshold,
             length_offset: row.length_offset.unwrap_or_default(),
-            path_point_tch: if row.tch_units_indicator == "F".to_string() {
+            path_point_tch: if row.tch_units_indicator == *"F" {
                 feet_to_meters(row.path_point_tch)
             } else {
                 row.path_point_tch

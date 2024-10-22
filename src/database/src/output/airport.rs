@@ -3,7 +3,8 @@ use serde::Serialize;
 use crate::{
     enums::{IfrCapability, RunwaySurfaceCode},
     math::{Coordinates, Degrees, Feet},
-    sql_structs, v2,
+    sql_structs,
+    v2,
 };
 
 #[serde_with::skip_serializing_none]
@@ -17,7 +18,6 @@ pub struct Airport {
     ///
     /// For most airports, this will be the same as the first two letters of the `ident`, such as `EG` for `EGLL`, or
     /// `LF` for `LFPG`.
-    ///
     // TODO: FIND WHAT THIS MEANS
     /// Airport type (v2 only)
     pub airport_type: String,
@@ -99,7 +99,7 @@ impl From<v2::sql_structs::Airports> for Airport {
             continent: airport.continent,
             country: airport.country,
             country_3letter: airport.country_3letter,
-            elevation: airport.elevation as f64,
+            elevation: airport.elevation,
             icao_code: airport.icao_code,
             ifr_capability: airport.ifr_capability.unwrap_or(IfrCapability::No),
             longest_runway_surface_code: Some(airport.longest_runway_surface_code),
@@ -107,10 +107,7 @@ impl From<v2::sql_structs::Airports> for Airport {
             transition_altitude: airport.transition_altitude,
             transition_level: airport.transition_level,
             speed_limit: airport.speed_limit,
-            speed_limit_altitude: airport
-                .speed_limit_altitude
-                .map(|val| val.parse::<f64>().ok())
-                .flatten(),
+            speed_limit_altitude: airport.speed_limit_altitude.and_then(|val| val.parse::<f64>().ok()),
             state: airport.state,
             state_2letter: airport.state_2letter,
         }

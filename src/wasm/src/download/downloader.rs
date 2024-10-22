@@ -1,10 +1,4 @@
-use std::{
-    cell::RefCell,
-    fs,
-    io::Cursor,
-    path::{Path, PathBuf},
-    rc::Rc,
-};
+use std::{cell::RefCell, io::Cursor, path::PathBuf, rc::Rc};
 
 use msfs::network::*;
 

@@ -1,13 +1,6 @@
-use std::{
-    error::Error,
-    fmt::{Display, Formatter},
-    fs,
-    path::Path,
-};
+use std::{error::Error, path::Path};
 
-use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags, Result};
-use serde::Serialize;
-use serde_json::{Number, Value};
+use rusqlite::{params, Connection, OpenFlags, Result};
 
 use crate::{
     math::{Coordinates, NauticalMiles},
@@ -21,31 +14,28 @@ use crate::{
         gls_navaid::GlsNavaid,
         ndb_navaid::NdbNavaid,
         path_point::PathPoint,
-        procedure::departure::map_departures,
         procedure::{
             approach::{map_approaches, Approach},
             arrival::{map_arrivals, Arrival},
-            departure::Departure,
+            departure::{map_departures, Departure},
         },
         runway::RunwayThreshold,
         vhf_navaid::VhfNavaid,
         waypoint::Waypoint,
     },
     sql_structs,
-    traits::*,
-    traits::{DatabaseNotCompat, NoDatabaseOpen},
+    traits::{NoDatabaseOpen, *},
     util,
 };
 
+#[derive(Default)]
 pub struct DatabaseV1 {
     connection: Option<Connection>,
     pub path: Option<String>,
 }
 
 impl DatabaseTrait for DatabaseV1 {
-    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
-        self.connection.as_ref().ok_or(NoDatabaseOpen)
-    }
+    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> { self.connection.as_ref().ok_or(NoDatabaseOpen) }
 
     fn setup(&self) -> Result<String, Box<dyn Error>> {
         // Nothing goes here preferrably
@@ -71,7 +61,7 @@ impl DatabaseTrait for DatabaseV1 {
 
         println!("[NAVIGRAPH]: Set active database to {:?}", db_path);
 
-        Ok(String::from(serde_json::to_string(&package).unwrap()))
+        Ok(serde_json::to_string(&package).unwrap())
     }
 
     fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {
@@ -112,7 +102,7 @@ impl DatabaseTrait for DatabaseV1 {
 
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(Waypoint::from)
             .collect())
     }
@@ -138,7 +128,7 @@ impl DatabaseTrait for DatabaseV1 {
 
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(NdbNavaid::from)
             .collect())
     }
@@ -209,7 +199,7 @@ impl DatabaseTrait for DatabaseV1 {
         // Filter into a circle of range
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(Waypoint::from)
             .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
             .collect())
@@ -233,7 +223,7 @@ impl DatabaseTrait for DatabaseV1 {
         // Filter into a circle of range
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(NdbNavaid::from)
             .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
             .collect())
@@ -466,11 +456,3 @@ impl DatabaseTrait for DatabaseV1 {
 }
 
 // Empty Connection
-impl Default for DatabaseV1 {
-    fn default() -> Self {
-        Self {
-            connection: Default::default(),
-            path: Default::default(),
-        }
-    }
-}

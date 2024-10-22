@@ -1,12 +1,9 @@
 use serde::Deserialize;
 
-use crate::{
-    enums::{
-        AirwayDirection, AirwayLevel, AirwayRouteType, AltitudeDescriptor, ApproachTypeIdentifier, CommunicationType,
-        ControlledAirspaceType, FrequencyUnits, IfrCapability, LegType, RestrictiveAirspaceType, RunwayLights,
-        RunwaySurface, RunwaySurfaceCode, SpeedDescriptor, TrafficPattern, TurnDirection,
-    },
-    output::fix::FixType,
+use crate::enums::{
+    AirwayDirection, AirwayLevel, AirwayRouteType, AltitudeDescriptor, ApproachTypeIdentifier, CommunicationType,
+    FrequencyUnits, IfrCapability, LegType, RunwayLights, RunwaySurface, RunwaySurfaceCode, SpeedDescriptor,
+    TrafficPattern, TurnDirection,
 };
 
 #[derive(Deserialize, Debug)]
@@ -38,6 +35,7 @@ pub struct AirportCommunication {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(unused_variables)]
 pub struct AirportMsa {
     pub area_code: Option<String>,
     pub icao_code: Option<String>,

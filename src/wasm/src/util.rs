@@ -1,20 +1,17 @@
 use std::{
     error::Error,
     fs,
-    io::{self, BufRead, BufReader, BufWriter, Read, Seek, Write},
+    io::{self},
     path::Path,
 };
-
-use uuid::Uuid;
 
 use navigation_database::{
     traits::InstalledNavigationDataCycleInfo,
     util::{get_path_type, PathType},
 };
+use uuid::Uuid;
 
-pub fn path_exists(path: &Path) -> bool {
-    get_path_type(path) != PathType::DoesNotExist
-}
+pub fn path_exists(path: &Path) -> bool { get_path_type(path) != PathType::DoesNotExist }
 
 pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::Result<()> {
     // Make sure we are deleting a directory (and in turn that it exists)
@@ -40,9 +37,12 @@ pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::
             delete_folder_recursively(&path, batch_size)?;
         } else if path_type == PathType::File {
             fs::remove_file(&path)?;
-        } else if let None = path.extension() {
-            // There are edge cases where completely empty directories are created and can't be deleted. They get registered as "unknown" path type so we need to check if the path has an extension (which would tell us if it's a file or a directory), and if it doesn't, we delete it as a directory
-            let _ = fs::remove_dir(&path); // this can fail silently, but we don't care since there also might be cases where a file literally doesn't exist
+        } else if path.extension().is_none() {
+            // There are edge cases where completely empty directories are created and can't be deleted. They get
+            // registered as "unknown" path type so we need to check if the path has an extension (which would tell us
+            // if it's a file or a directory), and if it doesn't, we delete it as a directory
+            let _ = fs::remove_dir(&path); // this can fail silently, but we don't care since there also might be cases
+                                           // where a file literally doesn't exist
         }
     }
     // Check if the directory is empty. If it is, delete it
@@ -93,9 +93,7 @@ pub fn copy_files_to_folder(from: &Path, to: &Path) -> io::Result<()> {
     Ok(())
 }
 
-pub fn trim_null_terminator(s: &str) -> &str {
-    s.trim_end_matches(char::from(0))
-}
+pub fn trim_null_terminator(s: &str) -> &str { s.trim_end_matches(char::from(0)) }
 
 pub fn generate_uuid_from_path<P>(cycle_path: P) -> Result<String, Box<dyn Error>>
 where

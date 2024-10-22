@@ -1,17 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use serde_json::Value;
-
-use rusqlite::params;
-
-use std::{cell::RefCell, error::Error, rc::Rc};
-
-use crate::{
-    math::Coordinates,
-    traits::DatabaseTrait,
-    util,
-    v2::{self, database::DatabaseV2},
-};
+use crate::math::Coordinates;
 
 #[derive(Serialize, Deserialize, Copy, Clone, Debug, Default)]
 pub enum FixType {
@@ -64,8 +53,8 @@ impl Fix {
     /// Creates a `Fix` by using the latitude and longitude fields, and by parsing the linked id field from a procedure
     /// or airway row.
     pub fn from_row_data(lat: f64, long: f64, id_raw: String) -> Self {
-        let table = id_raw.split("|").nth(0).unwrap();
-        let id = id_raw.split("|").nth(1).unwrap();
+        let table = id_raw.split('|').nth(0).unwrap();
+        let id = id_raw.split('|').nth(1).unwrap();
         let (airport_identifier, icao_code, ident) =
             if table.starts_with("tbl_terminal") || table == "tbl_localizers_glideslopes" || table == "tbl_gls" {
                 (Some(&id[0..4]), &id[4..6], &id[6..])

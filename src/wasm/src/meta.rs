@@ -6,6 +6,7 @@ use std::{
 };
 
 use msfs::network::NetworkRequestState;
+use navigation_database::traits::InstalledNavigationDataCycleInfo;
 
 use crate::{
     consts,
@@ -14,17 +15,9 @@ use crate::{
     util::path_exists,
 };
 
-use navigation_database::traits::InstalledNavigationDataCycleInfo;
-
-#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[derive(serde::Serialize, serde::Deserialize, Debug, Default)]
 pub struct InternalState {
     pub is_bundled: bool,
-}
-
-impl Default for InternalState {
-    fn default() -> Self {
-        Self { is_bundled: false }
-    }
 }
 
 #[derive(serde::Serialize, Clone, Copy, Debug, PartialEq, Eq)]
@@ -61,8 +54,8 @@ pub struct CurrentCycleResponse {
 
 pub fn get_internal_state() -> Result<InternalState, Box<dyn Error>> {
     let config_path = Path::new(consts::NAVIGATION_DATA_INTERNAL_CONFIG_LOCATION);
-    if !path_exists(&config_path) {
-        return Err("Internal config file does not exist")?;
+    if !path_exists(config_path) {
+        Err("Internal config file does not exist")?;
     }
 
     let config_file = std::fs::File::open(config_path)?;
@@ -91,13 +84,7 @@ pub fn start_network_request(task: Rc<RefCell<Task>>) {
     task.borrow_mut().associated_network_request = Some(request);
 }
 
-pub fn get_installed_cycle_from_json(path: &Path) -> Result<InstalledNavigationDataCycleInfo, Box<dyn Error>> {
-    let json_file = std::fs::File::open(path)?;
-    let installed_cycle_info: InstalledNavigationDataCycleInfo = serde_json::from_reader(json_file)?;
-
-    Ok(installed_cycle_info)
-}
-
+// TODO: Reimpelment this
 pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
     let response_bytes = match task.borrow().associated_network_request.as_ref() {
         Some(request) => {
@@ -176,31 +163,27 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
 
     let navigation_data_status = NavigationDataStatus {
         status,
-        installed_format: match &installed_cycle_info {
-            Some(installed_cycle_info) => Some(installed_cycle_info.format.clone()),
-            None => None,
-        },
-        installed_revision: match &installed_cycle_info {
-            Some(installed_cycle_info) => Some(installed_cycle_info.revision.clone()),
-            None => None,
-        },
-        installed_cycle: match &installed_cycle_info {
-            Some(installed_cycle_info) => Some(installed_cycle_info.cycle.clone()),
-            None => None,
-        },
+        installed_format: installed_cycle_info
+            .as_ref()
+            .map(|installed_cycle_info| installed_cycle_info.format.clone()),
+        installed_revision: installed_cycle_info
+            .as_ref()
+            .map(|installed_cycle_info| installed_cycle_info.revision.clone()),
+        installed_cycle: installed_cycle_info
+            .as_ref()
+            .map(|installed_cycle_info| installed_cycle_info.cycle.clone()),
         install_path: if status == InstallStatus::Manual {
             Some(consts::NAVIGATION_DATA_WORK_LOCATION.to_string())
         } else {
             None
         },
-        validity_period: match &installed_cycle_info {
-            Some(installed_cycle_info) => Some(installed_cycle_info.validity_period.clone()),
-            None => None,
-        },
+        validity_period: installed_cycle_info
+            .as_ref()
+            .map(|installed_cycle_info| installed_cycle_info.validity_period.clone()),
         latest_cycle: response_struct.cycle,
     };
 
-    let status_as_value = match serde_json::to_value(&navigation_data_status) {
+    let status_as_value = match serde_json::to_value(navigation_data_status) {
         Ok(status_as_value) => status_as_value,
         Err(e) => {
             task.borrow_mut().status = TaskStatus::Failure(e.to_string());

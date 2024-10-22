@@ -1,13 +1,6 @@
-use std::{
-    error::Error,
-    fmt::{Display, Formatter},
-    fs,
-    path::Path,
-};
+use std::{error::Error, path::Path};
 
-use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags, Result};
-use serde::Serialize;
-use serde_json::{Number, Value};
+use rusqlite::{params, Connection, OpenFlags, Result};
 
 use crate::{
     math::{Coordinates, NauticalMiles},
@@ -22,28 +15,28 @@ use crate::{
         ndb_navaid::NdbNavaid,
         path_point::PathPoint,
         procedure::{
-            approach::{map_approaches, map_approaches_v2, Approach},
-            arrival::{map_arrivals, map_arrivals_v2, Arrival},
-            departure::{map_departures, map_departures_v2, Departure},
+            approach::{map_approaches_v2, Approach},
+            arrival::{map_arrivals_v2, Arrival},
+            departure::{map_departures_v2, Departure},
         },
         runway::RunwayThreshold,
         vhf_navaid::VhfNavaid,
         waypoint::Waypoint,
     },
     sql_structs,
-    traits::{DatabaseNotCompat, DatabaseTrait, NoDatabaseOpen, PackageInfo},
-    util, v2,
+    traits::{DatabaseTrait, NoDatabaseOpen, PackageInfo},
+    util,
+    v2,
 };
 
+#[derive(Default)]
 pub struct DatabaseV2 {
     connection: Option<Connection>,
     pub path: Option<String>,
 }
 
 impl DatabaseTrait for DatabaseV2 {
-    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
-        self.connection.as_ref().ok_or(NoDatabaseOpen)
-    }
+    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> { self.connection.as_ref().ok_or(NoDatabaseOpen) }
 
     fn setup(&self) -> Result<String, Box<dyn Error>> {
         // Nothing goes here preferrably
@@ -69,7 +62,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         println!("[NAVIGRAPH]: Set active database to {:?}", db_path);
 
-        Ok(String::from(serde_json::to_string(&package).unwrap()))
+        Ok(serde_json::to_string(&package).unwrap())
     }
 
     fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {
@@ -113,7 +106,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(Waypoint::from)
             .collect())
     }
@@ -141,7 +134,7 @@ impl DatabaseTrait for DatabaseV2 {
 
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(NdbNavaid::from)
             .collect())
     }
@@ -216,7 +209,7 @@ impl DatabaseTrait for DatabaseV2 {
         // Filter into a circle of range
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(Waypoint::from)
             .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
             .collect())
@@ -241,7 +234,7 @@ impl DatabaseTrait for DatabaseV2 {
         // Filter into a circle of range
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(NdbNavaid::from)
             .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
             .collect())
@@ -331,8 +324,8 @@ impl DatabaseTrait for DatabaseV2 {
         let arc_where_string = util::range_query_where(center, range, "arc_origin");
 
         let range_query: String = format!(
-            "SELECT restrictive_airspace_designation, icao_code FROM tbl_ur_restrictive_airspace WHERE {where_string} OR \
-             {arc_where_string}"
+            "SELECT restrictive_airspace_designation, icao_code FROM tbl_ur_restrictive_airspace WHERE {where_string} \
+             OR {arc_where_string}"
         );
 
         let mut stmt = conn.prepare(
@@ -495,11 +488,3 @@ impl DatabaseTrait for DatabaseV2 {
 }
 
 // Empty Connection
-impl Default for DatabaseV2 {
-    fn default() -> Self {
-        Self {
-            connection: Default::default(),
-            path: Default::default(),
-        }
-    }
-}

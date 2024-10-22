@@ -4,7 +4,8 @@ use super::fix::Fix;
 use crate::{
     enums::{AltitudeDescriptor, LegType, SpeedDescriptor, TurnDirection},
     math::{Degrees, Feet, Knots, Minutes, NauticalMiles},
-    sql_structs, v2,
+    sql_structs,
+    v2,
 };
 
 #[serde_with::skip_serializing_none]

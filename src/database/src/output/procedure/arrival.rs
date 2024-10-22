@@ -3,8 +3,12 @@ use std::collections::{hash_map::Entry, HashMap};
 use serde::Serialize;
 
 use super::{
-    apply_common_leg, apply_common_leg_v2, apply_enroute_transition_leg, apply_runway_transition_leg,
-    apply_runway_transition_leg_v2, Transition,
+    apply_common_leg,
+    apply_common_leg_v2,
+    apply_enroute_transition_leg,
+    apply_runway_transition_leg,
+    apply_runway_transition_leg_v2,
+    Transition,
 };
 use crate::{output::procedure_leg::ProcedureLeg, sql_structs, v2};
 

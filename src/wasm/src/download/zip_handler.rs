@@ -1,8 +1,8 @@
 use std::{
-    fs, io,
+    fs,
+    io,
     path::{Path, PathBuf},
 };
-use uuid::Uuid;
 
 use crate::{
     consts,
