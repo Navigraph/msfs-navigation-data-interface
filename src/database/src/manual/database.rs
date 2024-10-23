@@ -14,9 +14,7 @@ pub struct DatabaseManual {
 }
 
 impl DatabaseTrait for DatabaseManual {
-    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
-        Err(NoDatabaseOpen)
-    }
+    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> { Err(NoDatabaseOpen) }
 
     fn setup(&self) -> Result<String, Box<dyn Error>> {
         // Nothing goes here preferrably

@@ -1,5 +1,6 @@
 use std::{
-    fs, io,
+    fs,
+    io,
     path::{Path, PathBuf},
 };
 

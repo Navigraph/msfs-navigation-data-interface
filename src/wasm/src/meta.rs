@@ -1,9 +1,4 @@
-use std::{
-    cell::RefCell,
-    error::Error,
-    path::{Path, PathBuf},
-    rc::Rc,
-};
+use std::{cell::RefCell, path::Path, rc::Rc};
 
 use msfs::network::NetworkRequestState;
 use navigation_database::traits::InstalledNavigationDataCycleInfo;
@@ -12,7 +7,6 @@ use crate::{
     consts,
     dispatcher::{Task, TaskStatus},
     network_helper::{Method, NetworkHelper},
-    util::path_exists,
 };
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Default)]
@@ -44,6 +38,7 @@ pub struct NavigationDataStatus {
     pub latest_cycle: String,
 }
 
+#[allow(dead_code)]
 #[derive(serde::Deserialize)]
 pub struct CurrentCycleResponse {
     pub name: String,
@@ -129,7 +124,7 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
 
     let installed_cycle_info = match json_path {
         Some(json_path) => {
-            let json_file = match std::fs::File::open(&json_path) {
+            let json_file = match std::fs::File::open(json_path) {
                 Ok(json_file) => json_file,
                 Err(e) => {
                     task.borrow_mut().status = TaskStatus::Failure(e.to_string());

@@ -7,7 +7,6 @@ use crate::{
     dispatcher::{Dispatcher, Task, TaskStatus},
     download::zip_handler::{BatchReturn, ZipFileHandler},
     json_structs::{events, params},
-    meta::{self, InternalState},
 };
 
 pub struct DownloadOptions {

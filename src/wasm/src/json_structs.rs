@@ -144,8 +144,8 @@ pub mod events {
 pub mod params {
     use navigation_database::math::{Coordinates, NauticalMiles};
 
-    #[serde(rename_all = "camelCase")]
     #[derive(serde::Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct DownloadNavigationDataParams {
         /// URL to download from
         pub url: String,
