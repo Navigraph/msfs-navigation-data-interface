@@ -84,7 +84,7 @@ pub fn start_network_request(task: Rc<RefCell<Task>>) {
     task.borrow_mut().associated_network_request = Some(request);
 }
 
-// TODO: Reimpelment this
+// Now just gets the status of the active database. Can still determine if you installed extra pacakges.
 pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
     let response_bytes = match task.borrow().associated_network_request.as_ref() {
         Some(request) => {
@@ -134,7 +134,7 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
 
     let status = if current_count == 0 {
         InstallStatus::None
-    } else if prebundled_folder <= current_count {
+    } else if prebundled_folder >= current_count {
         InstallStatus::Bundled
     } else {
         InstallStatus::Manual
@@ -147,12 +147,12 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
 
     let json_path = match status {
         InstallStatus::None => None,
-        _ => Some(&active_path.join("cycle.json")),
+        _ => Some(active_path.join("cycle.json")),
     };
 
     let installed_cycle_info = match json_path {
         Some(json_path) => {
-            let json_file = match std::fs::File::open(json_path) {
+            let json_file = match std::fs::File::open(&json_path) {
                 Ok(json_file) => json_file,
                 Err(e) => {
                     task.borrow_mut().status = TaskStatus::Failure(e.to_string());
@@ -184,10 +184,9 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
         installed_cycle: installed_cycle_info
             .as_ref()
             .map(|installed_cycle_info| installed_cycle_info.cycle.clone()),
-        install_path: if status == InstallStatus::Manual {
-            Some(active_path.to_string_lossy().to_string())
-        } else {
-            None
+        install_path: match status {
+            InstallStatus::None => None,
+            _ => Some(active_path.to_string_lossy().to_string()),
         },
         validity_period: installed_cycle_info
             .as_ref()
