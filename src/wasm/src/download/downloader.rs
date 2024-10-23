@@ -64,11 +64,11 @@ impl NavigationDataDownloader {
                         borrowed_task.status = TaskStatus::Success(None);
                     }
                     self.download_status.replace(DownloadStatus::Downloaded(package_uuid));
-                    // Update the internal state
-                    let res = meta::set_internal_state(InternalState { is_bundled: false });
-                    if let Err(e) = res {
-                        println!("[NAVIGRAPH] Failed to set internal state: {}", e);
-                    }
+                    // Update the internal state (is this even needed?)
+                    // let res = meta::set_internal_state(InternalState { is_bundled: false });
+                    // if let Err(e) = res {
+                    //     println!("[NAVIGRAPH] Failed to set internal state: {}", e);
+                    // }
                 },
                 Ok(BatchReturn::MoreFilesToDelete) => {
                     self.download_status.replace(DownloadStatus::CleaningDestination);

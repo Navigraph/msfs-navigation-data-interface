@@ -52,26 +52,6 @@ pub struct CurrentCycleResponse {
     pub cycle: String,
 }
 
-pub fn get_internal_state() -> Result<InternalState, Box<dyn Error>> {
-    let config_path = Path::new(consts::NAVIGATION_DATA_INTERNAL_CONFIG_LOCATION);
-    if !path_exists(config_path) {
-        Err("Internal config file does not exist")?;
-    }
-
-    let config_file = std::fs::File::open(config_path)?;
-    let internal_state: InternalState = serde_json::from_reader(config_file)?;
-
-    Ok(internal_state)
-}
-
-pub fn set_internal_state(internal_state: InternalState) -> Result<(), Box<dyn Error>> {
-    let config_path = Path::new(consts::NAVIGATION_DATA_INTERNAL_CONFIG_LOCATION);
-    let config_file = std::fs::File::create(config_path)?;
-    serde_json::to_writer(config_file, &internal_state)?;
-
-    Ok(())
-}
-
 pub fn start_network_request(task: Rc<RefCell<Task>>) {
     let request = NetworkHelper::make_request("https://navdata.api.navigraph.com/info", Method::Get, None, None);
     let request = match request {
@@ -141,9 +121,6 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
     };
 
     let active_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("active");
-
-    // figure out install status
-    let found_downloaded = path_exists(&active_path);
 
     let json_path = match status {
         InstallStatus::None => None,

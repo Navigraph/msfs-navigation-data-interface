@@ -178,7 +178,7 @@ impl<'a> Dispatcher<'a> {
         let cycle: InstalledNavigationDataCycleInfo =
             serde_json::from_reader(fs::File::open(uuid_path.join("cycle.json")).unwrap()).unwrap();
 
-        // Check for format change and update interface
+        // Check for format change and updates the used interface
         if cycle.format != self.db_type.borrow().as_str() {
             let new_format = InterfaceFormat::from(&cycle.format);
 
@@ -233,6 +233,14 @@ impl<'a> Dispatcher<'a> {
             };
 
             self.database.borrow_mut().enable_cycle(package)?;
+        } else {
+            let packages = self.list_packages(true, false);
+
+            if packages.is_empty() {
+                return Err("No packages found to initialize".into());
+            }
+
+            self.set_package(packages[0].uuid.clone())?;
         }
 
         Ok(String::from("Packages Setup"))
@@ -351,10 +359,10 @@ impl<'a> Dispatcher<'a> {
 
     fn handle_initialized(&mut self) {
         // Runs before everything, used to set up the navdata in the right places.
-        self.setup_packages().unwrap_or_else(|x| {
-            eprintln!("Packages failed to setup, Err: {}", x);
-            String::new()
-        });
+        match self.setup_packages() {
+            Ok(_) => (),
+            Err(x) => eprintln!("Packages failed to setup, Err: {}", x),
+        }
 
         // Runs extra setup on the configured database format handler
         self.database.borrow().setup().unwrap();
