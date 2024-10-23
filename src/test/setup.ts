@@ -3,7 +3,7 @@ import { argv, env } from "node:process"
 import { WASI } from "wasi"
 import { v4 } from "uuid"
 import { NavigraphNavigationDataInterface } from "../js"
-import { DEFAULT_DATA_PATH, WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
+import { DEFAULT_DATA_PATH, TEST_PATH, WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
 import "dotenv/config"
 import { random } from "./randomBigint"
 
@@ -145,6 +145,7 @@ const wasiSystem = new WASI({
   preopens: {
     "\\work": WORK_FOLDER_PATH,
     ".\\bundled-navigation-data": DEFAULT_DATA_PATH,
+    "\\test": TEST_PATH,
   },
 })
 
@@ -251,8 +252,6 @@ wasiSystem.initialize(wasmInstance)
 
 const fsContext = BigInt(0)
 
-const navigationDataInterface = new NavigraphNavigationDataInterface()
-
 let runLifecycle = true
 
 const drawRate = 30
@@ -289,6 +288,8 @@ wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelSe
 
 // This will run once for each test file
 beforeAll(async () => {
+  const navigationDataInterface = new NavigraphNavigationDataInterface()
+
   const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
 
   console.log("Did")
@@ -315,22 +316,6 @@ beforeAll(async () => {
   let packages = await navigationDataInterface.list_available_packages(true, false)
 
   console.log(JSON.stringify(packages, null, 2))
-
-  await navigationDataInterface.set_active_package(packages[1].uuid).catch(err => {
-    console.error(err)
-  })
-
-  await navigationDataInterface.set_active_package(packages[0].uuid).catch(err => {
-    console.error(err)
-  })
-
-  console.log("Set ext")
-
-  let airways = await navigationDataInterface.get_airways("A305").catch(err => {
-    console.error(err)
-  })
-
-  console.log(JSON.stringify(airways, null, 2))
 }, 30000)
 
 // Cancel the lifeCycle after all tests have completed

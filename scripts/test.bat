@@ -1,5 +1,7 @@
 @echo off
 
+set DEBUG="true"
+
 cd %~dp0
 
 rmdir /s /q ..\test_work

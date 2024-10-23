@@ -125,11 +125,13 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
           <div class="horizontal">
             <div class="vertical">
               <Input ref={this.icaoInputRef} value="TNCM" class="text-field" />
-              <div ref={this.executeIcaoButtonRef} class="button">
-                Fetch Airport
-              </div>
-              <div ref={this.loadDbRef} class="button">
-                Load DB
+              <div class="horizontal-no-pad">
+                <div ref={this.executeIcaoButtonRef} class="button">
+                  Fetch Airport
+                </div>
+                <div ref={this.loadDbRef} class="button">
+                  Load DB
+                </div>
               </div>
               <div style="height:30px;"></div>
               <Input

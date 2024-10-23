@@ -45,6 +45,13 @@
   padding: 2rem;
 }
 
+.horizontal-no-pad {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: flex-start;
+}
+
 .vertical {
   display: flex;
   flex-direction: column;
