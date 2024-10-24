@@ -145,7 +145,6 @@ const wasiSystem = new WASI({
   preopens: {
     "\\work": WORK_FOLDER_PATH,
     ".\\bundled-navigation-data": DEFAULT_DATA_PATH,
-    "\\test": TEST_PATH,
   },
 })
 
@@ -282,14 +281,14 @@ async function lifeCycle() {
 
 void lifeCycle()
 
+const navigationDataInterface = new NavigraphNavigationDataInterface()
+
 // Run the initialisation functions to setup the gauge
 wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.PRE_INSTALL, 0)
 wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.POST_INITIALIZE, 0)
 
 // This will run once for each test file
 beforeAll(async () => {
-  const navigationDataInterface = new NavigraphNavigationDataInterface()
-
   const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
 
   console.log("Did")
@@ -313,9 +312,17 @@ beforeAll(async () => {
     await navigationDataInterface.download_navigation_data(downloadUrl)
   }
 
-  let packages = await navigationDataInterface.list_available_packages(true, false)
-
-  console.log(JSON.stringify(packages, null, 2))
+  navigationDataInterface.list_available_packages(true, false).then(pkgs => {
+    console.log(JSON.stringify(pkgs), null, 2)
+    navigationDataInterface
+      .set_active_package(pkgs[0].uuid)
+      .then(val => {
+        console.log(val)
+      })
+      .catch(err => {
+        console.error(err)
+      })
+  })
 }, 30000)
 
 // Cancel the lifeCycle after all tests have completed

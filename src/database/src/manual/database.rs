@@ -14,19 +14,22 @@ pub struct DatabaseManual {
 }
 
 impl DatabaseTrait for DatabaseManual {
-    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> { Err(NoDatabaseOpen) }
+    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
+        Err(NoDatabaseOpen)
+    }
 
     fn setup(&self) -> Result<String, Box<dyn Error>> {
         // Nothing goes here preferrably
         Ok(String::from("Setup Complete"))
     }
 
-    fn enable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {
+    fn enable_cycle(&mut self, package: PackageInfo) -> bool {
         println!("[NAVIGRAPH]: Set active database to {:?}", &package.path);
 
         self.path.clone_from(&package.path);
 
-        Ok(serde_json::to_string(&package).unwrap())
+        // Ok(serde_json::to_string(&package).unwrap())
+        true
     }
 
     fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {

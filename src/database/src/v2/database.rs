@@ -25,8 +25,7 @@ use crate::{
     },
     sql_structs,
     traits::{DatabaseTrait, NoDatabaseOpen, PackageInfo},
-    util,
-    v2,
+    util, v2,
 };
 
 #[derive(Default)]
@@ -36,14 +35,16 @@ pub struct DatabaseV2 {
 }
 
 impl DatabaseTrait for DatabaseV2 {
-    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> { self.connection.as_ref().ok_or(NoDatabaseOpen) }
+    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
+        self.connection.as_ref().ok_or(NoDatabaseOpen)
+    }
 
     fn setup(&self) -> Result<String, Box<dyn Error>> {
         // Nothing goes here preferrably
         Ok(String::from("Setup Complete"))
     }
 
-    fn enable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {
+    fn enable_cycle(&mut self, package: PackageInfo) -> bool {
         let db_path = Path::new("")
             .join(package.path.clone())
             .join(format!("ng_jeppesen_fwdfd_{}.s3db", package.cycle.cycle));
@@ -51,18 +52,18 @@ impl DatabaseTrait for DatabaseV2 {
         println!("[NAVIGRAPH]: Setting active database to {:?}", db_path);
 
         if self.connection.is_some() {
-            self.disable_cycle(package.clone())?;
+            self.disable_cycle(package.clone()).unwrap();
         }
 
         let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-        let conn = Connection::open_with_flags(db_path.clone(), flags)?;
+        let conn = Connection::open_with_flags(db_path.clone(), flags).unwrap();
 
         self.connection = Some(conn);
         self.path = Some(String::from(db_path.to_str().unwrap()));
 
         println!("[NAVIGRAPH]: Set active database to {:?}", db_path);
 
-        Ok(serde_json::to_string(&package).unwrap())
+        true
     }
 
     fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {

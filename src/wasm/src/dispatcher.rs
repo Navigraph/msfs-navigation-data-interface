@@ -198,7 +198,9 @@ impl<'a> Dispatcher<'a> {
 
         fs::rename(uuid_path.clone(), active_path)?;
 
-        self.database.borrow_mut().enable_cycle(package)?;
+        let new_uuid = self.database.borrow_mut().enable_cycle(package);
+
+        print!("[NAVIGRAPH]: New uuid is {}", new_uuid);
 
         Ok(true)
     }
@@ -207,9 +209,13 @@ impl<'a> Dispatcher<'a> {
         self.copy_bundles()?;
 
         // Auto enable already activated cycle
-        let active_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("active");
+        let work_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
+        let active_path = work_path.join("active");
 
-        if path_exists(&active_path) {
+        if !path_exists(&work_path.join("navigraph-test")) {
+            // Testing shim
+            return Ok(String::from("Test Initalized"));
+        } else if path_exists(&active_path) {
             let cycle: InstalledNavigationDataCycleInfo =
                 serde_json::from_reader(fs::File::open(active_path.join("cycle.json")).unwrap()).unwrap();
 
@@ -232,7 +238,7 @@ impl<'a> Dispatcher<'a> {
                 cycle,
             };
 
-            self.database.borrow_mut().enable_cycle(package)?;
+            self.database.borrow_mut().enable_cycle(package);
         } else {
             let packages = self.list_packages(true, false);
 
