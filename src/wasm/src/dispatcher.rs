@@ -198,9 +198,13 @@ impl<'a> Dispatcher<'a> {
 
         fs::rename(uuid_path.clone(), active_path)?;
 
-        let new_uuid = self.database.borrow_mut().enable_cycle(package);
+        let new_uuid = self.database.borrow_mut().enable_cycle(package)?;
 
-        print!("[NAVIGRAPH]: New uuid is {}", new_uuid);
+        if new_uuid {
+            println!("[NAVIGRAPH]: Set Successful");
+        } else {
+            println!("[NAVIGRAPH]: Set Unsuccessful");
+        };
 
         Ok(true)
     }
@@ -238,7 +242,7 @@ impl<'a> Dispatcher<'a> {
                 cycle,
             };
 
-            self.database.borrow_mut().enable_cycle(package);
+            self.database.borrow_mut().enable_cycle(package)?;
         } else {
             let packages = self.list_packages(true, false);
 

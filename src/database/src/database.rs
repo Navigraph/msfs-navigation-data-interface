@@ -44,7 +44,7 @@ impl DatabaseTrait for DatabaseV1 {
         Ok(String::from("Setup Complete"))
     }
 
-    fn enable_cycle(&mut self, package: PackageInfo) -> bool {
+    fn enable_cycle(&mut self, package: PackageInfo) -> Result<bool, Box<dyn Error>> {
         let db_path = Path::new("")
             .join(package.path.clone())
             .join(format!("e_dfd_{}.s3db", package.cycle.cycle));
@@ -52,19 +52,18 @@ impl DatabaseTrait for DatabaseV1 {
         println!("[NAVIGRAPH]: Setting active database to {:?}", db_path);
 
         if self.connection.is_some() {
-            self.disable_cycle(package.clone()).unwrap();
+            self.disable_cycle(package.clone())?;
         }
 
         let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-        let conn = Connection::open_with_flags(db_path.clone(), flags).unwrap();
+        let conn = Connection::open_with_flags(db_path.clone(), flags)?;
 
         self.connection = Some(conn);
         self.path = Some(String::from(db_path.to_str().unwrap()));
 
         println!("[NAVIGRAPH]: Set active database to {:?}", db_path);
 
-        // Ok(serde_json::to_string(&package).unwrap())
-        true
+        Ok(true)
     }
 
     fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {

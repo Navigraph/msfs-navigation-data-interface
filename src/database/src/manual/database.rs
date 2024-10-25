@@ -23,13 +23,12 @@ impl DatabaseTrait for DatabaseManual {
         Ok(String::from("Setup Complete"))
     }
 
-    fn enable_cycle(&mut self, package: PackageInfo) -> bool {
+    fn enable_cycle(&mut self, package: PackageInfo) -> Result<bool, Box<dyn Error>> {
         println!("[NAVIGRAPH]: Set active database to {:?}", &package.path);
 
         self.path.clone_from(&package.path);
 
-        // Ok(serde_json::to_string(&package).unwrap())
-        true
+        Ok(true)
     }
 
     fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {

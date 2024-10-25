@@ -84,7 +84,7 @@ pub trait DatabaseTrait {
     fn setup(&self) -> Result<String, Box<dyn Error>>;
 
     // Takes a pacakge and switches the 'active' connection to the requested package.
-    fn enable_cycle(&mut self, package: PackageInfo) -> bool;
+    fn enable_cycle(&mut self, package: PackageInfo) -> Result<bool, Box<dyn Error>>;
 
     fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>>;
 

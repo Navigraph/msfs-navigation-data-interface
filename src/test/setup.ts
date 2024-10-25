@@ -84,6 +84,10 @@ function malloc(size: number): number {
 function readString(pointer: number): string {
   let lastChar = pointer
 
+  if (memoryBuffer.length == 0) {
+    return ""
+  }
+
   while (memoryBuffer[lastChar] !== 0) {
     lastChar++
   }
@@ -251,6 +255,10 @@ wasiSystem.initialize(wasmInstance)
 
 const fsContext = BigInt(0)
 
+// Run the initialisation functions to setup the gauge
+wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.PRE_INSTALL, 0)
+wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.POST_INITIALIZE, 0)
+
 let runLifecycle = true
 
 const drawRate = 30
@@ -279,19 +287,11 @@ async function lifeCycle() {
   }
 }
 
-void lifeCycle()
-
-const navigationDataInterface = new NavigraphNavigationDataInterface()
-
-// Run the initialisation functions to setup the gauge
-wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.PRE_INSTALL, 0)
-wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.POST_INITIALIZE, 0)
-
 // This will run once for each test file
 beforeAll(async () => {
-  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
+  const navigationDataInterface = new NavigraphNavigationDataInterface()
 
-  console.log("Did")
+  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
 
   if (!downloadUrl) {
     throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL`")
@@ -306,24 +306,25 @@ beforeAll(async () => {
 
   await waitForReady(navigationDataInterface)
 
-  console.log("it")
-
   if (downloadUrl !== "local") {
     await navigationDataInterface.download_navigation_data(downloadUrl)
   }
 
-  navigationDataInterface.list_available_packages(true, false).then(pkgs => {
-    console.log(JSON.stringify(pkgs), null, 2)
-    navigationDataInterface
-      .set_active_package(pkgs[0].uuid)
-      .then(val => {
-        console.log(val)
-      })
-      .catch(err => {
-        console.error(err)
-      })
-  })
+  let pkgs = await navigationDataInterface.list_available_packages(true, false)
+
+  console.log(JSON.stringify(pkgs, null, 2))
+
+  navigationDataInterface
+    .set_active_package(pkgs[0].uuid)
+    .then(val => {
+      console.log(val)
+    })
+    .catch(err => {
+      console.error(err)
+    })
 }, 30000)
+
+void lifeCycle()
 
 // Cancel the lifeCycle after all tests have completed
 afterAll(() => {
