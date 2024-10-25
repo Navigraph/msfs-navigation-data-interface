@@ -447,7 +447,7 @@ impl DatabaseTrait for DatabaseV2 {
     fn get_gates_at_airport(&self, airport_ident: String) -> Result<Vec<Gate>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_pb_gate WHERE airport_identifier = (?1)")?;
+        let mut stmt = conn.prepare("SELECT * FROM tbl_pb_gates WHERE airport_identifier = (?1)")?;
 
         // Same as v1, same struct can be used
         let gates_data = util::fetch_rows::<sql_structs::Gate>(&mut stmt, params![airport_ident])?;
@@ -480,7 +480,7 @@ impl DatabaseTrait for DatabaseV2 {
     fn get_path_points_at_airport(&self, airport_ident: String) -> Result<Vec<PathPoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_pp_pathpoints WHERE airport_identifier = (?1)")?;
+        let mut stmt = conn.prepare("SELECT * FROM tbl_pp_pathpoint WHERE airport_identifier = (?1)")?;
 
         let gates_data = util::fetch_rows::<v2::sql_structs::Pathpoints>(&mut stmt, params![airport_ident])?;
 

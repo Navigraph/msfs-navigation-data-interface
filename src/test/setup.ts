@@ -315,7 +315,7 @@ beforeAll(async () => {
   console.log(JSON.stringify(pkgs, null, 2))
 
   navigationDataInterface
-    .set_active_package(pkgs[0].uuid)
+    .set_active_package(pkgs[1].uuid)
     .then(val => {
       console.log(val)
     })
