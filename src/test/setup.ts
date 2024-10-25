@@ -287,43 +287,6 @@ async function lifeCycle() {
   }
 }
 
-// This will run once for each test file
-beforeAll(async () => {
-  const navigationDataInterface = new NavigraphNavigationDataInterface()
-
-  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
-
-  if (!downloadUrl) {
-    throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL`")
-  }
-
-  // Utility function to convert onReady to a promise
-  const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
-    return new Promise((resolve, _reject) => {
-      navDataInterface.onReady(() => resolve())
-    })
-  }
-
-  await waitForReady(navigationDataInterface)
-
-  if (downloadUrl !== "local") {
-    await navigationDataInterface.download_navigation_data(downloadUrl)
-  }
-
-  let pkgs = await navigationDataInterface.list_available_packages(true, false)
-
-  console.log(JSON.stringify(pkgs, null, 2))
-
-  navigationDataInterface
-    .set_active_package(pkgs[1].uuid)
-    .then(val => {
-      console.log(val)
-    })
-    .catch(err => {
-      console.error(err)
-    })
-}, 30000)
-
 void lifeCycle()
 
 // Cancel the lifeCycle after all tests have completed

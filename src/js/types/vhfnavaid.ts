@@ -8,5 +8,6 @@ export interface VhfNavaid {
   name: string
   frequency: MegaHertz
   location: Coordinates
+  magnetic_variation: Degrees
   station_declination?: Degrees
 }
