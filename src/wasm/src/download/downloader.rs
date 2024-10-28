@@ -254,7 +254,7 @@ impl NavigationDataDownloader {
     fn report_error(&self, message: String) {
         let borrowed_task = self.task.borrow();
         if (*borrowed_task).is_none() {
-            println!("[NAVIGRAPH] Task is none");
+            println!("[NAVIGRAPH] Task is none, but an error has been raised: {}", message);
             return;
         }
         let mut borrowed_task = borrowed_task.as_ref().unwrap().borrow_mut();
