@@ -150,8 +150,9 @@ impl<'a> Dispatcher<'a> {
         let uuid_path = base_path.join(uuid.clone());
 
         if path_exists(&active_path) {
-            let cycle: InstalledNavigationDataCycleInfo =
-                serde_json::from_reader(fs::File::open(active_path.join("cycle.json")).unwrap()).unwrap();
+            let file_handle = fs::File::open(active_path.join("cycle.json")).unwrap();
+
+            let cycle: InstalledNavigationDataCycleInfo = serde_json::from_reader(file_handle).unwrap();
 
             let hash = generate_uuid_from_cycle(&cycle);
 
@@ -167,8 +168,15 @@ impl<'a> Dispatcher<'a> {
 
             self.database.borrow_mut().disable_cycle(package)?;
 
-            // Disables the old path
-            fs::rename(active_path.clone(), base_path.join(hash))?;
+            if path_exists(&Path::new(consts::NAVIGATION_TEST_LOCATION)) {
+                util::delete_folder_recursively(&active_path, None)?;
+            } else {
+                // Disables the old path
+                match fs::rename(&active_path, base_path.join(hash)) {
+                    Ok(_) => (),
+                    Err(err) => eprintln!("{}", err),
+                }
+            }
         }
 
         if !path_exists(&uuid_path) {
@@ -198,15 +206,15 @@ impl<'a> Dispatcher<'a> {
 
         fs::rename(uuid_path.clone(), active_path)?;
 
-        let new_uuid = self.database.borrow_mut().enable_cycle(package)?;
+        let db_set = self.database.borrow_mut().enable_cycle(package)?;
 
-        if new_uuid {
+        if db_set {
             println!("[NAVIGRAPH]: Set Successful");
         } else {
             println!("[NAVIGRAPH]: Set Unsuccessful");
         };
 
-        Ok(true)
+        Ok(db_set)
     }
 
     fn setup_packages(&self) -> Result<String, Box<dyn Error>> {
@@ -216,7 +224,7 @@ impl<'a> Dispatcher<'a> {
         let work_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
         let active_path = work_path.join("active");
 
-        if !path_exists(&work_path.join("navigraph-test")) {
+        if path_exists(&Path::new(consts::NAVIGATION_TEST_LOCATION)) {
             // Testing shim
             return Ok(String::from("Test Initalized"));
         } else if path_exists(&active_path) {

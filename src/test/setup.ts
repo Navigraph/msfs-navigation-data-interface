@@ -287,6 +287,34 @@ async function lifeCycle() {
   }
 }
 
+beforeAll(async () => {
+  const navigationDataInterface = new NavigraphNavigationDataInterface()
+
+  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
+  const downloadUrlV2 = process.env.NAVIGATION_DATA_SIGNED_URL_V2
+
+  if (!(downloadUrl && downloadUrlV2)) {
+    throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL`")
+  }
+
+  // Utility function to convert onReady to a promise
+  const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
+    return new Promise((resolve, _reject) => {
+      navDataInterface.onReady(() => resolve())
+    })
+  }
+
+  await waitForReady(navigationDataInterface)
+
+  if (downloadUrl !== "local") {
+    await navigationDataInterface.download_navigation_data(downloadUrl)
+  }
+
+  if (downloadUrlV2 !== "local") {
+    await navigationDataInterface.download_navigation_data(downloadUrlV2)
+  }
+}, 30000)
+
 void lifeCycle()
 
 // Cancel the lifeCycle after all tests have completed

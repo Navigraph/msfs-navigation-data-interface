@@ -99,7 +99,7 @@ impl Fix {
         Self {
             fix_type,
             ident,
-            icao_code: icao_code.to_string(),
+            icao_code,
             location: Coordinates { lat, long },
             airport_ident,
         }

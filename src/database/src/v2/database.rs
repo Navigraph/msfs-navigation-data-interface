@@ -116,7 +116,7 @@ impl DatabaseTrait for DatabaseV2 {
     fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_d_vhfnavaids WHERE vor_identifier = (?1)")?;
+        let mut stmt = conn.prepare("SELECT * FROM tbl_d_vhfnavaids WHERE navaid_identifier = (?1)")?;
 
         let navaids_data = util::fetch_rows::<v2::sql_structs::VhfNavaids>(&mut stmt, params![ident])?;
 
@@ -127,8 +127,10 @@ impl DatabaseTrait for DatabaseV2 {
     fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut enroute_stmt = conn.prepare("SELECT * FROM tbl_db_enroute_ndbnavaids WHERE ndb_identifier = (?1)")?;
-        let mut terminal_stmt = conn.prepare("SELECT * FROM tbl_pn_terminal_ndbnavaids WHERE ndb_identifier = (?1)")?;
+        let mut enroute_stmt =
+            conn.prepare("SELECT * FROM tbl_db_enroute_ndbnavaids WHERE navaid_identifier = (?1)")?;
+        let mut terminal_stmt =
+            conn.prepare("SELECT * FROM tbl_pn_terminal_ndbnavaids WHERE navaid_identifier = (?1)")?;
 
         let enroute_data = util::fetch_rows::<v2::sql_structs::NdbNavaids>(&mut enroute_stmt, params![ident])?;
         let terminal_data = util::fetch_rows::<v2::sql_structs::NdbNavaids>(&mut terminal_stmt, params![ident])?;
@@ -222,7 +224,7 @@ impl DatabaseTrait for DatabaseV2 {
     ) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let where_string = util::range_query_where(center, range, "ndb");
+        let where_string = util::range_query_where(center, range, "navaid");
 
         let mut enroute_stmt =
             conn.prepare(format!("SELECT * FROM tbl_db_enroute_ndbnavaids WHERE {where_string}").as_str())?;
@@ -247,7 +249,7 @@ impl DatabaseTrait for DatabaseV2 {
     ) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let where_string = util::range_query_where(center, range, "vor");
+        let where_string = util::range_query_where(center, range, "navaid");
 
         let mut stmt = conn.prepare(format!("SELECT * FROM tbl_d_vhfnavaids WHERE {where_string}").as_str())?;
 
@@ -450,7 +452,7 @@ impl DatabaseTrait for DatabaseV2 {
         let mut stmt = conn.prepare("SELECT * FROM tbl_pb_gates WHERE airport_identifier = (?1)")?;
 
         // Same as v1, same struct can be used
-        let gates_data = util::fetch_rows::<sql_structs::Gate>(&mut stmt, params![airport_ident])?;
+        let gates_data = util::fetch_rows::<v2::sql_structs::Gate>(&mut stmt, params![airport_ident])?;
 
         Ok(gates_data.into_iter().map(Gate::from).collect())
     }

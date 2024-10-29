@@ -3,10 +3,10 @@ use serde::Serialize;
 use crate::{
     enums::ApproachTypeIdentifier,
     math::{feet_to_meters, Coordinates, Degrees, Meters},
-    sql_structs,
-    v2,
+    sql_structs, v2,
 };
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize, Default)]
 pub struct PathPoint {
     pub area_code: String,
@@ -80,14 +80,14 @@ impl From<v2::sql_structs::Pathpoints> for PathPoint {
             runway_ident: row.runway_identifier,
             ident: row.reference_path_identifier,
             landing_threshold_location: Coordinates {
-                lat: row.landing_threshold_latitude,
-                long: row.landing_threshold_longitude,
+                lat: row.landing_threshold_point_latitude,
+                long: row.landing_threshold_point_longitude,
             },
             ltp_ellipsoid_height: row.ltp_ellipsoid_height,
             glidepath_angle: row.glide_path_angle,
             flightpath_alignment_location: Coordinates {
-                lat: row.flight_path_alignment_latitude,
-                long: row.flight_path_alignment_longitude,
+                lat: row.flight_path_alignment_point_latitude,
+                long: row.flight_path_alignment_point_longitude,
             },
             course_width: row.course_width_at_threshold,
             length_offset: row.length_offset.unwrap_or_default(),

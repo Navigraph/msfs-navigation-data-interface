@@ -1,21 +1,9 @@
 use serde::Deserialize;
 
 use crate::enums::{
-    AirwayDirection,
-    AirwayLevel,
-    AirwayRouteType,
-    AltitudeDescriptor,
-    ApproachTypeIdentifier,
-    CommunicationType,
-    FrequencyUnits,
-    IfrCapability,
-    LegType,
-    RunwayLights,
-    RunwaySurface,
-    RunwaySurfaceCode,
-    SpeedDescriptor,
-    TrafficPattern,
-    TurnDirection,
+    AirwayDirection, AirwayLevel, AirwayRouteType, AltitudeDescriptor, ApproachTypeIdentifier, CommunicationType,
+    FrequencyUnits, IfrCapability, LegType, RunwayLights, RunwaySurface, RunwaySurfaceCode, SpeedDescriptor,
+    TrafficPattern, TurnDirection,
 };
 
 #[derive(Deserialize, Debug)]
@@ -84,6 +72,7 @@ pub struct Airports {
     pub country: Option<String>,
     pub country_3letter: Option<String>,
     pub elevation: f64,
+    pub fuel: Option<String>,
     pub icao_code: String,
     pub ifr_capability: Option<IfrCapability>,
     pub longest_runway_surface_code: RunwaySurfaceCode,
@@ -217,6 +206,17 @@ pub struct FirUir {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct Gate {
+    pub airport_identifier: String,
+    pub area_code: String,
+    pub gate_identifier: String,
+    pub gate_latitude: f64,
+    pub gate_longitude: f64,
+    pub icao_code: String,
+    pub name: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Gls {
     pub area_code: String,
     pub airport_identifier: String,
@@ -230,8 +230,7 @@ pub struct Gls {
     pub station_longitude: f64,
     pub gls_station_ident: String,
     pub gls_approach_slope: f64,
-    /// Yes its spelt wrong in the database
-    pub magentic_variation: f64,
+    pub magnetic_variation: f64,
     pub station_elevation: f64,
     pub station_type: Option<String>,
 }
@@ -389,13 +388,13 @@ pub struct Pathpoints {
     pub approach_type_identifier: ApproachTypeIdentifier,
     pub area_code: String,
     pub course_width_at_threshold: f64,
-    pub flight_path_alignment_latitude: f64,
-    pub flight_path_alignment_longitude: f64,
+    pub flight_path_alignment_point_latitude: f64,
+    pub flight_path_alignment_point_longitude: f64,
     pub glide_path_angle: f64,
     pub gnss_channel_number: f64,
     pub hal: f64,
-    pub landing_threshold_latitude: f64,
-    pub landing_threshold_longitude: f64,
+    pub landing_threshold_point_latitude: f64,
+    pub landing_threshold_point_longitude: f64,
     pub length_offset: Option<f64>,
     pub ltp_ellipsoid_height: f64,
     pub operations_type: Option<f64>, // new
@@ -479,12 +478,12 @@ pub struct NdbNavaids {
     pub area_code: String,
     pub airport_identifier: Option<String>,
     pub icao_code: String,
-    pub ndb_identifier: String,
-    pub ndb_name: String,
-    pub ndb_frequency: f64,
+    pub navaid_identifier: String,
+    pub navaid_name: String,
+    pub navaid_frequency: f64,
     pub navaid_class: String,
-    pub ndb_latitude: f64,
-    pub ndb_longitude: f64,
+    pub navaid_latitude: f64,
+    pub navaid_longitude: f64,
     pub range: f64,
 }
 
@@ -520,8 +519,8 @@ pub struct VhfNavaids {
     pub navaid_class: String,
     pub navaid_frequency: f64,
     pub navaid_identifier: String,
-    pub navaid_latitude: f64,
-    pub navaid_longitude: f64,
+    pub navaid_latitude: Option<f64>,
+    pub navaid_longitude: Option<f64>,
     pub navaid_name: String,
     pub range: f64,
     pub station_declination: Option<f64>,

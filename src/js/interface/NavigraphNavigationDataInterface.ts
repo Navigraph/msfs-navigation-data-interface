@@ -141,8 +141,8 @@ export class NavigraphNavigationDataInterface {
   /**
    * Gets information about the currently active database
    */
-  public async get_database_info(ident: string): Promise<DatabaseInfo> {
-    return await this.callWasmFunction("GetDatabaseInfo", { ident })
+  public async get_database_info(): Promise<DatabaseInfo> {
+    return await this.callWasmFunction("GetDatabaseInfo", {})
   }
 
   /**

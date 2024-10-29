@@ -387,6 +387,9 @@ pub enum RunwaySurface {
     Concrete,
     #[serde(rename = "WATE")]
     Water,
+    // TODO: Find out what BITU means
+    #[serde(rename = "BITU")]
+    BITU,
     #[serde(rename = "UNPV")]
     Unpaved,
 }

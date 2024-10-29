@@ -2,8 +2,7 @@ use serde::Serialize;
 
 use crate::{
     math::{Coordinates, KiloHertz},
-    sql_structs,
-    v2,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
@@ -48,12 +47,12 @@ impl From<v2::sql_structs::NdbNavaids> for NdbNavaid {
             area_code: navaid.area_code,
             airport_ident: navaid.airport_identifier,
             icao_code: navaid.icao_code,
-            ident: navaid.ndb_identifier,
-            name: navaid.ndb_name,
-            frequency: navaid.ndb_frequency,
+            ident: navaid.navaid_identifier,
+            name: navaid.navaid_name,
+            frequency: navaid.navaid_frequency,
             location: Coordinates {
-                lat: navaid.ndb_latitude,
-                long: navaid.ndb_longitude,
+                lat: navaid.navaid_latitude,
+                long: navaid.navaid_longitude,
             },
         }
     }

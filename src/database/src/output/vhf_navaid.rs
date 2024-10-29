@@ -2,8 +2,7 @@ use serde::Serialize;
 
 use crate::{
     math::{Coordinates, Degrees, MegaHertz},
-    sql_structs,
-    v2,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
@@ -64,8 +63,12 @@ impl From<v2::sql_structs::VhfNavaids> for VhfNavaid {
             name: navaid.navaid_name,
             frequency: navaid.navaid_frequency,
             location: Coordinates {
-                lat: navaid.navaid_latitude,
-                long: navaid.navaid_longitude,
+                lat: navaid
+                    .navaid_latitude
+                    .unwrap_or(navaid.dme_latitude.unwrap_or_default()),
+                long: navaid
+                    .navaid_longitude
+                    .unwrap_or(navaid.dme_longitude.unwrap_or_default()),
             },
             station_declination: navaid.station_declination,
             continent: navaid.continent,
