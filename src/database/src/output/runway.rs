@@ -3,10 +3,10 @@ use serde::Serialize;
 use crate::{
     enums::{RunwayLights, RunwaySurface, TrafficPattern},
     math::{Coordinates, Degrees, Feet},
-    sql_structs,
-    v2,
+    sql_structs, v2,
 };
 
+#[serde_with::skip_serializing_none]
 #[derive(Serialize, Clone, Default)]
 pub struct RunwayThreshold {
     /// The identifier of this runway, such as `RW18L` or `RW36R`

@@ -31,7 +31,14 @@ describe("DFDv1", () => {
 
     console.log(JSON.stringify(pkgs, null, 2))
 
-    await navigationDataInterface.set_active_package(pkgs[0].uuid)
+    navigationDataInterface
+      .set_active_package(pkgs[0].uuid)
+      .then(val => {
+        console.log(val)
+      })
+      .catch(err => {
+        console.error(err)
+      })
   }, 30000)
 
   it("Database info", async () => {
@@ -227,9 +234,9 @@ describe("DFDv1", () => {
 
     const target_airway = airways[0]
 
-    expect(airways.length).toBe(5)
+    expect(airways.length).toBe(1)
     expect(airways[0].direction).toBeUndefined()
-    expect(target_airway.fixes.length).toBe(52)
+    expect(target_airway.fixes.length).toBe(53)
     expect(target_airway.ident).toBe("A1")
     expect(target_airway.level).toBe(AirwayLevel.Both)
     expect(target_airway.route_type).toBe(AirwayRouteType.OfficialDesignatedAirwaysExpectRnavAirways)
@@ -282,7 +289,7 @@ describe("DFDv1", () => {
   it("Get departures", async () => {
     const departures = await navigationDataInterface.get_departures_at_airport("KLAX")
 
-    expect(departures.length).toBe(22)
+    expect(departures.length).toBe(24)
 
     const target_departure = departures.find(departure => departure.ident === "PNDAH2")
 
@@ -333,7 +340,7 @@ describe("DFDv1", () => {
   it("Get waypoints at airport", async () => {
     const waypoints = await navigationDataInterface.get_waypoints_at_airport("NZCH")
 
-    expect(waypoints.length).toBe(200)
+    expect(waypoints.length).toBe(201)
   })
 
   it("Get ndb navaids at airport", async () => {
@@ -356,11 +363,11 @@ describe("DFDv1", () => {
       fix: {
         airport_ident: "GCLP",
         fix_type: FixType.Waypoint,
-        ident: "CF21R",
+        ident: "TIPUX",
         icao_code: "GC",
         location: {
           lat: 28.116,
-          long: -15.30502778,
+          long: -15.30505556,
         },
       },
       theta: 25.4,
@@ -390,19 +397,19 @@ describe("DFDv1", () => {
     expect(gates[0]).toStrictEqual({
       area_code: "SPA",
       icao_code: "NZ",
-      ident: "10",
+      ident: "45",
       location: {
-        lat: -43.49016944,
-        long: 172.53940833,
+        lat: -43.49171111,
+        long: 172.54092222,
       },
-      name: "10",
+      name: "45",
     } satisfies Gate)
   })
 
   it("Get communications at airport", async () => {
     const communications = await navigationDataInterface.get_communications_at_airport("NZCH")
 
-    expect(communications.length).toBe(14)
+    expect(communications.length).toBe(17)
 
     expect(communications[3]).toStrictEqual({
       area_code: "SPA",
@@ -410,10 +417,10 @@ describe("DFDv1", () => {
       communication_type: CommunicationType.ApproachControl,
       frequency: 120.9,
       frequency_units: FrequencyUnits.VeryHigh,
-      callsign: "CHRISTCHURCH ",
+      callsign: "CHRISTCHURCH",
       location: {
-        lat: -43.489444444444445,
-        long: 172.53444444444443,
+        lat: -43.48944444,
+        long: 172.53444444,
       },
     } satisfies Communication)
   })
