@@ -3,6 +3,7 @@ use std::{error::Error, path::Path};
 use rusqlite::{params, Connection, OpenFlags, Result};
 
 use crate::{
+    enums::InterfaceFormat,
     math::{Coordinates, NauticalMiles},
     output::{
         airport::Airport,
@@ -35,6 +36,10 @@ pub struct DatabaseV2 {
 }
 
 impl DatabaseTrait for DatabaseV2 {
+    fn get_database_type(&self) -> InterfaceFormat {
+        return InterfaceFormat::DFDv2;
+    }
+
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
         self.connection.as_ref().ok_or(NoDatabaseOpen)
     }

@@ -3,6 +3,7 @@ use std::{error::Error, fs, path::Path};
 use rusqlite::{Connection, Result};
 
 use crate::{
+    enums::InterfaceFormat,
     output::database_info::DatabaseInfo,
     traits::{DatabaseTrait, InstalledNavigationDataCycleInfo, NoDatabaseOpen, PackageInfo},
 };
@@ -14,6 +15,10 @@ pub struct DatabaseManual {
 }
 
 impl DatabaseTrait for DatabaseManual {
+    fn get_database_type(&self) -> InterfaceFormat {
+        return InterfaceFormat::Custom;
+    }
+
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
         Err(NoDatabaseOpen)
     }

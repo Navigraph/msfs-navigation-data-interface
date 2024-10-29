@@ -176,7 +176,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     this.executeIcaoButtonRef.instance.addEventListener("click", () => {
       console.time("query")
       this.navigationDataInterface
-        .get_airports_in_range({ lat: 51.468, long: -0.4551 }, 640)
+        .get_airport(this.icaoInputRef.instance.value)
         .then(procedures => {
           console.info(procedures)
           this.outputRef.instance.textContent = JSON.stringify(procedures, null, 2)

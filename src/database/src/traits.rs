@@ -10,6 +10,7 @@ use serde_json::{Number, Value};
 use super::output::airport::Airport;
 use crate::{
     database::DatabaseV1,
+    enums::InterfaceFormat,
     manual::database::DatabaseManual,
     math::{Coordinates, NauticalMiles},
     output::{
@@ -78,6 +79,8 @@ pub enum DatabaseEnum {
 #[allow(unused_variables)]
 #[enum_dispatch(DatabaseEnum)]
 pub trait DatabaseTrait {
+    fn get_database_type(&self) -> InterfaceFormat;
+
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen>;
 
     // Called after the gauge intializes

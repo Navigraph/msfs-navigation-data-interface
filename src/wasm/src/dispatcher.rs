@@ -62,7 +62,6 @@ pub struct Dispatcher<'a> {
     database: RefCell<DatabaseEnum>,
     delta_time: std::time::Duration,
     queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
-    db_type: RefCell<InterfaceFormat>,
     set_active_on_finish: RefCell<bool>,
 }
 
@@ -79,7 +78,6 @@ impl<'a> Dispatcher<'a> {
             delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
                                                                    * the first update */
             queue: Rc::new(RefCell::new(Vec::new())),
-            db_type: RefCell::new(format),
             set_active_on_finish: RefCell::new(false),
         }
     }
@@ -124,9 +122,9 @@ impl<'a> Dispatcher<'a> {
         }
 
         if filter {
-            let db_type = self.db_type.borrow().as_str().to_string();
+            let interface_type = self.database.borrow().get_database_type().as_str().to_string();
 
-            packages.retain(|package| *package.cycle.format == db_type);
+            packages.retain(|package| *package.cycle.format == interface_type);
         }
 
         if sort {
@@ -187,7 +185,7 @@ impl<'a> Dispatcher<'a> {
             serde_json::from_reader(fs::File::open(uuid_path.join("cycle.json")).unwrap()).unwrap();
 
         // Check for format change and updates the used interface
-        if cycle.format != self.db_type.borrow().as_str() {
+        if cycle.format != self.database.borrow().get_database_type().as_str() {
             let new_format = InterfaceFormat::from(&cycle.format);
 
             self.database.replace(match new_format {
@@ -195,7 +193,6 @@ impl<'a> Dispatcher<'a> {
                 InterfaceFormat::DFDv2 => DatabaseV2::default().into(),
                 InterfaceFormat::Custom => DatabaseManual::default().into(),
             });
-            self.db_type.replace(new_format);
         }
 
         let package: PackageInfo = PackageInfo {
@@ -231,7 +228,7 @@ impl<'a> Dispatcher<'a> {
             let cycle: InstalledNavigationDataCycleInfo =
                 serde_json::from_reader(fs::File::open(active_path.join("cycle.json")).unwrap()).unwrap();
 
-            if cycle.format != self.db_type.borrow().as_str() {
+            if cycle.format != self.database.borrow().get_database_type().as_str() {
                 let new_format = InterfaceFormat::from(&cycle.format);
 
                 self.database.replace(match new_format {
@@ -239,7 +236,6 @@ impl<'a> Dispatcher<'a> {
                     InterfaceFormat::DFDv2 => DatabaseV2::default().into(),
                     InterfaceFormat::Custom => DatabaseManual::default().into(),
                 });
-                self.db_type.replace(new_format);
             }
 
             let hash = generate_uuid_from_cycle(&cycle);
@@ -343,7 +339,9 @@ impl<'a> Dispatcher<'a> {
         let mut count = 0;
 
         let (_keep, delete): (Vec<PackageInfo>, Vec<PackageInfo>) = packages.into_iter().partition(|pkg| {
-            if (self.db_type.borrow().as_str() == pkg.cycle.format) && (count <= count_max.unwrap_or(3)) {
+            if (self.database.borrow().get_database_type().as_str() == pkg.cycle.format)
+                && (count <= count_max.unwrap_or(3))
+            {
                 count += 1;
                 return true;
             } else if bundle_ids.contains(&pkg.uuid) || pkg.path.contains("active") {
