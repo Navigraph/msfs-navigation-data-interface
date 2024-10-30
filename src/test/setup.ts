@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs"
 import { argv, env } from "node:process"
 import { WASI } from "wasi"
+import { beforeAll } from "bun:test"
 import { v4 } from "uuid"
 import { NavigraphNavigationDataInterface } from "../js"
-import { DEFAULT_DATA_PATH, TEST_PATH, WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
+import { DEFAULT_DATA_PATH, WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
 import "dotenv/config"
 import { random } from "./randomBigint"
 
@@ -245,13 +246,13 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
       return 2 // FS_NETWORK_HTTP_REQUEST_STATE_WAITING_FOR_DATA
     },
   },
-}) as WasmInstance
+}) as unknown as WasmInstance
 
 // Initially assign `memoryBuffer` to a new Uint8Array linked to the exported memoryBuffer
 memoryBuffer = new Uint8Array(wasmInstance.exports.memory.buffer)
 wasmFunctionTable = wasmInstance.exports.__indirect_function_table
 
-wasiSystem.initialize(wasmInstance)
+wasiSystem.start(wasmInstance)
 
 const fsContext = BigInt(0)
 
