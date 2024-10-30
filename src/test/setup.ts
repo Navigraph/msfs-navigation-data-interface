@@ -245,7 +245,7 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
       return 2 // FS_NETWORK_HTTP_REQUEST_STATE_WAITING_FOR_DATA
     },
   },
-}) as WasmInstance
+}) as unknown as WasmInstance
 
 // Initially assign `memoryBuffer` to a new Uint8Array linked to the exported memoryBuffer
 memoryBuffer = new Uint8Array(wasmInstance.exports.memory.buffer)

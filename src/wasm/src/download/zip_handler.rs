@@ -1,12 +1,11 @@
 use std::{
-    fs,
-    io,
+    fs, io,
     path::{Path, PathBuf},
 };
 
 use crate::{
     consts,
-    util::{self, generate_uuid_from_path},
+    util::{self, generate_uuid_from_path, path_exists},
 };
 
 #[derive(PartialEq, Eq)]
@@ -75,7 +74,9 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
                 // Done extracting, drop the zip archive
                 self.zip_archive = None;
 
-                let temp_dir = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("temp");
+                let work_dir = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
+
+                let temp_dir = &work_dir.join("temp");
 
                 let cycle_path = temp_dir.join("cycle.json");
 
@@ -84,6 +85,15 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
                 };
 
                 let cycle_uuid = generate_uuid_from_path(cycle_path)?;
+
+                let active_cycle = generate_uuid_from_path(work_dir.join("active").join("cycle.json")).ok();
+
+                let is_active = active_cycle.is_some_and(|active_uuid| active_uuid == cycle_uuid);
+
+                if path_exists(&work_dir.join(&cycle_uuid)) || is_active {
+                    util::delete_folder_recursively(&temp_dir, None)?;
+                    return Err(format!("Package {} already exists", cycle_uuid).into());
+                }
 
                 fs::rename(
                     temp_dir,

@@ -29,11 +29,11 @@ pub struct RunwayThreshold {
     pub location: Coordinates,
     /// The elevation of the landing threshold of this runway in feet
     pub elevation: Feet,
-    /// Whether or not the runway has lights
+    /// Whether or not the runway has lights (v2 only)
     pub lights: Option<RunwayLights>,
-    /// Material that the runway is made out of
+    /// Material that the runway is made out of (v2 only)
     pub surface: Option<RunwaySurface>,
-    /// The traffic pattern of the runway
+    /// The traffic pattern of the runway (v2 only)
     pub traffic_pattern: Option<TrafficPattern>,
 }
 

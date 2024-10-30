@@ -2,8 +2,7 @@ use serde::Serialize;
 
 use crate::{
     math::{Coordinates, Degrees},
-    sql_structs,
-    v2,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
@@ -15,6 +14,8 @@ pub struct Waypoint {
     pub continent: Option<String>,
     /// Country of the waypoint (v2 only)
     pub country: Option<String>,
+    /// 3 Letter identifier describing the local horizontal identifier (v2 only)
+    pub datum_code: Option<String>,
     /// The identifier of the airport that this Waypoint is associated with, if any
     pub airport_ident: Option<String>,
     /// The icao prefix of the region that this Waypoint is in.
@@ -62,6 +63,7 @@ impl From<v2::sql_structs::Waypoints> for Waypoint {
             continent: waypoint.continent,
             country: waypoint.country,
             magnetic_variation: waypoint.magnetic_varation,
+            datum_code: waypoint.datum_code,
         }
     }
 }

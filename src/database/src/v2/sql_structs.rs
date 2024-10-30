@@ -475,16 +475,20 @@ pub struct Sids {
 
 #[derive(Deserialize, Debug)]
 pub struct NdbNavaids {
-    pub area_code: String,
     pub airport_identifier: Option<String>,
-    pub icao_code: String,
-    pub navaid_identifier: String,
-    pub navaid_name: String,
-    pub navaid_frequency: f64,
+    pub area_code: String,
+    pub continent: Option<String>,
+    pub country: Option<String>,
+    pub datum_code: Option<String>,
+    pub icao_code: Option<String>,
+    pub magnetic_variation: Option<f64>,
     pub navaid_class: String,
-    pub navaid_latitude: f64,
-    pub navaid_longitude: f64,
-    pub range: f64,
+    pub navaid_frequency: f64,
+    pub navaid_identifier: Option<String>,
+    pub navaid_latitude: Option<f64>,
+    pub navaid_longitude: Option<f64>,
+    pub navaid_name: String,
+    pub range: Option<f64>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -492,6 +496,7 @@ pub struct Waypoints {
     pub area_code: String,
     pub continent: Option<String>,
     pub country: Option<String>,
+    pub datum_code: Option<String>,
     pub icao_code: Option<String>,
     pub magnetic_varation: Option<f64>,
     pub region_code: Option<String>,
@@ -509,6 +514,7 @@ pub struct VhfNavaids {
     pub area_code: String,
     pub continent: Option<String>,
     pub country: Option<String>,
+    pub datum_code: Option<String>,
     pub dme_elevation: Option<f64>,
     pub dme_ident: Option<String>,
     pub dme_latitude: Option<f64>,
@@ -522,6 +528,6 @@ pub struct VhfNavaids {
     pub navaid_latitude: Option<f64>,
     pub navaid_longitude: Option<f64>,
     pub navaid_name: String,
-    pub range: f64,
+    pub range: Option<f64>,
     pub station_declination: Option<f64>,
 }

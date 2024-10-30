@@ -19,6 +19,7 @@ pub struct PathPoint {
     pub ident: String,
     pub landing_threshold_location: Coordinates,
     pub ltp_ellipsoid_height: Meters,
+    /// Other heights are v1 only
     pub fpap_ellipsoid_height: Option<Meters>, // Does not exist on v2
     pub ltp_orthometric_height: Option<Meters>,
     pub fpap_orthometric_height: Option<Meters>,

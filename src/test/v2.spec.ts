@@ -101,6 +101,7 @@ describe("DFDv2", () => {
       area_code: "EUR",
       continent: "EUROPE",
       country: "DENMARK",
+      datum_code: "WGE",
       icao_code: "EK",
       ident: "CH",
       location: {
@@ -110,6 +111,7 @@ describe("DFDv2", () => {
       frequency: 110.5,
       name: "KASTRUP",
       magnetic_variation: 5.1,
+      range: 25,
     } satisfies VhfNavaid)
   })
 
@@ -120,6 +122,9 @@ describe("DFDv2", () => {
 
     expect(navaids[0]).toStrictEqual({
       area_code: "AFR",
+      continent: "AFRICA",
+      country: "MOZAMBIQUE",
+      datum_code: "WGE",
       icao_code: "FQ",
       ident: "CH",
       location: {
@@ -128,6 +133,7 @@ describe("DFDv2", () => {
       },
       frequency: 282,
       name: "CHIMOIO",
+      range: 75,
     } satisfies NdbNavaid)
   })
 

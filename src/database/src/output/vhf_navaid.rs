@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use crate::{
-    math::{Coordinates, Degrees, MegaHertz},
+    math::{Coordinates, Degrees, MegaHertz, NauticalMiles},
     sql_structs, v2,
 };
 
@@ -14,6 +14,8 @@ pub struct VhfNavaid {
     pub continent: Option<String>,
     /// Country of the navaid (v2 only)
     pub country: Option<String>,
+    /// 3 Letter identifier describing the local horizontal identifier (v2 only)
+    pub datum_code: Option<String>,
     /// The identifier of the airport that this VhfNavaid is associated with, if any
     pub airport_ident: Option<String>,
     /// The icao prefix of the region that this VhfNavaid is in.
@@ -30,6 +32,8 @@ pub struct VhfNavaid {
     pub station_declination: Option<Degrees>,
     /// Magnetic variation
     pub magnetic_variation: Option<Degrees>,
+    /// VOR range (v2 only)
+    pub range: Option<NauticalMiles>,
 }
 
 impl From<sql_structs::VhfNavaids> for VhfNavaid {
@@ -74,6 +78,8 @@ impl From<v2::sql_structs::VhfNavaids> for VhfNavaid {
             continent: navaid.continent,
             country: navaid.country,
             magnetic_variation: navaid.magnetic_variation,
+            range: navaid.range,
+            datum_code: navaid.datum_code,
         }
     }
 }
