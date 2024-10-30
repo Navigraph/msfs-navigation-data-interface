@@ -2,6 +2,6 @@
 
 cd .\src\js
 
-call npm run build
+call bun run build
 
 cd %~dp0

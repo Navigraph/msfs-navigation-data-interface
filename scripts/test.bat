@@ -2,8 +2,10 @@
 
 cd %~dp0
 
-rmdir /s /q ..\test_work
-mkdir ..\test_work
-mkdir ..\test_work\navigraph-test
+rmdir /s /q ..\test_work\work
+mkdir ..\test_work\work
+mkdir ..\test_work\work\navigraph-test
 
-call .\run_docker_cmd.bat npm run jest
+cd ..
+
+call bun test --bail

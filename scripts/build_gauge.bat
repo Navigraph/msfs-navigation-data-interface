@@ -2,6 +2,6 @@
 
 cd .\examples\gauge
 
-call npm run build
+call bun run build
 
 cd %~dp0

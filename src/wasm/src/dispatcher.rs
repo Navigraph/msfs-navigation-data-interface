@@ -376,7 +376,7 @@ impl<'a> Dispatcher<'a> {
     fn handle_initialized(&mut self) {
         // Runs before everything, used to set up the navdata in the right places.
         match self.setup_packages() {
-            Ok(_) => (),
+            Ok(res) => println!("[NAVIGRAPH]:{}", res),
             Err(x) => eprintln!("Packages failed to setup, Err: {}", x),
         }
 

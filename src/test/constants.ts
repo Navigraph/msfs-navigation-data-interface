@@ -1,3 +1,3 @@
-export const WORK_FOLDER_PATH = "./test_work"
+export const WORK_FOLDER_PATH = "./test_work/work"
 export const WEBASSEMBLY_PATH = "./out/msfs_navigation_data_interface.wasm"
 export const DEFAULT_DATA_PATH = "./examples/aircraft/PackageSources/bundled-navigation-data"

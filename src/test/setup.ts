@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { argv, env } from "node:process"
 import { WASI } from "wasi"
-import { beforeAll } from "bun:test"
+import { afterAll, beforeAll } from "bun:test"
 import { v4 } from "uuid"
 import { NavigraphNavigationDataInterface } from "../js"
 import { DEFAULT_DATA_PATH, WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
@@ -253,6 +253,8 @@ memoryBuffer = new Uint8Array(wasmInstance.exports.memory.buffer)
 wasmFunctionTable = wasmInstance.exports.__indirect_function_table
 
 wasiSystem.start(wasmInstance)
+
+console.log(wasiSystem)
 
 const fsContext = BigInt(0)
 
