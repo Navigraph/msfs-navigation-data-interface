@@ -39,7 +39,7 @@ describe("DFDv2", () => {
       .catch(err => {
         console.error(err)
       })
-  }, 30000)
+  })
 
   it("Database info", async () => {
     const info = await navigationDataInterface.get_database_info()
@@ -135,7 +135,7 @@ describe("DFDv2", () => {
     const airports = await navigationDataInterface.get_airports_in_range({ lat: 51.468, long: -0.4551 }, 640)
 
     expect(airports.length).toBe(1686)
-  }, 30000)
+  })
 
   it("Get waypoints in range", async () => {
     const waypoints = await navigationDataInterface.get_waypoints_in_range({ lat: -43.4876, long: 172.5374 }, 10)
