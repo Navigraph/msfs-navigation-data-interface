@@ -56,7 +56,6 @@ pub struct PackageInfo {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
-#[serde_with::skip_serializing_none]
 #[serde(rename_all = "camelCase")]
 pub struct InstalledNavigationDataCycleInfo {
     pub cycle: String,
@@ -64,6 +63,8 @@ pub struct InstalledNavigationDataCycleInfo {
     pub name: String,
     pub format: String,
     pub validity_period: String,
+    // The serde_with doesn't work here so this is here instead
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub database_path: Option<String>,
 }
 

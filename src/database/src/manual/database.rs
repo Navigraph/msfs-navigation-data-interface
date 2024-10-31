@@ -43,13 +43,7 @@ impl DatabaseTrait for DatabaseManual {
         let cycle: InstalledNavigationDataCycleInfo =
             serde_json::from_reader(fs::File::open(cycle_path).unwrap()).unwrap();
 
-        let validity = cycle
-            .validity_period
-            .split('/')
-            .map(|f| f.to_string())
-            .collect::<Vec<String>>();
-
-        let mut validity = validity.into_iter();
+        let mut validity = cycle.validity_period.split('/').map(|f| f.to_string());
 
         let header_data = DatabaseInfo::new(
             cycle.cycle,
