@@ -3,7 +3,8 @@ use serde::Serialize;
 use crate::{
     enums::ApproachTypeIdentifier,
     math::{feet_to_meters, Coordinates, Degrees, Meters},
-    sql_structs, v2,
+    sql_structs,
+    v2,
 };
 
 #[serde_with::skip_serializing_none]

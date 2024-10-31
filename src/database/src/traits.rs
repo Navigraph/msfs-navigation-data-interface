@@ -34,18 +34,14 @@ use crate::{
 pub struct NoDatabaseOpen;
 
 impl Display for NoDatabaseOpen {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "No database open")
-    }
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "No database open") }
 }
 
 #[derive(Debug)]
 pub struct DatabaseNotCompat;
 
 impl Display for DatabaseNotCompat {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Function not implemented in database type")
-    }
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "Function not implemented in database type") }
 }
 
 impl Error for NoDatabaseOpen {}
@@ -129,24 +125,16 @@ pub trait DatabaseTrait {
 
         Ok(json)
     }
-    fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> {
-        Err(Box::new(DatabaseNotCompat))
-    }
-    fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn Error>> {
-        Err(Box::new(DatabaseNotCompat))
-    }
-    fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
-        Err(Box::new(DatabaseNotCompat))
-    }
+    fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
+    fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
+    fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
     fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
     fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn Error>> {
-        Err(Box::new(DatabaseNotCompat))
-    }
+    fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
     fn get_airways_at_fix(&self, fix_ident: String, fix_icao_code: String) -> Result<Vec<Airway>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }

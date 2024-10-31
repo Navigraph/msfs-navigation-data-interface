@@ -1,9 +1,21 @@
 use serde::Deserialize;
 
 use crate::enums::{
-    AirwayDirection, AirwayLevel, AirwayRouteType, AltitudeDescriptor, ApproachTypeIdentifier, CommunicationType,
-    FrequencyUnits, IfrCapability, LegType, RunwayLights, RunwaySurface, RunwaySurfaceCode, SpeedDescriptor,
-    TrafficPattern, TurnDirection,
+    AirwayDirection,
+    AirwayLevel,
+    AirwayRouteType,
+    AltitudeDescriptor,
+    ApproachTypeIdentifier,
+    CommunicationType,
+    FrequencyUnits,
+    IfrCapability,
+    LegType,
+    RunwayLights,
+    RunwaySurface,
+    RunwaySurfaceCode,
+    SpeedDescriptor,
+    TrafficPattern,
+    TurnDirection,
 };
 
 #[derive(Deserialize, Debug)]

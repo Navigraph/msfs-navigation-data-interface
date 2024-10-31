@@ -1,5 +1,6 @@
 use std::{
-    fs, io,
+    fs,
+    io,
     path::{Path, PathBuf},
 };
 
@@ -91,7 +92,7 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
                 let is_active = active_cycle.is_some_and(|active_uuid| active_uuid == cycle_uuid);
 
                 if path_exists(&work_dir.join(&cycle_uuid)) || is_active {
-                    util::delete_folder_recursively(&temp_dir, None)?;
+                    util::delete_folder_recursively(temp_dir, None)?;
                     return Err(format!("Package {} already exists", cycle_uuid).into());
                 }
 

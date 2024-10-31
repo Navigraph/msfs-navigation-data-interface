@@ -36,13 +36,9 @@ pub struct DatabaseV1 {
 }
 
 impl DatabaseTrait for DatabaseV1 {
-    fn get_database_type(&self) -> InterfaceFormat {
-        return InterfaceFormat::DFDv1;
-    }
+    fn get_database_type(&self) -> InterfaceFormat { InterfaceFormat::DFDv1 }
 
-    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
-        self.connection.as_ref().ok_or(NoDatabaseOpen)
-    }
+    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> { self.connection.as_ref().ok_or(NoDatabaseOpen) }
 
     fn setup(&self) -> Result<String, Box<dyn Error>> {
         // Nothing goes here preferrably

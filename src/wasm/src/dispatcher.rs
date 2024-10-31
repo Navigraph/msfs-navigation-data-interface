@@ -166,7 +166,7 @@ impl<'a> Dispatcher<'a> {
 
             self.database.borrow_mut().disable_cycle(package)?;
 
-            if path_exists(&Path::new(consts::NAVIGATION_TEST_LOCATION)) {
+            if path_exists(Path::new(consts::NAVIGATION_TEST_LOCATION)) {
                 util::delete_folder_recursively(&active_path, None)?;
             } else {
                 // Disables the old path
@@ -221,7 +221,7 @@ impl<'a> Dispatcher<'a> {
         let work_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
         let active_path = work_path.join("active");
 
-        if path_exists(&Path::new(consts::NAVIGATION_TEST_LOCATION)) {
+        if path_exists(Path::new(consts::NAVIGATION_TEST_LOCATION)) {
             // Testing shim
             return Ok(String::from("Test Initalized"));
         } else if path_exists(&active_path) {
