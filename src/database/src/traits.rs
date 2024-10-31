@@ -56,13 +56,15 @@ pub struct PackageInfo {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[serde_with::skip_serializing_none]
+#[serde(rename_all = "camelCase")]
 pub struct InstalledNavigationDataCycleInfo {
     pub cycle: String,
     pub revision: String,
     pub name: String,
     pub format: String,
-    #[serde(rename = "validityPeriod")]
     pub validity_period: String,
+    pub database_path: Option<String>,
 }
 
 #[enum_dispatch]
@@ -83,9 +85,9 @@ pub trait DatabaseTrait {
     fn setup(&self) -> Result<String, Box<dyn Error>>;
 
     // Takes a pacakge and switches the 'active' connection to the requested package.
-    fn enable_cycle(&mut self, package: PackageInfo) -> Result<bool, Box<dyn Error>>;
+    fn enable_cycle(&mut self, package: &PackageInfo) -> Result<bool, Box<dyn Error>>;
 
-    fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>>;
+    fn disable_cycle(&mut self) -> Result<bool, Box<dyn Error>>;
 
     fn execute_sql_query(&self, sql: String, params: Vec<String>) -> Result<Value, Box<dyn Error>> {
         // Execute query

@@ -46,15 +46,18 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(String::from("Setup Complete"))
     }
 
-    fn enable_cycle(&mut self, package: PackageInfo) -> Result<bool, Box<dyn Error>> {
-        let db_path = Path::new("")
-            .join(package.path.clone())
-            .join(format!("ng_jeppesen_fwdfd_{}.s3db", package.cycle.cycle));
+    fn enable_cycle(&mut self, package: &PackageInfo) -> Result<bool, Box<dyn Error>> {
+        let db_path = match package.cycle.database_path {
+            Some(ref path) => Path::new("").join(&package.path).join(path),
+            None => Path::new("")
+                .join(&package.path)
+                .join(format!("ng_jeppesen_fwdfd_{}.s3db", package.cycle.cycle)),
+        };
 
         println!("[NAVIGRAPH]: Setting active database to {:?}", db_path);
 
         if self.connection.is_some() {
-            self.disable_cycle(package.clone())?;
+            self.disable_cycle()?;
         }
 
         let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
@@ -68,10 +71,10 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(true)
     }
 
-    fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {
+    fn disable_cycle(&mut self) -> Result<bool, Box<dyn Error>> {
         println!("[NAVIGRAPH]: Disabling active database");
         self.connection = None;
-        Ok(package.uuid)
+        Ok(true)
     }
 
     fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> {

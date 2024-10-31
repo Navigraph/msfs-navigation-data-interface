@@ -24,7 +24,7 @@ impl DatabaseTrait for DatabaseManual {
         Ok(String::from("Setup Complete"))
     }
 
-    fn enable_cycle(&mut self, package: PackageInfo) -> Result<bool, Box<dyn Error>> {
+    fn enable_cycle(&mut self, package: &PackageInfo) -> Result<bool, Box<dyn Error>> {
         println!("[NAVIGRAPH]: Set active database to {:?}", &package.path);
 
         self.path.clone_from(&package.path);
@@ -32,9 +32,9 @@ impl DatabaseTrait for DatabaseManual {
         Ok(true)
     }
 
-    fn disable_cycle(&mut self, package: PackageInfo) -> Result<String, Box<dyn Error>> {
+    fn disable_cycle(&mut self) -> Result<bool, Box<dyn Error>> {
         println!("[NAVIGRAPH]: Disabling active database");
-        Ok(package.uuid)
+        Ok(true)
     }
 
     fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> {
@@ -49,7 +49,15 @@ impl DatabaseTrait for DatabaseManual {
             .map(|f| f.to_string())
             .collect::<Vec<String>>();
 
-        let header_data = DatabaseInfo::new(cycle.cycle, validity[0].clone(), validity[1].clone(), None, None);
+        let mut validity = validity.into_iter();
+
+        let header_data = DatabaseInfo::new(
+            cycle.cycle,
+            validity.nth(0).unwrap_or_default(),
+            validity.next().unwrap_or_default(),
+            None,
+            None,
+        );
 
         Ok(header_data)
     }

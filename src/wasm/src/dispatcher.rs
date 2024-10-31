@@ -145,7 +145,7 @@ impl<'a> Dispatcher<'a> {
 
         let active_path = base_path.join("active");
 
-        let uuid_path = base_path.join(uuid.clone());
+        let uuid_path = base_path.join(&uuid);
 
         if path_exists(&active_path) {
             let file_handle = fs::File::open(active_path.join("cycle.json")).unwrap();
@@ -158,14 +158,9 @@ impl<'a> Dispatcher<'a> {
                 return Ok(false);
             }
 
-            let package: PackageInfo = PackageInfo {
-                path: String::from(active_path.to_string_lossy()),
-                uuid: uuid.clone(),
-                cycle,
-            };
+            self.database.borrow_mut().disable_cycle()?;
 
-            self.database.borrow_mut().disable_cycle(package)?;
-
+            // Yes, this is really required for jest not to freeze
             if path_exists(Path::new(consts::NAVIGATION_TEST_LOCATION)) {
                 util::delete_folder_recursively(&active_path, None)?;
             } else {
@@ -201,9 +196,9 @@ impl<'a> Dispatcher<'a> {
             cycle,
         };
 
-        fs::rename(uuid_path.clone(), active_path)?;
+        fs::rename(uuid_path, active_path)?;
 
-        let db_set = self.database.borrow_mut().enable_cycle(package)?;
+        let db_set = self.database.borrow_mut().enable_cycle(&package)?;
 
         if db_set {
             println!("[NAVIGRAPH]: Set Successful");
@@ -246,7 +241,7 @@ impl<'a> Dispatcher<'a> {
                 cycle,
             };
 
-            self.database.borrow_mut().enable_cycle(package)?;
+            self.database.borrow_mut().enable_cycle(&package)?;
         } else {
             let packages = self.list_packages(true, false);
 
@@ -254,7 +249,8 @@ impl<'a> Dispatcher<'a> {
                 return Err("No packages found to initialize".into());
             }
 
-            self.set_package(packages[0].uuid.clone())?;
+            // Unwrap here is protected
+            self.set_package(packages.into_iter().nth(0).unwrap().uuid)?;
         }
 
         Ok(String::from("Packages Setup"))
@@ -265,7 +261,7 @@ impl<'a> Dispatcher<'a> {
 
         let package_list = self.list_packages(false, false);
 
-        let uuid_list: Vec<String> = package_list.iter().map(|package| package.uuid.clone()).collect();
+        let uuid_list: Vec<String> = package_list.into_iter().map(|package| package.uuid).collect();
 
         let mut active_uuid: String = String::new();
 

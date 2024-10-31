@@ -1,4 +1,5 @@
 # Use command `cargo +nightly fmt`, nightly formatter is required for some features
+unstable_features = true
 
 binop_separator = "Front"
 blank_lines_lower_bound = 0

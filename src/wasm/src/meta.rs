@@ -122,7 +122,7 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
         _ => Some(active_path.join("cycle.json")),
     };
 
-    let installed_cycle_info = match json_path {
+    let mut installed_cycle_info = match json_path {
         Some(json_path) => {
             let json_file = match std::fs::File::open(json_path) {
                 Ok(json_file) => json_file,
@@ -148,20 +148,20 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
     let navigation_data_status = NavigationDataStatus {
         status,
         installed_format: installed_cycle_info
-            .as_ref()
+            .as_mut()
             .map(|installed_cycle_info| installed_cycle_info.format.clone()),
         installed_revision: installed_cycle_info
-            .as_ref()
+            .as_mut()
             .map(|installed_cycle_info| installed_cycle_info.revision.clone()),
         installed_cycle: installed_cycle_info
-            .as_ref()
+            .as_mut()
             .map(|installed_cycle_info| installed_cycle_info.cycle.clone()),
         install_path: match status {
             InstallStatus::None => None,
             _ => Some(active_path.to_string_lossy().to_string()),
         },
         validity_period: installed_cycle_info
-            .as_ref()
+            .as_mut()
             .map(|installed_cycle_info| installed_cycle_info.validity_period.clone()),
         latest_cycle: response_struct.cycle,
     };
