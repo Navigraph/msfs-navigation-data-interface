@@ -2,8 +2,6 @@ mod consts;
 mod dispatcher;
 mod download;
 mod json_structs;
-mod meta;
-mod network_helper;
 mod util;
 
 #[msfs::gauge(name=navigation_data_interface)]

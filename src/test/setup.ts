@@ -3,7 +3,7 @@ import { argv, env } from "node:process"
 import { WASI } from "wasi"
 import { v4 } from "uuid"
 import { NavigraphNavigationDataInterface } from "../js"
-import { DEFAULT_DATA_PATH, TEST_PATH, WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
+import { DEFAULT_DATA_PATH, WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
 import "dotenv/config"
 import { random } from "./randomBigint"
 
@@ -290,12 +290,8 @@ async function lifeCycle() {
 beforeAll(async () => {
   const navigationDataInterface = new NavigraphNavigationDataInterface()
 
-  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
-  const downloadUrlV2 = process.env.NAVIGATION_DATA_SIGNED_URL_V2
-
-  if (!(downloadUrl && downloadUrlV2)) {
-    throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL`")
-  }
+  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL ?? 'local'
+  const downloadUrlV2 = process.env.NAVIGATION_DATA_SIGNED_URL_V2 ?? 'local'
 
   // Utility function to convert onReady to a promise
   const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
@@ -312,6 +308,10 @@ beforeAll(async () => {
 
   if (downloadUrlV2 !== "local") {
     await navigationDataInterface.download_navigation_data(downloadUrlV2)
+  }
+
+  if(await navigationDataInterface.get_active_package() !== null) {
+    throw new Error('Active package should be null at initialisation')
   }
 }, 30000)
 

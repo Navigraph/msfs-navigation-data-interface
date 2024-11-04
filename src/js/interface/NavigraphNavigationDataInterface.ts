@@ -19,7 +19,6 @@ import {
   VhfNavaid,
   Waypoint,
 } from "../types"
-import { NavigationDataStatus } from "../types/meta"
 import {
   Callback,
   CommBusMessage,
@@ -130,12 +129,10 @@ export class NavigraphNavigationDataInterface {
   }
 
   /**
-   * Gets the installation status of the navigation data
-   *
-   * @returns A promise that resolves with the installation status
+   * Gets the package information for the currently active package
    */
-  public async get_navigation_data_install_status(): Promise<NavigationDataStatus> {
-    return await this.callWasmFunction("GetNavigationDataInstallStatus", {})
+  public async get_active_package(): Promise<PackageInfo | null> {
+    return await this.callWasmFunction("GetActivePackage", {})
   }
 
   /**

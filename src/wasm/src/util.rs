@@ -11,7 +11,9 @@ use navigation_database::{
 };
 use uuid::Uuid;
 
-pub fn path_exists(path: &Path) -> bool { get_path_type(path) != PathType::DoesNotExist }
+pub fn path_exists(path: &Path) -> bool {
+    get_path_type(path) != PathType::DoesNotExist
+}
 
 pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::Result<()> {
     // Make sure we are deleting a directory (and in turn that it exists)
@@ -93,7 +95,9 @@ pub fn copy_files_to_folder(from: &Path, to: &Path) -> io::Result<()> {
     Ok(())
 }
 
-pub fn trim_null_terminator(s: &str) -> &str { s.trim_end_matches(char::from(0)) }
+pub fn trim_null_terminator(s: &str) -> &str {
+    s.trim_end_matches(char::from(0))
+}
 
 pub fn generate_uuid_from_path<P>(cycle_path: P) -> Result<String, Box<dyn Error>>
 where

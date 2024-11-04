@@ -11,8 +11,8 @@ import {
   DownloadProgressPhase,
   NavigraphEventType,
   NavigraphNavigationDataInterface,
+  PackageInfo,
 } from "@navigraph/msfs-navigation-data-interface"
-import { NavigationDataStatus } from "@navigraph/msfs-navigation-data-interface/types/meta"
 import { CancelToken } from "navigraph/auth"
 import { packages } from "../Lib/navigraph"
 import { AuthService } from "../Services/AuthService"
@@ -40,7 +40,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly loadingRef = FSComponent.createRef<HTMLDivElement>()
   private readonly authContainerRef = FSComponent.createRef<HTMLDivElement>()
 
-  private readonly navigationDataStatus = Subject.create<NavigationDataStatus | null>(null)
+  private readonly activeDatabase = Subject.create<PackageInfo | null>(null)
 
   private cancelSource = CancelToken.source()
 
@@ -71,26 +71,22 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     })
   }
 
-  public renderDatabaseStatus(): VNode | void {
+  public renderDatabaseInfo(): VNode | void {
     return (
       <>
         <div
           class={MappedSubject.create(([status]) => {
             return status ? "vertical" : "hidden"
-          }, this.navigationDataStatus)}
+          }, this.activeDatabase)}
         >
-          <div>{this.navigationDataStatus.map(s => `Install method: ${s?.status}`)}</div>
+          <div>{this.activeDatabase.map(s => `Bundled: ${s?.is_bundled}`)}</div>
           <div>
-            {this.navigationDataStatus.map(
-              s => `Installed format: ${s?.installedFormat} revision ${s?.installedRevision}`,
-            )}
+            {this.activeDatabase.map(s => `Installed format: ${s?.cycle.format} revision ${s?.cycle.revision}`)}
           </div>
-          <div>{this.navigationDataStatus.map(s => `Installed path: ${s?.installedPath}`)}</div>
-          <div>{this.navigationDataStatus.map(s => `Installed cycle: ${s?.installedCycle}`)}</div>
-          <div>{this.navigationDataStatus.map(s => `Latest cycle: ${s?.latestCycle}`)}</div>
-          <div>{this.navigationDataStatus.map(s => `Validity period: ${s?.validityPeriod}`)}</div>
+          <div>{this.activeDatabase.map(s => `Active path: ${s?.path}`)}</div>
+          <div>{this.activeDatabase.map(s => `Active cycle: ${s?.cycle.cycle}`)}</div>
+          <div>{this.activeDatabase.map(s => `Validity period: ${s?.cycle.validityPeriod}`)}</div>
         </div>
-        <div class={this.navigationDataStatus.map(status => (status ? "hidden" : "visible"))}>Loading status...</div>
       </>
     )
   }
@@ -117,7 +113,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
               <div ref={this.downloadButtonRef} class="button">
                 Download
               </div>
-              {this.renderDatabaseStatus()}
+              {this.renderDatabaseInfo()}
             </div>
           </div>
 
@@ -159,12 +155,8 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     super.onAfterRender(node)
 
     // Populate status when ready
-    this.navigationDataInterface.onReady(() => {
-      this.navigationDataInterface
-        .get_navigation_data_install_status()
-        .then(status => this.navigationDataStatus.set(status))
-        .catch(e => console.error(e))
-
+    this.navigationDataInterface.onReady(async () => {
+      this.activeDatabase.set(await this.navigationDataInterface.get_active_package())
       // show the auth container
       this.authContainerRef.instance.style.display = "block"
       this.loadingRef.instance.style.display = "none"
@@ -265,10 +257,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       await this.navigationDataInterface.download_navigation_data(pkg.file.url, true)
 
       // Update navigation data status
-      this.navigationDataInterface
-        .get_navigation_data_install_status()
-        .then(status => this.navigationDataStatus.set(status))
-        .catch(e => console.error(e))
+      this.activeDatabase.set(await this.navigationDataInterface.get_active_package())
 
       this.displayMessage("Navigation data downloaded")
     } catch (err) {

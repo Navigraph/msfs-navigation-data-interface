@@ -9,5 +9,6 @@ export interface CycleInfo {
 export interface PackageInfo {
   path: string
   uuid: string
+  is_bundled: boolean
   cycle: CycleInfo
 }

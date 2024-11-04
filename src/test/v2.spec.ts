@@ -6,6 +6,7 @@ import {
   FixType,
   IfrCapability,
   NavigraphNavigationDataInterface,
+  PackageInfo,
   RunwaySurfaceCode,
 } from "../js"
 import { ControlledAirspaceType, Path, PathType, RestrictiveAirspaceType } from "../js/types/airspace"
@@ -29,16 +30,24 @@ describe("DFDv2", () => {
   beforeAll(async () => {
     let pkgs = await navigationDataInterface.list_available_packages(true, false)
 
-    console.log(JSON.stringify(pkgs, null, 2))
+    const target_package = pkgs.find((info) => info.cycle.format === 'dfdv2' && info.cycle.cycle === '2401')
 
-    navigationDataInterface
-      .set_active_package(pkgs[1].uuid)
-      .then(val => {
-        console.log(val)
-      })
-      .catch(err => {
-        console.error(err)
-      })
+    if(!target_package) {
+      throw new Error('V2 Database with cycle 2401 was not found in available packages')
+    }
+
+    await navigationDataInterface.set_active_package(target_package.uuid)
+  }, 30000)
+
+  it("Active database", async () => {
+    const packageInfo = await navigationDataInterface.get_active_package();
+
+    expect(packageInfo).toStrictEqual({
+      is_bundled: !process.env.NAVIGATION_DATA_SIGNED_URL,
+      path: "/active",
+      uuid: "12313",
+      cycle: {"cycle":"2401","revision":"1","name":"Navigraph Avionics", "format": "dfdv2", "validityPeriod": "2024-01-25/2024-02-21"}
+    } satisfies PackageInfo)
   })
 
   it("Database info", async () => {

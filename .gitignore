@@ -7,7 +7,9 @@ tsconfig.tsbuildinfo
 examples/aircraft/PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/NavigationDataInterfaceSample
 examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel/msfs_navigation_data_interface.wasm
 examples/aircraft/PackageSources/bundled-navigation-data
-!examples/aircraft/PackageSources/bundled-navigation-data/sample-data
+!examples/aircraft/PackageSources/bundled-navigation-data/sample-data-v1
+!examples/aircraft/PackageSources/bundled-navigation-data/sample-data-v2
+
 out
 
 # Rust

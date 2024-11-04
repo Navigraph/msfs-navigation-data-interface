@@ -3,11 +3,11 @@ use std::{
     error::Error,
     fs,
     io::{self},
-    path::Path,
+    path::{Path, PathBuf},
     rc::Rc,
 };
 
-use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEvent};
+use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::{
     database::DatabaseV1,
     enums::InterfaceFormat,
@@ -24,8 +24,6 @@ use crate::{
         functions::{CallFunction, FunctionResult, FunctionStatus, FunctionType},
         params,
     },
-    meta::{self},
-    network_helper::NetworkHelper,
     util::{self, generate_uuid_from_cycle, generate_uuid_from_path, path_exists},
 };
 
@@ -42,7 +40,6 @@ pub struct Task {
     pub id: String,
     pub data: Option<serde_json::Value>,
     pub status: TaskStatus,
-    pub associated_network_request: Option<NetworkHelper>,
 }
 
 impl Task {
@@ -82,6 +79,29 @@ impl<'a> Dispatcher<'a> {
         }
     }
 
+    fn get_package_info(&self, path: &PathBuf) -> Result<PackageInfo, Box<dyn Error>> {
+        let cycle_file = fs::File::open(path.join("cycle.json"))?;
+
+        let cycle: InstalledNavigationDataCycleInfo = serde_json::from_reader(cycle_file)?;
+
+        let uuid = generate_uuid_from_cycle(&cycle);
+
+        let bundled_path = Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION);
+
+        let is_bundled = fs::read_dir(bundled_path).map_or(false, |mut directory| {
+            directory.any(|folder| {
+                folder.is_ok_and(|folder| generate_uuid_from_path(folder.path()).map_or(false, |x| x == uuid))
+            })
+        });
+
+        Ok(PackageInfo {
+            path: String::from(path.to_string_lossy()),
+            uuid,
+            is_bundled,
+            cycle,
+        })
+    }
+
     fn list_packages(&self, sort: bool, filter: bool) -> Vec<PackageInfo> {
         let navigation_data_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
 
@@ -98,25 +118,8 @@ impl<'a> Dispatcher<'a> {
                 continue;
             };
 
-            let file_path = file.path();
-
-            let cycle_file = fs::File::open(file_path.join("cycle.json"));
-
-            match cycle_file {
-                Ok(cycle_file) => {
-                    let cycle: InstalledNavigationDataCycleInfo = serde_json::from_reader(cycle_file).unwrap();
-
-                    let uuid = match file_path.file_name().unwrap().to_string_lossy().to_string().as_str() {
-                        "active" => generate_uuid_from_cycle(&cycle),
-                        x => String::from(x),
-                    };
-
-                    packages.push(PackageInfo {
-                        path: String::from(file_path.to_string_lossy()),
-                        uuid,
-                        cycle,
-                    });
-                },
+            match self.get_package_info(&file.path()) {
+                Ok(package_info) => packages.push(package_info),
                 Err(err) => eprintln!("{:?}", err),
             }
         }
@@ -128,7 +131,7 @@ impl<'a> Dispatcher<'a> {
         }
 
         if sort {
-            packages.sort_by(|a, b| {
+            packages.sort_by(|a: &PackageInfo, b| {
                 b.cycle
                     .cycle
                     .cmp(&a.cycle.cycle)
@@ -148,11 +151,9 @@ impl<'a> Dispatcher<'a> {
         let uuid_path = base_path.join(&uuid);
 
         if path_exists(&active_path) {
-            let file_handle = fs::File::open(active_path.join("cycle.json")).unwrap();
+            let package_info = self.get_package_info(&active_path)?;
 
-            let cycle: InstalledNavigationDataCycleInfo = serde_json::from_reader(file_handle).unwrap();
-
-            let hash = generate_uuid_from_cycle(&cycle);
+            let hash = generate_uuid_from_cycle(&package_info.cycle);
 
             if hash == uuid {
                 return Ok(false);
@@ -176,12 +177,13 @@ impl<'a> Dispatcher<'a> {
             return Err("Package does not exist".into());
         }
 
-        let cycle: InstalledNavigationDataCycleInfo =
-            serde_json::from_reader(fs::File::open(uuid_path.join("cycle.json")).unwrap()).unwrap();
+        fs::rename(uuid_path, &active_path)?;
+
+        let package_info = self.get_package_info(&active_path)?;
 
         // Check for format change and updates the used interface
-        if cycle.format != self.database.borrow().get_database_type().as_str() {
-            let new_format = InterfaceFormat::from(&cycle.format);
+        if package_info.cycle.format != self.database.borrow().get_database_type().as_str() {
+            let new_format = InterfaceFormat::from(&package_info.cycle.format);
 
             self.database.replace(match new_format {
                 InterfaceFormat::DFDv1 => DatabaseV1::default().into(),
@@ -190,15 +192,7 @@ impl<'a> Dispatcher<'a> {
             });
         }
 
-        let package: PackageInfo = PackageInfo {
-            path: String::from(active_path.to_string_lossy()),
-            uuid,
-            cycle,
-        };
-
-        fs::rename(uuid_path, active_path)?;
-
-        let db_set = self.database.borrow_mut().enable_cycle(&package)?;
+        let db_set = self.database.borrow_mut().enable_cycle(&package_info)?;
 
         if db_set {
             println!("[NAVIGRAPH]: Set Successful");
@@ -220,11 +214,10 @@ impl<'a> Dispatcher<'a> {
             // Testing shim
             return Ok(String::from("Test Initalized"));
         } else if path_exists(&active_path) {
-            let cycle: InstalledNavigationDataCycleInfo =
-                serde_json::from_reader(fs::File::open(active_path.join("cycle.json")).unwrap()).unwrap();
+            let package = self.get_package_info(&active_path)?;
 
-            if cycle.format != self.database.borrow().get_database_type().as_str() {
-                let new_format = InterfaceFormat::from(&cycle.format);
+            if package.cycle.format != self.database.borrow().get_database_type().as_str() {
+                let new_format = InterfaceFormat::from(&package.cycle.format);
 
                 self.database.replace(match new_format {
                     InterfaceFormat::DFDv1 => DatabaseV1::default().into(),
@@ -232,14 +225,6 @@ impl<'a> Dispatcher<'a> {
                     InterfaceFormat::Custom => DatabaseManual::default().into(),
                 });
             }
-
-            let hash = generate_uuid_from_cycle(&cycle);
-
-            let package: PackageInfo = PackageInfo {
-                path: String::from(active_path.to_string_lossy()),
-                uuid: hash,
-                cycle,
-            };
 
             self.database.borrow_mut().enable_cycle(&package)?;
         } else {
@@ -359,6 +344,7 @@ impl<'a> Dispatcher<'a> {
                 self.handle_initialized();
             },
             MSFSEvent::PreDraw(data) => {
+                println!("Pre Draw");
                 self.handle_update(data);
             },
             MSFSEvent::PreKill => {
@@ -454,13 +440,15 @@ impl<'a> Dispatcher<'a> {
                 FunctionType::SetDownloadOptions => {
                     Dispatcher::execute_task(task.clone(), |t| self.downloader.set_download_options(t))
                 },
-                FunctionType::GetNavigationDataInstallStatus => {
-                    // We can't use the execute_task function here because the download process doesn't finish in the
-                    // function call, which results in slightly "messier" code
+                FunctionType::GetActivePackage => Dispatcher::execute_task(task.clone(), |t| {
+                    let active_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("active");
 
-                    // We first need to initialize the network request and then wait for the response
-                    meta::start_network_request(Rc::clone(task))
-                },
+                    let package = self.get_package_info(&active_path);
+
+                    t.borrow_mut().status = TaskStatus::Success(Some(serde_json::to_value(package.ok())?));
+
+                    Ok(())
+                }),
                 FunctionType::ListAvailablePackages => Dispatcher::execute_task(task.clone(), |t| {
                     let params = t.borrow().parse_data_as::<params::ListAvailablePackages>()?;
 
@@ -743,33 +731,6 @@ impl<'a> Dispatcher<'a> {
             }
         }
 
-        // Network request tasks
-        for task in queue
-            .iter()
-            .filter(|task| task.borrow().status == TaskStatus::InProgress)
-        {
-            let response_state = match task.borrow().associated_network_request {
-                Some(ref request) => request.response_state(),
-                None => continue,
-            };
-            let function_type = task.borrow().function_type;
-            if response_state == NetworkRequestState::DataReady {
-                match function_type {
-                    FunctionType::GetNavigationDataInstallStatus => {
-                        println!("[NAVIGRAPH] Network request completed, getting install status");
-                        meta::get_navigation_data_install_status(Rc::clone(task));
-                        println!("[NAVIGRAPH] Install status task completed");
-                    },
-                    _ => {
-                        // Should not happen for now
-                        println!("[NAVIGRAPH] Network request completed but no handler for this type of request");
-                    },
-                }
-            } else if response_state == NetworkRequestState::Failed {
-                task.borrow_mut().status = TaskStatus::Failure("Network request failed".to_owned());
-            }
-        }
-
         // Process completed tasks (everything should at least be in progress at this point)
         queue.retain(|task| {
             if let TaskStatus::InProgress = task.borrow().status {
@@ -829,7 +790,6 @@ impl<'a> Dispatcher<'a> {
             id: json_result.id,
             data: json_result.data,
             status: TaskStatus::NotStarted,
-            associated_network_request: None,
         })));
 
         Ok(())

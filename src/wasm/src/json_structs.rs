@@ -8,8 +8,6 @@ pub mod functions {
         DownloadNavigationData,
         /// `SetDownloadOptionsParams`
         SetDownloadOptions,
-        /// `GetNavigationDataInstallStatus`
-        GetNavigationDataInstallStatus,
         /// `ExecuteSQLQueryParams`
         ExecuteSQLQuery,
 
@@ -19,6 +17,8 @@ pub mod functions {
         ListAvailablePackages,
         /// `SetActivePackage`
         SetActivePackage,
+        /// `GetActivePackage`
+        GetActivePackage,
         /// `DeletePackage`
         DeletePackage,
         /// `CleanPackages`
