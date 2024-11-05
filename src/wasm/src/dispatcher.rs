@@ -403,7 +403,6 @@ impl<'a> Dispatcher<'a> {
         }
     }
 
-    // TODO: Implement possible db switching on finish
     fn on_download_finish(&mut self, package_uuid: String) {
         if *self.set_active_on_finish.borrow() {
             self.set_package(package_uuid).unwrap_or_default();

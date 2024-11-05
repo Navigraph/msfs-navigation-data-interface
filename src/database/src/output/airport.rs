@@ -18,8 +18,7 @@ pub struct Airport {
     ///
     /// For most airports, this will be the same as the first two letters of the `ident`, such as `EG` for `EGLL`, or
     /// `LF` for `LFPG`.
-    // TODO: FIND WHAT THIS MEANS
-    /// Airport type (v2 only)
+    /// Airport type (see Appendix 3.38) (v2 only)
     pub airport_type: String,
     /// The notable exceptions to this are airports in the US, Canada, and Australia.
     pub icao_code: String,
@@ -39,8 +38,7 @@ pub struct Airport {
     pub longest_runway_surface_code: Option<RunwaySurfaceCode>,
     /// The elevation in feet of the airport's reference point
     pub elevation: Feet,
-    // TODO: Find what this means (elaborate)
-    /// Magnetic Variation (v2 only)
+    /// Magnetic north in Degrees (v2 only)
     pub magnetic_variation: Option<Degrees>,
     /// The altitude in feet where aircraft transition from `QNH/QFE` to `STD` barometer settings
     ///

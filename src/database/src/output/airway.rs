@@ -72,7 +72,7 @@ pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway>
     })
 }
 
-// TODO: Implement error propigation, need to rewrite logic
+// TODO: Implement error propigation, need to rewrite logic (maybe out of scope)
 pub(crate) fn map_airways_v2(data: Vec<v2::sql_structs::EnrouteAirways>) -> Vec<Airway> {
     let mut airway_complete = false;
     data.into_iter().fold(Vec::new(), |mut airways, airway_row| {
