@@ -3,7 +3,7 @@ use std::{
     error::Error,
     fs,
     io::{self},
-    path::{Path, PathBuf},
+    path::Path,
     rc::Rc,
 };
 
@@ -90,7 +90,9 @@ impl<'a> Dispatcher<'a> {
 
         let is_bundled = fs::read_dir(bundled_path).map_or(false, |mut directory| {
             directory.any(|folder| {
-                folder.is_ok_and(|folder| generate_uuid_from_path(folder.path()).map_or(false, |x| x == uuid))
+                folder.is_ok_and(|folder| {
+                    generate_uuid_from_path(folder.path().join("cycle.json")).map_or(false, |x| x == uuid)
+                })
             })
         });
 
