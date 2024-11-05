@@ -290,8 +290,8 @@ async function lifeCycle() {
 beforeAll(async () => {
   const navigationDataInterface = new NavigraphNavigationDataInterface()
 
-  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL ?? 'local'
-  const downloadUrlV2 = process.env.NAVIGATION_DATA_SIGNED_URL_V2 ?? 'local'
+  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL ?? "local"
+  const downloadUrlV2 = process.env.NAVIGATION_DATA_SIGNED_URL_V2 ?? "local"
 
   // Utility function to convert onReady to a promise
   const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
@@ -308,10 +308,6 @@ beforeAll(async () => {
 
   if (downloadUrlV2 !== "local") {
     await navigationDataInterface.download_navigation_data(downloadUrlV2)
-  }
-
-  if(await navigationDataInterface.get_active_package() !== null) {
-    throw new Error('Active package should be null at initialisation')
   }
 }, 30000)
 

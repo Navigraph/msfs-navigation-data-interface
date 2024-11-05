@@ -344,7 +344,6 @@ impl<'a> Dispatcher<'a> {
                 self.handle_initialized();
             },
             MSFSEvent::PreDraw(data) => {
-                println!("Pre Draw");
                 self.handle_update(data);
             },
             MSFSEvent::PreKill => {

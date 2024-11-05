@@ -1,4 +1,4 @@
-import { Coordinates, Feet, Knots } from "./math"
+import { Coordinates, Degrees, Feet, Knots } from "./math"
 
 export enum IfrCapability {
   Yes = "Y",
@@ -13,9 +13,14 @@ export enum RunwaySurfaceCode {
 }
 
 export interface Airport {
+  airport_type?: string
   area_code: string
   ident: string
   icao_code: string
+  city?: string
+  continent?: string
+  country?: string
+  country_3letter?: string
   location: Coordinates
   name: string
   ifr_capability: IfrCapability
@@ -26,4 +31,5 @@ export interface Airport {
   speed_limit?: Knots
   speed_limit_altitude?: Feet
   iata_ident?: string
+  magnetic_variation?: Degrees
 }

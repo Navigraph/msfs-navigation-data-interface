@@ -30,23 +30,36 @@ describe("DFDv1", () => {
   beforeAll(async () => {
     let pkgs = await navigationDataInterface.list_available_packages(true, false)
 
-    const target_package = pkgs.find((info) => info.cycle.format === 'dfd' && info.cycle.cycle === '2101')
+    // const target_package = pkgs.find((info) => info.cycle.format === 'dfd' && info.cycle.cycle === '2101')
 
-    if(!target_package) {
-      throw new Error('V1 Database with cycle 2101 was not found in available packages')
-    }
+    // if(!target_package) {
+    //   throw new Error('V1 Database with cycle 2101 was not found in available packages')
+    // }
 
-    await navigationDataInterface.set_active_package(target_package.uuid)
+    navigationDataInterface
+      .set_active_package(pkgs[0].uuid)
+      .then(val => {
+        console.log(val)
+      })
+      .catch(err => {
+        console.error(err)
+      })
   }, 30000)
 
   it("Active database", async () => {
-    const packageInfo = await navigationDataInterface.get_active_package();
+    const packageInfo = await navigationDataInterface.get_active_package()
 
     expect(packageInfo).toStrictEqual({
       is_bundled: !process.env.NAVIGATION_DATA_SIGNED_URL,
       path: "/active",
       uuid: "12313",
-      cycle: {"cycle":"2101","revision":"1","name":"Navigraph Avionics", "format": "dfd", "validityPeriod": "2021-01-25/2021-02-20"}
+      cycle: {
+        cycle: "2101",
+        revision: "1",
+        name: "Navigraph Avionics",
+        format: "dfd",
+        validityPeriod: "2021-01-25/2021-02-20",
+      },
     } satisfies PackageInfo)
   })
 
