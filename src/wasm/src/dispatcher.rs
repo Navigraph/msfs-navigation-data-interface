@@ -79,7 +79,7 @@ impl<'a> Dispatcher<'a> {
         }
     }
 
-    fn get_package_info(&self, path: &PathBuf) -> Result<PackageInfo, Box<dyn Error>> {
+    fn get_package_info(&self, path: &Path) -> Result<PackageInfo, Box<dyn Error>> {
         let cycle_file = fs::File::open(path.join("cycle.json"))?;
 
         let cycle: InstalledNavigationDataCycleInfo = serde_json::from_reader(cycle_file)?;
