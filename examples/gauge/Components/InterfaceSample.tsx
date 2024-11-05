@@ -140,7 +140,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
                 Execute SQL
               </div>
             </div>
-            <div class="scrollable">
+            <div class="overflow-scroll h-[400px]">
               <pre ref={this.outputRef} id="output">
                 The output of the query will show up here
               </pre>

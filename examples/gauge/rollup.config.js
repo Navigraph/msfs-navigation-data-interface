@@ -3,7 +3,8 @@ import replace from "@rollup/plugin-replace"
 import dotenv from "dotenv"
 import copy from "rollup-plugin-copy"
 import esbuild from "rollup-plugin-esbuild"
-import css from "rollup-plugin-import-css"
+// import css from "rollup-plugin-import-css"
+import postcss from "rollup-plugin-postcss"
 
 dotenv.config()
 
@@ -21,13 +22,17 @@ export default {
     format: "es",
   },
   plugins: [
-    css({ output: "MyInstrument.css" }),
     resolve({ extensions: [".js", ".jsx", ".ts", ".tsx"] }),
     esbuild({ target: "es2017" }),
     replace({
       "process.env.NG_CLIENT_ID": JSON.stringify(process.env.NG_CLIENT_ID),
       "process.env.NG_CLIENT_SECRET": JSON.stringify(process.env.NG_CLIENT_SECRET),
       preventAssignment: true,
+    }),
+    postcss({
+      extract: true,
+      minimize: true,
+      output: "MyInstrument.css",
     }),
     copy({
       targets: [
