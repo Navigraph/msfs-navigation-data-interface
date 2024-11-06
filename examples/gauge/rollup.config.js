@@ -23,7 +23,7 @@ export default {
   },
   plugins: [
     resolve({ extensions: [".js", ".jsx", ".ts", ".tsx"] }),
-    esbuild({ target: "es2017" }),
+    esbuild({ target: "es6" }),
     replace({
       "process.env.NG_CLIENT_ID": JSON.stringify(process.env.NG_CLIENT_ID),
       "process.env.NG_CLIENT_SECRET": JSON.stringify(process.env.NG_CLIENT_SECRET),

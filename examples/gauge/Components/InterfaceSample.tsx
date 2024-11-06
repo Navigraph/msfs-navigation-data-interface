@@ -19,6 +19,8 @@ import { AuthService } from "../Services/AuthService"
 import { Dropdown } from "./Dropdown"
 import { Input } from "./Input"
 import "./InterfaceSample.css"
+import { Dashboard } from "./Pages/Dashboard/Dashboard"
+import { Button, InterfaceNavbar, InterfaceSwitch } from "./Utils"
 
 interface InterfaceSampleProps extends ComponentProps {
   bus: EventBus
@@ -41,6 +43,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly authContainerRef = FSComponent.createRef<HTMLDivElement>()
 
   private readonly activeDatabase = Subject.create<PackageInfo | null>(null)
+  private readonly mainPageIndex = Subject.create(0)
 
   private cancelSource = CancelToken.source()
 
@@ -91,6 +94,12 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     )
   }
 
+  private readonly buttons: [number, string][] = [
+    [0, "Page 1"],
+    [1, "Page 2"],
+    [2, "Page 3"],
+  ]
+
   public render(): VNode {
     return (
       <>
@@ -99,7 +108,30 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
           minutes
         </div>
         <div class="auth-container" ref={this.authContainerRef} style={{ display: "none" }}>
-          <div class="horizontal">
+          <div class="size-full flex flex-row divide-y bg-ng-background-900">
+            <div class="h-full w-[7rem]">
+              <InterfaceNavbar
+                tabs={[
+                  [0, "Page 1"],
+                  [1, "Page 2"],
+                  [2, "Page 3"],
+                ]}
+                setActive={pageNumber => this.mainPageIndex.set(pageNumber)}
+                active={this.mainPageIndex}
+              />
+            </div>
+            <InterfaceSwitch
+              class="bg-ng-background-400"
+              active={this.mainPageIndex}
+              pages={[
+                [0, <Dashboard />],
+                [1, <p class="text-xl">Hi2</p>],
+                [2, <p class="text-xl">Hi3</p>],
+              ]}
+            />
+          </div>
+
+          {/* <div class="horizontal">
             <div class="vertical">
               <h4>Step 1 - Sign in</h4>
               <div ref={this.textRef}>Loading</div>
@@ -145,7 +177,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
                 The output of the query will show up here
               </pre>
             </div>
-          </div>
+          </div> */}
         </div>
       </>
     )
