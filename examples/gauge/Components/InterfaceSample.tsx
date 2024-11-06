@@ -1,4 +1,5 @@
 import {
+  ArraySubject,
   ComponentProps,
   DisplayComponent,
   EventBus,
@@ -19,8 +20,10 @@ import { AuthService } from "../Services/AuthService"
 import { Dropdown } from "./Dropdown"
 import { Input } from "./Input"
 import "./InterfaceSample.css"
+import { AuthPage } from "./Pages/Auth/Auth"
 import { Dashboard } from "./Pages/Dashboard/Dashboard"
-import { Button, InterfaceNavbar, InterfaceSwitch } from "./Utils"
+import { TestPage } from "./Pages/Test/Test"
+import { InterfaceNavbar, InterfaceSwitch } from "./Utils"
 
 interface InterfaceSampleProps extends ComponentProps {
   bus: EventBus
@@ -43,6 +46,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly authContainerRef = FSComponent.createRef<HTMLDivElement>()
 
   private readonly activeDatabase = Subject.create<PackageInfo | null>(null)
+  private readonly databases = Subject.create<PackageInfo[]>([])
   private readonly mainPageIndex = Subject.create(0)
 
   private cancelSource = CancelToken.source()
@@ -94,12 +98,6 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     )
   }
 
-  private readonly buttons: [number, string][] = [
-    [0, "Page 1"],
-    [1, "Page 2"],
-    [2, "Page 3"],
-  ]
-
   public render(): VNode {
     return (
       <>
@@ -112,9 +110,9 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
             <div class="h-full w-[7rem]">
               <InterfaceNavbar
                 tabs={[
-                  [0, "Page 1"],
-                  [1, "Page 2"],
-                  [2, "Page 3"],
+                  [0, "Dash"],
+                  [1, "Test"],
+                  [2, "Auth"],
                 ]}
                 setActive={pageNumber => this.mainPageIndex.set(pageNumber)}
                 active={this.mainPageIndex}
@@ -124,9 +122,9 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
               class="bg-ng-background-400"
               active={this.mainPageIndex}
               pages={[
-                [0, <Dashboard />],
-                [1, <p class="text-xl">Hi2</p>],
-                [2, <p class="text-xl">Hi3</p>],
+                [0, <Dashboard databases={this.databases} />],
+                [1, <TestPage />],
+                [2, <AuthPage />],
               ]}
             />
           </div>
@@ -189,6 +187,13 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     // Populate status when ready
     this.navigationDataInterface.onReady(async () => {
       this.activeDatabase.set(await this.navigationDataInterface.get_active_package())
+      this.navigationDataInterface
+        .list_available_packages(true)
+        .then(pkgs => {
+          this.databases.set(pkgs)
+        })
+        .catch(err => console.error(`Error setting databases: ${err}`))
+
       // show the auth container
       this.authContainerRef.instance.style.display = "block"
       this.loadingRef.instance.style.display = "none"
