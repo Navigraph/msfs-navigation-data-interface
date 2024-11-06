@@ -78,26 +78,6 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     })
   }
 
-  public renderDatabaseInfo(): VNode | void {
-    return (
-      <>
-        <div
-          class={MappedSubject.create(([status]) => {
-            return status ? "vertical" : "hidden"
-          }, this.activeDatabase)}
-        >
-          <div>{this.activeDatabase.map(s => `Bundled: ${s?.is_bundled}`)}</div>
-          <div>
-            {this.activeDatabase.map(s => `Installed format: ${s?.cycle.format} revision ${s?.cycle.revision}`)}
-          </div>
-          <div>{this.activeDatabase.map(s => `Active path: ${s?.path}`)}</div>
-          <div>{this.activeDatabase.map(s => `Active cycle: ${s?.cycle.cycle}`)}</div>
-          <div>{this.activeDatabase.map(s => `Validity period: ${s?.cycle.validityPeriod}`)}</div>
-        </div>
-      </>
-    )
-  }
-
   public render(): VNode {
     return (
       <>
@@ -122,7 +102,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
               class="bg-ng-background-400"
               active={this.mainPageIndex}
               pages={[
-                [0, <Dashboard databases={this.databases} />],
+                [0, <Dashboard activeDatabase={this.activeDatabase} databases={this.databases} />],
                 [1, <TestPage />],
                 [2, <AuthPage />],
               ]}
