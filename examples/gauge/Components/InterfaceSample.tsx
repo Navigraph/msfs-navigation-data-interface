@@ -46,8 +46,9 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly authContainerRef = FSComponent.createRef<HTMLDivElement>()
 
   private readonly activeDatabase = Subject.create<PackageInfo | null>(null)
-  private readonly databases = Subject.create<PackageInfo[]>([])
+  private readonly databases = ArraySubject.create<PackageInfo>([])
   private readonly mainPageIndex = Subject.create(0)
+  private readonly selectedDatabase = Subject.create<PackageInfo | null>(null)
 
   private cancelSource = CancelToken.source()
 
@@ -102,7 +103,16 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
               class="bg-ng-background-400"
               active={this.mainPageIndex}
               pages={[
-                [0, <Dashboard activeDatabase={this.activeDatabase} databases={this.databases} />],
+                [
+                  0,
+                  <Dashboard
+                    activeDatabase={this.activeDatabase}
+                    databases={this.databases}
+                    selectedDatabase={this.selectedDatabase}
+                    setSelectedDatabase={database => this.selectedDatabase.set(database)}
+                    interface={this.navigationDataInterface}
+                  />,
+                ],
                 [1, <TestPage />],
                 [2, <AuthPage />],
               ]}
@@ -166,7 +176,10 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
     // Populate status when ready
     this.navigationDataInterface.onReady(async () => {
-      this.activeDatabase.set(await this.navigationDataInterface.get_active_package())
+      const activePackage = await this.navigationDataInterface.get_active_package()
+
+      this.activeDatabase.set(activePackage)
+      this.selectedDatabase.set(activePackage)
       this.navigationDataInterface
         .list_available_packages(true)
         .then(pkgs => {
@@ -179,49 +192,49 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       this.loadingRef.instance.style.display = "none"
     })
 
-    this.loginButtonRef.instance.addEventListener("click", () => this.handleClick())
-    this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
+    // this.loginButtonRef.instance.addEventListener("click", () => this.handleClick())
+    // this.downloadButtonRef.instance.addEventListener("click", () => this.handleDownloadClick())
 
-    this.executeIcaoButtonRef.instance.addEventListener("click", () => {
-      console.time("query")
-      this.navigationDataInterface
-        .get_arrivals_at_airport(this.icaoInputRef.instance.value)
-        .then(procedures => {
-          console.info(procedures)
-          this.outputRef.instance.textContent = JSON.stringify(procedures, null, 2)
-        })
-        .catch(e => console.error(e))
-        .finally(() => console.timeEnd("query"))
-    })
+    // this.executeIcaoButtonRef.instance.addEventListener("click", () => {
+    //   console.time("query")
+    //   this.navigationDataInterface
+    //     .get_arrivals_at_airport(this.icaoInputRef.instance.value)
+    //     .then(procedures => {
+    //       console.info(procedures)
+    //       this.outputRef.instance.textContent = JSON.stringify(procedures, null, 2)
+    //     })
+    //     .catch(e => console.error(e))
+    //     .finally(() => console.timeEnd("query"))
+    // })
 
-    this.loadDbRef.instance.addEventListener("click", () => this.handleLoadDbClick())
+    // this.loadDbRef.instance.addEventListener("click", () => this.handleLoadDbClick())
 
-    this.executeSqlButtonRef.instance.addEventListener("click", () => {
-      console.time("query")
-      this.navigationDataInterface
-        .execute_sql(this.sqlInputRef.instance.value, [])
-        .then(result => {
-          console.info(result)
-          this.outputRef.instance.textContent = JSON.stringify(result, null, 2)
-        })
-        .catch(e => console.error(e))
-        .finally(() => console.timeEnd("query"))
-    })
+    // this.executeSqlButtonRef.instance.addEventListener("click", () => {
+    //   console.time("query")
+    //   this.navigationDataInterface
+    //     .execute_sql(this.sqlInputRef.instance.value, [])
+    //     .then(result => {
+    //       console.info(result)
+    //       this.outputRef.instance.textContent = JSON.stringify(result, null, 2)
+    //     })
+    //     .catch(e => console.error(e))
+    //     .finally(() => console.timeEnd("query"))
+    // })
 
-    AuthService.user.sub(user => {
-      if (user) {
-        this.qrCodeRef.instance.src = ""
-        this.qrCodeRef.instance.style.display = "none"
-        this.loginButtonRef.instance.textContent = "Log out"
-        this.textRef.instance.textContent = `Welcome, ${user.preferred_username}`
-        this.displayMessage("")
+    // AuthService.user.sub(user => {
+    //   if (user) {
+    //     this.qrCodeRef.instance.src = ""
+    //     this.qrCodeRef.instance.style.display = "none"
+    //     this.loginButtonRef.instance.textContent = "Log out"
+    //     this.textRef.instance.textContent = `Welcome, ${user.preferred_username}`
+    //     this.displayMessage("")
 
-        this.handleLogin()
-      } else {
-        this.loginButtonRef.instance.textContent = "Sign in"
-        this.textRef.instance.textContent = "Not logged in"
-      }
-    }, true)
+    //     this.handleLogin()
+    //   } else {
+    //     this.loginButtonRef.instance.textContent = "Sign in"
+    //     this.textRef.instance.textContent = "Not logged in"
+    //   }
+    // }, true)
   }
 
   private async handleClick() {

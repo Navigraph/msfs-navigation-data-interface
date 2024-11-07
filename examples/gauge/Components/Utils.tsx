@@ -1,4 +1,11 @@
-import { ComponentProps, DisplayComponent, FSComponent, Subscribable, VNode } from "@microsoft/msfs-sdk"
+import {
+  ComponentProps,
+  DisplayComponent,
+  FSComponent,
+  Subscribable,
+  SubscribableUtils,
+  VNode,
+} from "@microsoft/msfs-sdk"
 
 type Page = [number, VNode]
 
@@ -7,11 +14,14 @@ interface InterfaceSwitchProps extends ComponentProps {
   intoClass?: string
   active: Subscribable<number>
   pages: Page[]
+  noTheming?: boolean
+  intoNoTheming?: boolean
 }
 
 interface InterfaceSwitchPageProps extends ComponentProps {
   class?: string
   active: Subscribable<boolean>
+  noTheming: boolean
 }
 
 export class InterfaceSwitch extends DisplayComponent<InterfaceSwitchProps> {
@@ -19,9 +29,13 @@ export class InterfaceSwitch extends DisplayComponent<InterfaceSwitchProps> {
 
   render(): VNode {
     return (
-      <div class={`size-full ${this.props.class ?? "bg-inherit"}`}>
+      <div class={`${this.props.noTheming ? "" : "size-full"} ${this.props.class ?? "bg-inherit"}`}>
         {this.props.pages.map(([pageNumber, page]) => (
-          <InterfaceSwitchPage class={this.props.intoClass ?? "bg-inherit"} active={this.visibility(pageNumber)}>
+          <InterfaceSwitchPage
+            class={this.props.intoClass ?? "bg-inherit"}
+            active={this.visibility(pageNumber)}
+            noTheming={this.props.intoNoTheming ?? false}
+          >
             {page}
           </InterfaceSwitchPage>
         ))}
@@ -31,7 +45,9 @@ export class InterfaceSwitch extends DisplayComponent<InterfaceSwitchProps> {
 }
 
 class InterfaceSwitchPage extends DisplayComponent<InterfaceSwitchPageProps> {
-  private readonly activeCss = this.props.active.map(val => `size-full p-6 ${val ? "block" : "hidden"}`)
+  private readonly activeCss = this.props.active.map(
+    val => `${val ? "block" : "!hidden"} ${this.props.noTheming ? "" : "size-full p-6"} ${this.props.class ?? ""}`,
+  )
 
   render(): VNode {
     return <div class={this.activeCss}>{this.props.children}</div>
@@ -73,7 +89,7 @@ export class InterfaceNavbar extends DisplayComponent<InterfaceNavbarProps> {
   }
 }
 
-class InterfaceNavbarItem extends DisplayComponent<InterfaceNavbarItemProps> {
+export class InterfaceNavbarItem extends DisplayComponent<InterfaceNavbarItemProps> {
   private readonly activeCss = this.props.active.map(
     val => `${this.props.class ?? "size-full"} ${val ? this.props.activeClass ?? "" : ""}`,
   )
@@ -87,15 +103,31 @@ class InterfaceNavbarItem extends DisplayComponent<InterfaceNavbarItemProps> {
   }
 }
 
+export class InterfaceNavbarItemV2 extends DisplayComponent<InterfaceNavbarItemProps> {
+  private readonly activeCss = this.props.active.map(
+    val => `${this.props.class ?? "size-full"} ${val ? this.props.activeClass ?? "" : ""}`,
+  )
+
+  render(): VNode {
+    return (
+      <Button class={this.activeCss} onClick={this.props.setActive}>
+        {this.props.children}
+      </Button>
+    )
+  }
+}
+
 interface ButtonProps extends ComponentProps {
-  class?: Subscribable<string>
+  class?: Subscribable<string> | string
   onClick: () => void
 }
 
 export class Button extends DisplayComponent<ButtonProps> {
   private readonly buttonRef = FSComponent.createRef<HTMLDivElement>()
 
-  private readonly class = this.props.class?.map(val => val ?? "text-inherit")
+  private readonly class = SubscribableUtils.toSubscribable(this.props.class ?? "", true).map(
+    val => val ?? "text-inherit",
+  )
 
   onAfterRender(node: VNode): void {
     super.onAfterRender(node)
