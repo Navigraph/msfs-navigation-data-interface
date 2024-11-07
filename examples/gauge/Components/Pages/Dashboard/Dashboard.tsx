@@ -4,10 +4,8 @@ import {
   FSComponent,
   MappedSubject,
   MappedSubscribable,
-  Subject,
   Subscribable,
   SubscribableArray,
-  Subscription,
   VNode,
 } from "@microsoft/msfs-sdk"
 import { NavigraphNavigationDataInterface, PackageInfo } from "@navigraph/msfs-navigation-data-interface"
@@ -17,15 +15,15 @@ import { Button, InterfaceNavbarItemV2, InterfaceSwitch } from "../../Utils"
 interface DashboardProps extends ComponentProps {
   databases: SubscribableArray<PackageInfo>
   selectedDatabase: Subscribable<PackageInfo | null>
+  selectedDatabaseIndex: Subscribable<number>
   setSelectedDatabase: (database: PackageInfo) => void
+  setSelectedDatabaseIndex: (index: number) => void
   activeDatabase: Subscribable<PackageInfo | null>
   interface: NavigraphNavigationDataInterface
 }
 
 export class Dashboard extends DisplayComponent<DashboardProps> {
-  private readonly selectedDatabaseIndex = Subject.create(0)
-
-  private readonly _selectedCallback = this.selectedDatabaseIndex.map(val => {
+  private readonly _selectedCallback = this.props.selectedDatabaseIndex.map(val => {
     if (this.props.databases.length !== 0) {
       this.props.setSelectedDatabase(this.props.databases.get(val))
     }
@@ -42,8 +40,8 @@ export class Dashboard extends DisplayComponent<DashboardProps> {
         class="w-full p-4 flex items-center"
         activeClass="bg-blue-400"
         content={""}
-        active={this.selectedDatabaseIndex.map(val => val === index)}
-        setActive={() => this.selectedDatabaseIndex.set(index)}
+        active={this.props.selectedDatabaseIndex.map(val => val === index)}
+        setActive={() => this.props.setSelectedDatabaseIndex(index)}
       >
         <p class="text-2xl text-inherit">
           {data.cycle.cycle} - {data.cycle.format}
@@ -78,7 +76,6 @@ export class Dashboard extends DisplayComponent<DashboardProps> {
                   data={this.props.databases}
                   renderItem={(data, index) => this.displayItems(data as PackageInfo, index)}
                 />
-                {/* Broken idk why */}
               </div>
             </div>
             <Button onClick={() => this.setDatabase()} class="p-4 bg-blue-400">

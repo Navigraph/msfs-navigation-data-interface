@@ -8,6 +8,7 @@ import postcss from "rollup-plugin-postcss"
 
 dotenv.config()
 
+// eslint-disable-next-line no-undef
 const DEBUG = process.env.DEBUG === "true"
 
 let outputDest = "../aircraft/PackageSources"
@@ -25,7 +26,9 @@ export default {
     resolve({ extensions: [".js", ".jsx", ".ts", ".tsx"] }),
     esbuild({ target: "es6" }),
     replace({
+      // eslint-disable-next-line no-undef
       "process.env.NG_CLIENT_ID": JSON.stringify(process.env.NG_CLIENT_ID),
+      // eslint-disable-next-line no-undef
       "process.env.NG_CLIENT_SECRET": JSON.stringify(process.env.NG_CLIENT_SECRET),
       preventAssignment: true,
     }),
