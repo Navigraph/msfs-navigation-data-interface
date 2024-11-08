@@ -66,10 +66,10 @@ export class Dashboard extends DisplayComponent<DashboardProps> {
   render(): VNode {
     return (
       <div class="size-full flex flex-col">
-        <p class="mb-8 text-4xl">Dashboard</p>
+        <p class="ml-2 mb-8 text-4xl">Dashboard</p>
         <div class="flex flex-row flex-grow flex-auto">
           <div class="w-1/3 flex flex-col">
-            <p class="text-3xl mb-4">Databases</p>
+            <p class="ml-2 text-3xl mb-4">Databases</p>
             <div class="mt-2 flex-grow bg-ng-background-500 shadow-inner">
               <div class="flex flex-col space-y-2">
                 <List
@@ -99,9 +99,9 @@ class ActiveDatabase extends DisplayComponent<ActiveDatabaseProps> {
 
   render(): VNode {
     return (
-      <div class="flex-grow flex flex-col">
+      <div class="w-2/3 flex flex-col">
         <InterfaceSwitch
-          class="flex flex-row"
+          class="ml-2 flex flex-row"
           active={this.isActive}
           noTheming={true}
           intoNoTheming={true}
