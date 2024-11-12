@@ -7,7 +7,7 @@ import {
   Subject,
   VNode,
 } from "@microsoft/msfs-sdk"
-import { NavigraphNavigationDataInterface } from "@navigraph/msfs-navigation-data-interface"
+import { Coordinates, NavigraphNavigationDataInterface } from "@navigraph/msfs-navigation-data-interface"
 import { Checkbox, Input } from "../../Input"
 import { Button, InterfaceNavbarItemV2, InterfaceSwitch } from "../../Utils"
 
@@ -60,6 +60,176 @@ export class TestPage extends DisplayComponent<TestPageProps> {
       name: "SetActivePackage",
       functionCallback: input => this.props.interface.download_navigation_data(input ?? ""),
     },
+    {
+      index: 4,
+      arguments: ["uuid: string"],
+      name: "DeletePackage",
+      functionCallback: input => this.props.interface.delete_package(input ?? ""),
+    },
+    {
+      index: 5,
+      arguments: ["count?: string"],
+      name: "CleanPackages",
+      functionCallback: input => this.props.interface.clean_packages(Number(input)),
+    },
+    {
+      index: 6,
+      arguments: [],
+      name: "GetDatabaseInfo",
+      functionCallback: () => this.props.interface.get_database_info(),
+    },
+    {
+      index: 7,
+      arguments: ["ident: string"],
+      name: "GetAirport",
+      functionCallback: input => this.props.interface.get_airport(input ?? ""),
+    },
+    {
+      index: 8,
+      arguments: ["ident: string"],
+      name: "GetWaypoints",
+      functionCallback: input => this.props.interface.get_waypoints(input ?? ""),
+    },
+    {
+      index: 9,
+      arguments: ["ident: string"],
+      name: "GetVhfNavaids",
+      functionCallback: input => this.props.interface.get_vhf_navaids(input ?? ""),
+    },
+    {
+      index: 10,
+      arguments: ["ident: string"],
+      name: "GetNdbNavaids",
+      functionCallback: input => this.props.interface.get_ndb_navaids(input ?? ""),
+    },
+    {
+      index: 11,
+      arguments: ["ident: string"],
+      name: "GetAirways",
+      functionCallback: input => this.props.interface.get_airways(input ?? ""),
+    },
+    {
+      index: 12,
+      arguments: ["fixIdent: string", "fixIcao: string"],
+      name: "GetAirwaysAtFix",
+      functionCallback: (input, inputAlt) => this.props.interface.get_airways_at_fix(input ?? "", inputAlt ?? ""),
+    },
+    {
+      index: 13,
+      arguments: ["center: (lat, long)", "range: nm"],
+      name: "GetAirportsInRange",
+      functionCallback: (input, inputAlt) =>
+        this.props.interface.get_airports_in_range(this.strToCoords(input), Number(inputAlt ?? 0)),
+    },
+    {
+      index: 14,
+      arguments: ["center: (lat, long)", "range: nm"],
+      name: "GetWaypointsInRange",
+      functionCallback: (input, inputAlt) =>
+        this.props.interface.get_waypoints_in_range(this.strToCoords(input), Number(inputAlt ?? 0)),
+    },
+    {
+      index: 15,
+      arguments: ["center: (lat, long)", "range: nm"],
+      name: "GetVhfNavaidsInRange",
+      functionCallback: (input, inputAlt) =>
+        this.props.interface.get_vhf_navaids_in_range(this.strToCoords(input), Number(inputAlt ?? 0)),
+    },
+    {
+      index: 16,
+      arguments: ["center: (lat, long)", "range: nm"],
+      name: "GetNdbNavaidsInRange",
+      functionCallback: (input, inputAlt) =>
+        this.props.interface.get_ndb_navaids_in_range(this.strToCoords(input), Number(inputAlt ?? 0)),
+    },
+    {
+      index: 17,
+      arguments: ["center: (lat, long)", "range: nm"],
+      name: "GetAirwaysInRange",
+      functionCallback: (input, inputAlt) =>
+        this.props.interface.get_airways_in_range(this.strToCoords(input), Number(inputAlt ?? 0)),
+    },
+    {
+      index: 18,
+      arguments: ["center: (lat, long)", "range: nm"],
+      name: "GetControlledAirspacesInRange",
+      functionCallback: (input, inputAlt) =>
+        this.props.interface.get_controlled_airspaces_in_range(this.strToCoords(input), Number(inputAlt ?? 0)),
+    },
+    {
+      index: 19,
+      arguments: ["center: (lat, long)", "range: nm"],
+      name: "GetRestrictiveAirspacesInRange",
+      functionCallback: (input, inputAlt) =>
+        this.props.interface.get_restrictive_airspaces_in_range(this.strToCoords(input), Number(inputAlt ?? 0)),
+    },
+    {
+      index: 20,
+      arguments: ["center: (lat, long)", "range: nm"],
+      name: "GetCommunicationsInRange",
+      functionCallback: (input, inputAlt) =>
+        this.props.interface.get_communications_in_range(this.strToCoords(input), Number(inputAlt ?? 0)),
+    },
+    {
+      index: 21,
+      arguments: ["airportIdent: string"],
+      name: "GetRunwaysAtAirport",
+      functionCallback: input => this.props.interface.get_runways_at_airport(input ?? ""),
+    },
+    {
+      index: 22,
+      arguments: ["airportIdent: string"],
+      name: "GetDeparturesAtAirport",
+      functionCallback: input => this.props.interface.get_departures_at_airport(input ?? ""),
+    },
+    {
+      index: 23,
+      arguments: ["airportIdent: string"],
+      name: "GetArrivalsAtAirport",
+      functionCallback: input => this.props.interface.get_arrivals_at_airport(input ?? ""),
+    },
+    {
+      index: 24,
+      arguments: ["airportIdent: string"],
+      name: "GetApproachesAtAirport",
+      functionCallback: input => this.props.interface.get_approaches_at_airport(input ?? ""),
+    },
+    {
+      index: 25,
+      arguments: ["airportIdent: string"],
+      name: "GetWaypointsAtAirport",
+      functionCallback: input => this.props.interface.get_waypoints_at_airport(input ?? ""),
+    },
+    {
+      index: 26,
+      arguments: ["airportIdent: string"],
+      name: "GetNdbNavaidsAtAirport",
+      functionCallback: input => this.props.interface.get_ndb_navaids_at_airport(input ?? ""),
+    },
+    {
+      index: 27,
+      arguments: ["airportIdent: string"],
+      name: "GetGatesAtAirport",
+      functionCallback: input => this.props.interface.get_gates_at_airport(input ?? ""),
+    },
+    {
+      index: 28,
+      arguments: ["airportIdent: string"],
+      name: "GetCommunicationsAtAirport",
+      functionCallback: input => this.props.interface.get_communications_at_airport(input ?? ""),
+    },
+    {
+      index: 29,
+      arguments: ["airportIdent: string"],
+      name: "GetGlsNavaidsAtAirport",
+      functionCallback: input => this.props.interface.get_gls_navaids_at_airport(input ?? ""),
+    },
+    {
+      index: 30,
+      arguments: ["airportIdent: string"],
+      name: "GetPathPointsAtAirport",
+      functionCallback: input => this.props.interface.get_path_points_at_airport(input ?? ""),
+    },
   ]
 
   private readonly input1 = Subject.create("")
@@ -87,6 +257,17 @@ export class TestPage extends DisplayComponent<TestPageProps> {
 
   private strToBool(input?: string): boolean {
     return input == "true" ? true : false
+  }
+
+  private strToCoords(input?: string): Coordinates {
+    const splitInput = (input ?? "").replace(/[(){}\s]/g, "").split(",")
+
+    const coords: Coordinates = {
+      lat: Number(splitInput[0] ?? 0.0),
+      long: Number(splitInput[1] ?? 0.0),
+    }
+
+    return coords
   }
 
   private handleFunction = () => {
@@ -158,7 +339,7 @@ export class TestPage extends DisplayComponent<TestPageProps> {
         <p class="mb-8 text-4xl">Test</p>
         <div class="size-full w-[875px] flex flex-row">
           <div class="w-1/3 flex flex-col">
-            <div class="overflow-scroll flex-grow bg-ng-background-500">
+            <div class="size-full overflow-scroll flex-grow bg-ng-background-500">
               {this.functionList.map(obj => (
                 <InterfaceNavbarItemV2
                   content={""}
@@ -207,7 +388,7 @@ export class TestPage extends DisplayComponent<TestPageProps> {
                 noTheming
                 intoNoTheming
                 hideLast
-                class={this.input2State.map(obj => (obj.active ? "size-full flex content-center" : ""))}
+                class={this.input2State.map(obj => (obj.active ? "h-full w-1/2 flex content-center" : ""))}
                 intoClass="flex-grow flex content-center"
                 active={this.input2State.map(obj => (obj.active ? (obj.type === InputStateType.String ? 0 : 1) : 2))}
                 pages={[

@@ -7,7 +7,7 @@ import {
   UUID,
   VNode,
 } from "@microsoft/msfs-sdk"
-import { Button, InterfaceNavbarItemV2 } from "./Utils"
+import { InterfaceNavbarItemV2 } from "./Utils"
 
 interface InputProps extends ComponentProps {
   value: Subscribable<string>
