@@ -1,7 +1,18 @@
-import { ComponentProps, DisplayComponent, FSComponent, Subscribable, UUID, VNode } from "@microsoft/msfs-sdk"
+import {
+  ComponentProps,
+  DisplayComponent,
+  FSComponent,
+  Subscribable,
+  SubscribableUtils,
+  UUID,
+  VNode,
+} from "@microsoft/msfs-sdk"
+import { Button, InterfaceNavbarItemV2 } from "./Utils"
 
 interface InputProps extends ComponentProps {
-  value?: string
+  value: Subscribable<string>
+  setValue: (value: string) => void
+  default?: Subscribable<string> | string
   class?: string | Subscribable<string>
   textarea?: boolean
 }
@@ -10,12 +21,15 @@ export class Input extends DisplayComponent<InputProps> {
   private readonly inputId = UUID.GenerateUuid()
   private readonly inputRef = FSComponent.createRef<HTMLInputElement>()
 
-  get value() {
-    return this.inputRef.instance.value
-  }
-
   onAfterRender(node: VNode): void {
     super.onAfterRender(node)
+
+    this.props.value.map(val => (this.inputRef.instance.value = val))
+    SubscribableUtils.toSubscribable(this.props.default ?? "", true).map(val => {
+      this.inputRef.instance.placeholder = val
+    })
+
+    this.inputRef.instance.addEventListener("input", () => this.props.setValue(this.inputRef.instance.value ?? ""))
 
     this.inputRef.instance.onfocus = this.onInputFocus
     this.inputRef.instance.onblur = this.onInputBlur
@@ -52,5 +66,34 @@ export class Input extends DisplayComponent<InputProps> {
         </textarea>
       )
     return <input ref={this.inputRef} {...this.getInputProps()} />
+  }
+}
+
+interface CheckboxProps extends ComponentProps {
+  value: Subscribable<string>
+  setValue: (value: string) => void
+  default?: Subscribable<string> | string
+  class?: string
+}
+
+export class Checkbox extends DisplayComponent<CheckboxProps> {
+  private readonly isActive = this.props.value.map(val => (val == "true" ? true : false))
+
+  private onClick = () => {
+    this.props.setValue(this.isActive.get() ? "false" : "true")
+  }
+
+  render(): VNode {
+    return (
+      <InterfaceNavbarItemV2
+        content={""}
+        active={this.isActive}
+        class={`h-full flex-grow bg-white text-black flex items-center justify-center ${this.props.class ?? ""}`}
+        activeClass="!bg-green-400 !text-white"
+        setActive={() => this.onClick()}
+      >
+        <span class="text-4xl">{this.isActive.map(val => (val ? "✔" : "X"))}</span>
+      </InterfaceNavbarItemV2>
+    )
   }
 }

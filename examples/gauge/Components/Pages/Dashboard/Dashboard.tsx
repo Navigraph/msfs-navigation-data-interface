@@ -71,7 +71,7 @@ export class Dashboard extends DisplayComponent<DashboardProps> {
           <div class="w-1/3 flex flex-col">
             <p class="ml-2 text-3xl mb-4">Databases</p>
             <div class="mt-2 flex-grow bg-ng-background-500 shadow-inner">
-              <div class="flex flex-col space-y-2">
+              <div class="flex flex-col space-y-2 overflow-auto">
                 <List
                   data={this.props.databases}
                   renderItem={(data, index) => this.displayItems(data as PackageInfo, index)}

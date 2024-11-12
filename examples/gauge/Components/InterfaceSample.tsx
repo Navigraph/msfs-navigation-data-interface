@@ -72,7 +72,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
                     interface={this.navigationDataInterface}
                   />,
                 ],
-                [1, <TestPage />],
+                [1, <TestPage interface={this.navigationDataInterface} />],
                 [
                   2,
                   <AuthPage

@@ -10,12 +10,13 @@ import {
 type Page = [number, VNode]
 
 interface InterfaceSwitchProps extends ComponentProps {
-  class?: string
+  class?: string | Subscribable<string>
   intoClass?: string
   active: Subscribable<number>
   pages: Page[]
   noTheming?: boolean
   intoNoTheming?: boolean
+  hideLast?: boolean
 }
 
 interface InterfaceSwitchPageProps extends ComponentProps {
@@ -25,11 +26,18 @@ interface InterfaceSwitchPageProps extends ComponentProps {
 }
 
 export class InterfaceSwitch extends DisplayComponent<InterfaceSwitchProps> {
-  private readonly visibility = (pageNumber: number) => this.props.active.map(val => val === pageNumber)
+  private readonly activeClass = SubscribableUtils.toSubscribable(this.props.class ?? "", true).map(
+    val => `${this.props.noTheming ? "" : "size-full"} ${val ?? "bg-inherit"}`,
+  )
+
+  private readonly visibility = (pageNumber: number) =>
+    this.props.active.map(val =>
+      this.props.hideLast ? val === pageNumber && val !== this.props.pages.length - 1 : val === pageNumber,
+    )
 
   render(): VNode {
     return (
-      <div class={`${this.props.noTheming ? "" : "size-full"} ${this.props.class ?? "bg-inherit"}`}>
+      <div class={this.activeClass}>
         {this.props.pages.map(([pageNumber, page]) => (
           <InterfaceSwitchPage
             class={this.props.intoClass ?? "bg-inherit"}
