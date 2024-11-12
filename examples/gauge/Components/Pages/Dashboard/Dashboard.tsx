@@ -37,7 +37,7 @@ export class Dashboard extends DisplayComponent<DashboardProps> {
   private displayItems(data: PackageInfo, index: number): VNode {
     return (
       <InterfaceNavbarItemV2
-        class="w-full p-4 flex items-center"
+        class="w-full p-4 flex items-center hover:bg-blue-800"
         activeClass="bg-blue-400"
         content={""}
         active={this.props.selectedDatabaseIndex.map(val => val === index)}
@@ -78,7 +78,7 @@ export class Dashboard extends DisplayComponent<DashboardProps> {
                 />
               </div>
             </div>
-            <Button onClick={() => this.setDatabase()} class="p-4 bg-blue-400">
+            <Button onClick={() => this.setDatabase()} class="p-4 bg-blue-400 hover:bg-blue-800">
               <p class="text-2xl">Select Database</p>
             </Button>
           </div>

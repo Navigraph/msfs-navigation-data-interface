@@ -162,7 +162,7 @@ export class TestPage extends DisplayComponent<TestPageProps> {
               {this.functionList.map(obj => (
                 <InterfaceNavbarItemV2
                   content={""}
-                  class="w-full p-2 flex flex-col items-start"
+                  class="w-full p-2 flex flex-col items-start hover:bg-blue-800"
                   activeClass="bg-blue-400"
                   active={this.selectedFunction.map(index => index === obj.index)}
                   setActive={() => this.selectedFunction.set(obj.index)}
@@ -237,7 +237,7 @@ export class TestPage extends DisplayComponent<TestPageProps> {
               <p class="text-xl whitespace-pre">{this.output}</p>
             </div>
             <Button
-              class="h-16 flex flex-row items-center pl-4 bg-blue-400 overflow-auto"
+              class="h-16 flex flex-row items-center pl-4 bg-blue-400 overflow-auto hover:bg-blue-800"
               onClick={() => this.handleFunction()}
             >
               <span class="text-3xl">Try:</span>

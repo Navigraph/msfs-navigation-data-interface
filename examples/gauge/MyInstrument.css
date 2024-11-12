@@ -6,3 +6,20 @@
   width: 100%;
   height: 100%;
 }
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1d2838;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #7f868f;
+  border-radius: 2rem;
+}
+
+::-webkit-scrollbar-corner {
+  background: #1d2838;
+}

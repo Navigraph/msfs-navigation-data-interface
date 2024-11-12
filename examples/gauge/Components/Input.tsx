@@ -88,8 +88,10 @@ export class Checkbox extends DisplayComponent<CheckboxProps> {
       <InterfaceNavbarItemV2
         content={""}
         active={this.isActive}
-        class={`h-full flex-grow bg-white text-black flex items-center justify-center ${this.props.class ?? ""}`}
-        activeClass="!bg-green-400 !text-white"
+        class={`h-full flex-grow bg-white text-black flex items-center justify-center hover:bg-gray-400 ${
+          this.props.class ?? ""
+        }`}
+        activeClass="hover:!bg-green-700 !bg-green-500 !text-white"
         setActive={() => this.onClick()}
       >
         <span class="text-4xl">{this.isActive.map(val => (val ? "✔" : "X"))}</span>
