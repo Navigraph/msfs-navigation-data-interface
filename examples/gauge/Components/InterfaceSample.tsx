@@ -44,7 +44,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
           minutes
         </div>
         <div class="auth-container" ref={this.authContainerRef} style={{ display: "none" }}>
-          <div class="size-full flex flex-row divide-y bg-ng-background-900">
+          <div class="size-full flex flex-row bg-ng-background-900">
             <div class="h-full w-[7rem]">
               <InterfaceNavbar
                 tabs={[
@@ -84,37 +84,6 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
               ]}
             />
           </div>
-
-          {/* 
-          <h4 style="text-align: center;">Step 3 - Query the database</h4>
-          <div class="horizontal">
-            <div class="vertical">
-              <Input ref={this.icaoInputRef} value="TNCM" class="text-field" />
-              <div class="horizontal-no-pad">
-                <div ref={this.executeIcaoButtonRef} class="button">
-                  Fetch Airport
-                </div>
-                <div ref={this.loadDbRef} class="button">
-                  Load DB
-                </div>
-              </div>
-              <div style="height:30px;"></div>
-              <Input
-                ref={this.sqlInputRef}
-                textarea
-                value="SELECT airport_name FROM tbl_airports WHERE airport_identifier = 'TNCM'"
-                class="text-field"
-              />
-              <div ref={this.executeSqlButtonRef} class="button">
-                Execute SQL
-              </div>
-            </div>
-            <div class="overflow-scroll h-[400px]">
-              <pre ref={this.outputRef} id="output">
-                The output of the query will show up here
-              </pre>
-            </div>
-          </div> */}
         </div>
       </>
     )

@@ -154,9 +154,9 @@ export class TestPage extends DisplayComponent<TestPageProps> {
 
   render(): VNode {
     return (
-      <div class="size-full flex flex-col">
+      <div class="size-full flex flex-col flex-grow">
         <p class="mb-8 text-4xl">Test</p>
-        <div class="size-full flex flex-row flex-grow">
+        <div class="size-full w-[875px] flex flex-row">
           <div class="w-1/3 flex flex-col">
             <div class="overflow-scroll flex-grow bg-ng-background-500">
               {this.functionList.map(obj => (
@@ -232,7 +232,7 @@ export class TestPage extends DisplayComponent<TestPageProps> {
               />
             </div>
           </div>
-          <div class="w-2/3 bg-ng-background-700 flex flex-col">
+          <div class="w-2/3 bg-ng-background-700 flex flex-col flex-grow">
             <div class="size-full p-2 flex-grow overflow-auto">
               <p class="text-xl whitespace-pre">{this.output}</p>
             </div>
