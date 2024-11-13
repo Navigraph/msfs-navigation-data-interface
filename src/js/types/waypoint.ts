@@ -1,4 +1,4 @@
-import { Coordinates } from "./math"
+import { Coordinates, Degrees } from "./math"
 
 export interface Waypoint {
   area_code: string
@@ -10,4 +10,5 @@ export interface Waypoint {
   ident: string
   name: string
   location: Coordinates
+  magnetic_variation?: Degrees
 }

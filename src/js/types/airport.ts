@@ -21,6 +21,8 @@ export interface Airport {
   continent?: string
   country?: string
   country_3letter?: string
+  state?: string
+  state_2letter?: string
   location: Coordinates
   name: string
   ifr_capability: IfrCapability
