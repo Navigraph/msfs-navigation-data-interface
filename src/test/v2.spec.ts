@@ -28,22 +28,29 @@ const navigationDataInterface = new NavigraphNavigationDataInterface()
 describe("DFDv2", () => {
   // This will run once for each test file
   beforeAll(async () => {
-    let pkgs = await navigationDataInterface.list_available_packages(true, false)
+    const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL_V2 ?? "local"
 
-    // const target_package = pkgs.find(info => info.cycle.format === "dfdv2" && info.cycle.cycle === "2401")
-
-    // if (!target_package) {
-    //   throw new Error("V2 Database with cycle 2401 was not found in available packages")
-    // }
-
-    navigationDataInterface
-      .set_active_package(pkgs[1].uuid)
-      .then(val => {
-        console.log(val)
+    const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
+      return new Promise((resolve, _reject) => {
+        navDataInterface.onReady(() => resolve())
       })
-      .catch(err => {
-        console.error(err)
-      })
+    }
+  
+    await waitForReady(navigationDataInterface)
+
+    if(downloadUrl === "local") {
+      let pkgs = await navigationDataInterface.list_available_packages(true, false)
+  
+      const target_package = pkgs.find((info) => info.cycle.format === 'dfdv2' && info.cycle.cycle === '2410')
+  
+      if(!target_package) {
+        throw new Error('V2 Database with cycle 2410 was not found in available packages')
+      }
+  
+      navigationDataInterface.set_active_package(target_package.uuid);
+    } else {
+      await navigationDataInterface.download_navigation_data(downloadUrl, true)
+    }
   }, 30000)
 
   it("Active database", async () => {
@@ -51,14 +58,14 @@ describe("DFDv2", () => {
 
     expect(packageInfo).toStrictEqual({
       is_bundled: !process.env.NAVIGATION_DATA_SIGNED_URL,
-      path: "/active",
-      uuid: "12313",
+      path: "\\work/navigation-data/active",
+      uuid: "37735bb9-635b-37be-be1b-c5f9a89b7672",
       cycle: {
-        cycle: "2401",
+        cycle: "2410",
         revision: "1",
         name: "Navigraph Avionics",
         format: "dfdv2",
-        validityPeriod: "2024-01-25/2024-02-21",
+        validityPeriod: "2024-10-03/2024-10-30"   
       },
     } satisfies PackageInfo)
   })
@@ -67,9 +74,9 @@ describe("DFDv2", () => {
     const info = await navigationDataInterface.get_database_info()
 
     expect(info).toStrictEqual({
-      airac_cycle: "2313",
-      effective_from_to: ["28-12-2023", "25-01-2024"],
-      previous_from_to: ["30-11-2023", "28-12-2023"],
+      airac_cycle: "2410",
+      effective_from_to: ["03-10-2024", "30-10-2024"],
+      previous_from_to: ["depricated", "depricated"],
     } satisfies DatabaseInfo)
   })
 
@@ -77,21 +84,29 @@ describe("DFDv2", () => {
     const airport = await navigationDataInterface.get_airport("KJFK")
 
     expect(airport).toStrictEqual({
+      airport_type: "C",
       area_code: "USA",
+      city: "NEW YORK",
+      continent: "NORTH AMERICA",
+      country: "UNITED STATES",
+      country_3letter: "USA",
       ident: "KJFK",
       icao_code: "K6",
       location: {
-        lat: 40.63992778,
-        long: -73.77869167,
+        lat: 40.63992777777778,
+        long: -73.77869166666666,
       },
       name: "KENNEDY INTL",
       ifr_capability: IfrCapability.Yes,
       longest_runway_surface_code: RunwaySurfaceCode.Hard,
+      magnetic_variation: -13,
       elevation: 13,
       transition_altitude: 18000,
       transition_level: 18000,
       speed_limit: 250,
       speed_limit_altitude: 10000,
+      state: "NEW YORK",
+      state_2letter: "NY",
       iata_ident: "JFK",
     } satisfies Airport)
   })
@@ -103,11 +118,14 @@ describe("DFDv2", () => {
 
     expect(waypoints[0]).toStrictEqual({
       area_code: "SPA",
+      continent: "PACIFIC",
+      country: "NEW ZEALAND",
+      datum_code: "WGE",
       icao_code: "NZ",
       ident: "GLENN",
       location: {
-        lat: -42.88116389,
-        long: 172.83973889,
+        lat: -42.88116388888889,
+        long: 172.8397388888889,
       },
       name: "GLENN",
     } satisfies Waypoint)
@@ -162,7 +180,7 @@ describe("DFDv2", () => {
   it("Get airports in range", async () => {
     const airports = await navigationDataInterface.get_airports_in_range({ lat: 51.468, long: -0.4551 }, 640)
 
-    expect(airports.length).toBe(1686)
+    expect(airports.length).toBe(1506)
   })
 
   it("Get waypoints in range", async () => {

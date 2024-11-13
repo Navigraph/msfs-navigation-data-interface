@@ -287,31 +287,11 @@ async function lifeCycle() {
   }
 }
 
-beforeAll(async () => {
-  const navigationDataInterface = new NavigraphNavigationDataInterface()
-
-  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL ?? "local"
-  const downloadUrlV2 = process.env.NAVIGATION_DATA_SIGNED_URL_V2 ?? "local"
-
-  // Utility function to convert onReady to a promise
-  const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
-    return new Promise((resolve, _reject) => {
-      navDataInterface.onReady(() => resolve())
-    })
-  }
-
-  await waitForReady(navigationDataInterface)
-
-  if (downloadUrl !== "local") {
-    await navigationDataInterface.download_navigation_data(downloadUrl)
-  }
-
-  if (downloadUrlV2 !== "local") {
-    await navigationDataInterface.download_navigation_data(downloadUrlV2)
-  }
-}, 30000)
-
 void lifeCycle()
+
+beforeAll(() => {
+  runLifecycle = true;
+})
 
 // Cancel the lifeCycle after all tests have completed
 afterAll(() => {

@@ -28,22 +28,29 @@ const navigationDataInterface = new NavigraphNavigationDataInterface()
 describe("DFDv1", () => {
   // This will run once for each test file
   beforeAll(async () => {
-    let pkgs = await navigationDataInterface.list_available_packages(true, false)
+    const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL ?? "local"
 
-    // const target_package = pkgs.find((info) => info.cycle.format === 'dfd' && info.cycle.cycle === '2101')
-
-    // if(!target_package) {
-    //   throw new Error('V1 Database with cycle 2101 was not found in available packages')
-    // }
-
-    navigationDataInterface
-      .set_active_package(pkgs[0].uuid)
-      .then(val => {
-        console.log(val)
+    const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
+      return new Promise((resolve, _reject) => {
+        navDataInterface.onReady(() => resolve())
       })
-      .catch(err => {
-        console.error(err)
-      })
+    }
+  
+    await waitForReady(navigationDataInterface)
+
+    if(downloadUrl === "local") {
+      let pkgs = await navigationDataInterface.list_available_packages(true, false)
+  
+      const target_package = pkgs.find((info) => info.cycle.format === 'dfd' && info.cycle.cycle === '2410')
+  
+      if(!target_package) {
+        throw new Error('V1 Database with cycle 2410 was not found in available packages')
+      }
+  
+      navigationDataInterface.set_active_package(target_package.uuid);
+    } else {
+      await navigationDataInterface.download_navigation_data(downloadUrl, true)
+    }
   }, 30000)
 
   it("Active database", async () => {
@@ -51,14 +58,14 @@ describe("DFDv1", () => {
 
     expect(packageInfo).toStrictEqual({
       is_bundled: !process.env.NAVIGATION_DATA_SIGNED_URL,
-      path: "/active",
-      uuid: "12313",
+      path: "\\work/navigation-data/active",
+      uuid: "481bc1fd-2712-3e42-9183-c4463ad1d952",
       cycle: {
-        cycle: "2101",
+        cycle: "2410",
         revision: "1",
         name: "Navigraph Avionics",
         format: "dfd",
-        validityPeriod: "2021-01-25/2021-02-20",
+        validityPeriod: "2024-10-03/2024-10-30",     
       },
     } satisfies PackageInfo)
   })
@@ -67,9 +74,9 @@ describe("DFDv1", () => {
     const info = await navigationDataInterface.get_database_info()
 
     expect(info).toStrictEqual({
-      airac_cycle: "2313",
-      effective_from_to: ["28-12-2023", "25-01-2024"],
-      previous_from_to: ["30-11-2023", "28-12-2023"],
+      airac_cycle: "2410",
+      effective_from_to: ["03-10-2024", "31-10-2024"],
+      previous_from_to: ["05-09-2024", "03-10-2024"],
     } satisfies DatabaseInfo)
   })
 
@@ -153,7 +160,7 @@ describe("DFDv1", () => {
   it("Get airports in range", async () => {
     const airports = await navigationDataInterface.get_airports_in_range({ lat: 51.468, long: -0.4551 }, 640)
 
-    expect(airports.length).toBe(1686)
+    expect(airports.length).toBe(1688)
   })
 
   it("Get waypoints in range", async () => {

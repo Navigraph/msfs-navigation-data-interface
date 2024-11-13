@@ -9,11 +9,11 @@ pub struct DatabaseInfo {
     /// The AIRAC cycle that this database is.
     ///
     /// e.g. `2313` or `2107`
-    airac_cycle: String,
+    pub airac_cycle: String,
     /// The effective date range of this AIRAC cycle.
-    effective_from_to: (String, String),
+    pub effective_from_to: (String, String),
     /// The effective date range of the previous AIRAC cycle
-    previous_from_to: (String, String),
+    pub previous_from_to: (String, String),
 }
 
 impl DatabaseInfo {

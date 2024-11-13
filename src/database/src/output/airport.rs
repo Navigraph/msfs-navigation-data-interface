@@ -3,8 +3,7 @@ use serde::Serialize;
 use crate::{
     enums::{IfrCapability, RunwaySurfaceCode},
     math::{Coordinates, Degrees, Feet},
-    sql_structs,
-    v2,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
@@ -19,18 +18,18 @@ pub struct Airport {
     /// For most airports, this will be the same as the first two letters of the `ident`, such as `EG` for `EGLL`, or
     /// `LF` for `LFPG`.
     /// Airport type (see Appendix 3.38) (v2 only)
-    pub airport_type: String,
     /// The notable exceptions to this are airports in the US, Canada, and Australia.
     pub icao_code: String,
+    pub airport_type: Option<String>,
     /// The geographic location of the airport's reference point
     pub location: Coordinates,
     /// The airport's general area (v2 only)
-    city: Option<String>,
-    continent: Option<String>,
-    country: Option<String>,
-    country_3letter: Option<String>,
-    state: Option<String>,
-    state_2letter: Option<String>,
+    pub city: Option<String>,
+    pub continent: Option<String>,
+    pub country: Option<String>,
+    pub country_3letter: Option<String>,
+    pub state: Option<String>,
+    pub state_2letter: Option<String>,
     /// The formal name of the airport such as `KENNEDY INTL` for `KJFK` or `HEATHROW` for `EGLL`
     pub name: String,
     pub ifr_capability: IfrCapability,
@@ -90,7 +89,7 @@ impl From<v2::sql_structs::Airports> for Airport {
                 lat: airport.airport_ref_latitude,
                 long: airport.airport_ref_longitude,
             },
-            airport_type: airport.airport_type,
+            airport_type: Some(airport.airport_type),
             area_code: airport.area_code,
             iata_ident: airport.ata_iata_code,
             city: airport.city,
