@@ -91,7 +91,10 @@ pub fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str
         )
     }
 }
-pub fn fetch_row<T>(stmt: &mut rusqlite::Statement, params: impl rusqlite::Params) -> Result<T, Box<dyn Error>>
+pub fn fetch_row<T>(
+    stmt: &mut rusqlite::Statement,
+    params: impl rusqlite::Params,
+) -> Result<T, Box<dyn Error>>
 where
     T: for<'r> serde::Deserialize<'r>,
 {
@@ -100,7 +103,10 @@ where
     Ok(row)
 }
 
-pub fn fetch_rows<T>(stmt: &mut rusqlite::Statement, params: impl rusqlite::Params) -> Result<Vec<T>, Box<dyn Error>>
+pub fn fetch_rows<T>(
+    stmt: &mut rusqlite::Statement,
+    params: impl rusqlite::Params,
+) -> Result<Vec<T>, Box<dyn Error>>
 where
     T: for<'r> serde::Deserialize<'r>,
 {

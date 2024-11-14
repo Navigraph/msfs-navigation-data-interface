@@ -3,8 +3,7 @@ use serde::Serialize;
 use crate::{
     enums::{IfrCapability, RunwaySurfaceCode},
     math::{Coordinates, Degrees, Feet},
-    sql_structs,
-    v2,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
@@ -105,7 +104,9 @@ impl From<v2::sql_structs::Airports> for Airport {
             transition_altitude: airport.transition_altitude,
             transition_level: airport.transition_level,
             speed_limit: airport.speed_limit,
-            speed_limit_altitude: airport.speed_limit_altitude.and_then(|val| val.parse::<f64>().ok()),
+            speed_limit_altitude: airport
+                .speed_limit_altitude
+                .and_then(|val| val.parse::<f64>().ok()),
             state: airport.state,
             state_2letter: airport.state_2letter,
         }

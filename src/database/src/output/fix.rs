@@ -55,12 +55,14 @@ impl Fix {
     pub fn from_row_data(lat: f64, long: f64, id_raw: String) -> Self {
         let table = id_raw.split('|').nth(0).unwrap();
         let id = id_raw.split('|').nth(1).unwrap();
-        let (airport_identifier, icao_code, ident) =
-            if table.starts_with("tbl_terminal") || table == "tbl_localizers_glideslopes" || table == "tbl_gls" {
-                (Some(&id[0..4]), &id[4..6], &id[6..])
-            } else {
-                (None, &id[0..2], &id[2..])
-            };
+        let (airport_identifier, icao_code, ident) = if table.starts_with("tbl_terminal")
+            || table == "tbl_localizers_glideslopes"
+            || table == "tbl_gls"
+        {
+            (Some(&id[0..4]), &id[4..6], &id[6..])
+        } else {
+            (None, &id[0..2], &id[2..])
+        };
 
         let fix_type = match table {
             "tbl_airports" => FixType::Airport,
@@ -83,7 +85,12 @@ impl Fix {
     }
 
     pub fn from_row_data_v2(
-        lat: f64, long: f64, ident: String, icao_code: String, airport_ident: Option<String>, ref_table: String,
+        lat: f64,
+        long: f64,
+        ident: String,
+        icao_code: String,
+        airport_ident: Option<String>,
+        ref_table: String,
     ) -> Self {
         let fix_type = match ref_table.as_str() {
             "PA" => FixType::Airport,

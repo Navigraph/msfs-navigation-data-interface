@@ -2,8 +2,7 @@ use serde::Serialize;
 
 use crate::{
     math::{Coordinates, KiloHertz, NauticalMiles},
-    sql_structs,
-    v2,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]

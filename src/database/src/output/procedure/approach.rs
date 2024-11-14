@@ -101,7 +101,7 @@ pub(crate) fn map_approaches(data: Vec<sql_structs::Procedures>) -> Vec<Approach
                                                            * an approach will usually be a transition so it can not
                                                            * be used to find the approach type) */
                     })
-                },
+                }
             };
 
             let route_type = row.route_type.clone();
@@ -118,7 +118,8 @@ pub(crate) fn map_approaches(data: Vec<sql_structs::Procedures>) -> Vec<Approach
             match route_type.as_str() {
                 "A" => apply_enroute_transition_leg(
                     leg,
-                    transition_identifier.expect("Transition leg was found without a transition identifier"),
+                    transition_identifier
+                        .expect("Transition leg was found without a transition identifier"),
                     &mut approach.transitions,
                 ),
                 "Z" => approach.missed_legs.push(leg),
@@ -126,11 +127,12 @@ pub(crate) fn map_approaches(data: Vec<sql_structs::Procedures>) -> Vec<Approach
                     if missed_started || x == "Z" {
                         approach.missed_legs.push(leg);
                     } else {
-                        approach.approach_type = serde_json::from_value(serde_json::Value::String(route_type)).unwrap();
+                        approach.approach_type =
+                            serde_json::from_value(serde_json::Value::String(route_type)).unwrap();
 
                         approach.legs.push(leg)
                     }
-                },
+                }
             }
 
             approaches
@@ -161,7 +163,7 @@ pub(crate) fn map_approaches_v2(data: Vec<v2::sql_structs::Procedures>) -> Vec<A
                                                            * an approach will usually be a transition so it can not
                                                            * be used to find the approach type) */
                     })
-                },
+                }
             };
 
             let route_type = row.route_type.clone();
@@ -178,7 +180,8 @@ pub(crate) fn map_approaches_v2(data: Vec<v2::sql_structs::Procedures>) -> Vec<A
             match route_type.as_str() {
                 "A" => apply_enroute_transition_leg(
                     leg,
-                    transition_identifier.expect("Transition leg was found without a transition identifier"),
+                    transition_identifier
+                        .expect("Transition leg was found without a transition identifier"),
                     &mut approach.transitions,
                 ),
                 "Z" => approach.missed_legs.push(leg),
@@ -186,11 +189,12 @@ pub(crate) fn map_approaches_v2(data: Vec<v2::sql_structs::Procedures>) -> Vec<A
                     if missed_started || x == "Z" {
                         approach.missed_legs.push(leg);
                     } else {
-                        approach.approach_type = serde_json::from_value(serde_json::Value::String(route_type)).unwrap();
+                        approach.approach_type =
+                            serde_json::from_value(serde_json::Value::String(route_type)).unwrap();
 
                         approach.legs.push(leg)
                     }
-                },
+                }
             }
 
             approaches

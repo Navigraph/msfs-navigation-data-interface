@@ -2,8 +2,7 @@ use serde::Serialize;
 
 use crate::{
     math::{Coordinates, Degrees, Feet},
-    sql_structs,
-    v2,
+    sql_structs, v2,
 };
 
 #[derive(Serialize)]

@@ -34,14 +34,18 @@ use crate::{
 pub struct NoDatabaseOpen;
 
 impl Display for NoDatabaseOpen {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "No database open") }
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "No database open")
+    }
 }
 
 #[derive(Debug)]
 pub struct DatabaseNotCompat;
 
 impl Display for DatabaseNotCompat {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result { write!(f, "Function not implemented in database type") }
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Function not implemented in database type")
+    }
 }
 
 impl Error for NoDatabaseOpen {}
@@ -106,7 +110,9 @@ pub trait DatabaseTrait {
             let mut map = serde_json::Map::new();
             for (i, name) in names.iter().enumerate() {
                 let value = match row.get_ref(i)? {
-                    ValueRef::Text(text) => Some(Value::String(String::from_utf8(text.into()).unwrap())),
+                    ValueRef::Text(text) => {
+                        Some(Value::String(String::from_utf8(text.into()).unwrap()))
+                    }
                     ValueRef::Integer(int) => Some(Value::Number(Number::from(int))),
                     ValueRef::Real(real) => Some(Value::Number(Number::from_f64(real).unwrap())),
                     ValueRef::Null => None,
@@ -129,83 +135,142 @@ pub trait DatabaseTrait {
 
         Ok(json)
     }
-    fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
-    fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
-    fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
+    fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> {
+        Err(Box::new(DatabaseNotCompat))
+    }
+    fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn Error>> {
+        Err(Box::new(DatabaseNotCompat))
+    }
+    fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
+        Err(Box::new(DatabaseNotCompat))
+    }
     fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
     fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn Error>> { Err(Box::new(DatabaseNotCompat)) }
-    fn get_airways_at_fix(&self, fix_ident: String, fix_icao_code: String) -> Result<Vec<Airway>, Box<dyn Error>> {
+    fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_airports_in_range(&self, center: Coordinates, range: NauticalMiles) -> Result<Vec<Airport>, Box<dyn Error>> {
+    fn get_airways_at_fix(
+        &self,
+        fix_ident: String,
+        fix_icao_code: String,
+    ) -> Result<Vec<Airway>, Box<dyn Error>> {
+        Err(Box::new(DatabaseNotCompat))
+    }
+    fn get_airports_in_range(
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
+    ) -> Result<Vec<Airport>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
     fn get_waypoints_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
     fn get_ndb_navaids_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
     fn get_vhf_navaids_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_airways_in_range(&self, center: Coordinates, range: NauticalMiles) -> Result<Vec<Airway>, Box<dyn Error>> {
+    fn get_airways_in_range(
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
+    ) -> Result<Vec<Airway>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
     fn get_controlled_airspaces_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<ControlledAirspace>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
     fn get_restrictive_airspaces_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<RestrictiveAirspace>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
     fn get_communications_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<Communication>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_runways_at_airport(&self, airport_ident: String) -> Result<Vec<RunwayThreshold>, Box<dyn Error>> {
+    fn get_runways_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<RunwayThreshold>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_departures_at_airport(&self, airport_ident: String) -> Result<Vec<Departure>, Box<dyn Error>> {
+    fn get_departures_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<Departure>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_arrivals_at_airport(&self, airport_ident: String) -> Result<Vec<Arrival>, Box<dyn Error>> {
+    fn get_arrivals_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<Arrival>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_approaches_at_airport(&self, airport_ident: String) -> Result<Vec<Approach>, Box<dyn Error>> {
+    fn get_approaches_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<Approach>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_waypoints_at_airport(&self, airport_ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
+    fn get_waypoints_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_ndb_navaids_at_airport(&self, airport_ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
+    fn get_ndb_navaids_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
     fn get_gates_at_airport(&self, airport_ident: String) -> Result<Vec<Gate>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_communications_at_airport(&self, airport_ident: String) -> Result<Vec<Communication>, Box<dyn Error>> {
+    fn get_communications_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<Communication>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_gls_navaids_at_airport(&self, airport_ident: String) -> Result<Vec<GlsNavaid>, Box<dyn Error>> {
+    fn get_gls_navaids_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<GlsNavaid>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
-    fn get_path_points_at_airport(&self, airport_ident: String) -> Result<Vec<PathPoint>, Box<dyn Error>> {
+    fn get_path_points_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<PathPoint>, Box<dyn Error>> {
         Err(Box::new(DatabaseNotCompat))
     }
 }

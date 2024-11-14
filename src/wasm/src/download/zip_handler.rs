@@ -1,6 +1,5 @@
 use std::{
-    fs,
-    io,
+    fs, io,
     path::{Path, PathBuf},
 };
 
@@ -48,7 +47,10 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
         }
     }
 
-    pub fn unzip_batch(&mut self, batch_size: usize) -> Result<BatchReturn, Box<dyn std::error::Error>> {
+    pub fn unzip_batch(
+        &mut self,
+        batch_size: usize,
+    ) -> Result<BatchReturn, Box<dyn std::error::Error>> {
         if self.zip_archive.is_none() {
             return Err("No zip archive to extract".to_string().into());
         }
@@ -87,7 +89,8 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
 
                 let cycle_uuid = generate_uuid_from_path(cycle_path)?;
 
-                let active_cycle = generate_uuid_from_path(work_dir.join("active").join("cycle.json")).ok();
+                let active_cycle =
+                    generate_uuid_from_path(work_dir.join("active").join("cycle.json")).ok();
 
                 let is_active = active_cycle.is_some_and(|active_uuid| active_uuid == cycle_uuid);
 
@@ -125,14 +128,17 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
             }
 
             if (*file.name()).ends_with('/') {
-                fs::create_dir_all(outpath).map_err(|_| "Failed to create directory".to_string())?;
+                fs::create_dir_all(outpath)
+                    .map_err(|_| "Failed to create directory".to_string())?;
             } else {
                 if let Some(p) = outpath.parent() {
                     if !util::path_exists(p) {
-                        fs::create_dir_all(p).map_err(|_| "Failed to create directory".to_string())?;
+                        fs::create_dir_all(p)
+                            .map_err(|_| "Failed to create directory".to_string())?;
                     }
                 }
-                let mut outfile = fs::File::create(outpath).map_err(|_| "Failed to create file".to_string())?;
+                let mut outfile =
+                    fs::File::create(outpath).map_err(|_| "Failed to create file".to_string())?;
                 io::copy(&mut file, &mut outfile).map_err(|_| "Failed to copy file".to_string())?;
             }
             self.current_file_index += 1;

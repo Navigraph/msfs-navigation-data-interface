@@ -36,8 +36,13 @@ pub struct Path {
 
 impl Path {
     fn from_data(
-        latitude: Option<f64>, longitude: Option<f64>, arc_latitude: Option<f64>, arc_longitude: Option<f64>,
-        arc_distance: Option<f64>, arc_bearing: Option<f64>, boundary_via: String,
+        latitude: Option<f64>,
+        longitude: Option<f64>,
+        arc_latitude: Option<f64>,
+        arc_longitude: Option<f64>,
+        arc_distance: Option<f64>,
+        arc_bearing: Option<f64>,
+        boundary_via: String,
     ) -> Self {
         let boundary_char = boundary_via.chars().nth(0).unwrap();
         match boundary_char {
@@ -104,7 +109,9 @@ pub struct RestrictiveAirspace {
     pub boundary_paths: Vec<Path>,
 }
 
-pub(crate) fn map_controlled_airspaces(data: Vec<sql_structs::ControlledAirspace>) -> Vec<ControlledAirspace> {
+pub(crate) fn map_controlled_airspaces(
+    data: Vec<sql_structs::ControlledAirspace>,
+) -> Vec<ControlledAirspace> {
     let mut airspace_complete = false;
 
     data.into_iter().fold(Vec::new(), |mut airspaces, row| {
@@ -144,7 +151,9 @@ pub(crate) fn map_controlled_airspaces(data: Vec<sql_structs::ControlledAirspace
     })
 }
 
-pub(crate) fn map_restrictive_airspaces(data: Vec<sql_structs::RestrictiveAirspace>) -> Vec<RestrictiveAirspace> {
+pub(crate) fn map_restrictive_airspaces(
+    data: Vec<sql_structs::RestrictiveAirspace>,
+) -> Vec<RestrictiveAirspace> {
     let mut airspace_complete = false;
 
     data.into_iter().fold(Vec::new(), |mut airspaces, row| {

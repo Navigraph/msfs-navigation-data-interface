@@ -5,7 +5,9 @@ mod json_structs;
 mod util;
 
 #[msfs::gauge(name=navigation_data_interface)]
-async fn navigation_data_interface(mut gauge: msfs::Gauge) -> Result<(), Box<dyn std::error::Error>> {
+async fn navigation_data_interface(
+    mut gauge: msfs::Gauge,
+) -> Result<(), Box<dyn std::error::Error>> {
     let hash = env!("GIT_HASH").split_at(7).0;
 
     // Log the current version of the module

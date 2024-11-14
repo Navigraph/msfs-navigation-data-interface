@@ -43,72 +43,76 @@ pub struct Airway {
 /// to way to identify distinct airways other than iterating through them to find an end of airway flag
 pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway> {
     let mut airway_complete = false;
-    data.into_iter().fold(Vec::new(), |mut airways, airway_row| {
-        if airways.is_empty() || airway_complete {
-            airways.push(Airway {
-                ident: airway_row.route_identifier,
-                fixes: Vec::new(),
-                route_type: airway_row.route_type,
-                level: airway_row.flightlevel,
-                direction: airway_row.direction_restriction,
-            });
+    data.into_iter()
+        .fold(Vec::new(), |mut airways, airway_row| {
+            if airways.is_empty() || airway_complete {
+                airways.push(Airway {
+                    ident: airway_row.route_identifier,
+                    fixes: Vec::new(),
+                    route_type: airway_row.route_type,
+                    level: airway_row.flightlevel,
+                    direction: airway_row.direction_restriction,
+                });
 
-            airway_complete = false;
-        }
+                airway_complete = false;
+            }
 
-        let target_airway = airways.last_mut().unwrap();
+            let target_airway = airways.last_mut().unwrap();
 
-        target_airway.fixes.push(Fix::from_row_data(
-            airway_row.waypoint_latitude,
-            airway_row.waypoint_longitude,
-            airway_row.id,
-        ));
+            target_airway.fixes.push(Fix::from_row_data(
+                airway_row.waypoint_latitude,
+                airway_row.waypoint_longitude,
+                airway_row.id,
+            ));
 
-        if airway_row.waypoint_description_code.chars().nth(1) == Some('E') {
-            airway_complete = true;
-        }
+            if airway_row.waypoint_description_code.chars().nth(1) == Some('E') {
+                airway_complete = true;
+            }
 
-        airways
-    })
+            airways
+        })
 }
 
 // TODO: Implement error propigation, need to rewrite logic (maybe out of scope)
 pub(crate) fn map_airways_v2(data: Vec<v2::sql_structs::EnrouteAirways>) -> Vec<Airway> {
     let mut airway_complete = false;
-    data.into_iter().fold(Vec::new(), |mut airways, airway_row| {
-        if airways.is_empty() || airway_complete {
-            airways.push(Airway {
-                ident: airway_row.route_identifier.unwrap_or("ERROR".to_string()),
-                fixes: Vec::new(),
-                route_type: airway_row.route_type.unwrap_or(AirwayRouteType::UndesignatedAtsRoute),
-                level: airway_row.flightlevel.unwrap_or(AirwayLevel::Both),
-                direction: airway_row.direction_restriction,
-            });
+    data.into_iter()
+        .fold(Vec::new(), |mut airways, airway_row| {
+            if airways.is_empty() || airway_complete {
+                airways.push(Airway {
+                    ident: airway_row.route_identifier.unwrap_or("ERROR".to_string()),
+                    fixes: Vec::new(),
+                    route_type: airway_row
+                        .route_type
+                        .unwrap_or(AirwayRouteType::UndesignatedAtsRoute),
+                    level: airway_row.flightlevel.unwrap_or(AirwayLevel::Both),
+                    direction: airway_row.direction_restriction,
+                });
 
-            airway_complete = false;
-        }
+                airway_complete = false;
+            }
 
-        let target_airway = airways.last_mut().unwrap();
+            let target_airway = airways.last_mut().unwrap();
 
-        target_airway.fixes.push(Fix::from_row_data_v2(
-            airway_row.waypoint_latitude.unwrap_or(0.),
-            airway_row.waypoint_longitude.unwrap_or(0.),
-            airway_row.waypoint_identifier.unwrap_or("NULL".to_string()),
-            airway_row.icao_code.unwrap_or("NULL".to_string()),
-            None,
-            airway_row.waypoint_ref_table,
-        ));
+            target_airway.fixes.push(Fix::from_row_data_v2(
+                airway_row.waypoint_latitude.unwrap_or(0.),
+                airway_row.waypoint_longitude.unwrap_or(0.),
+                airway_row.waypoint_identifier.unwrap_or("NULL".to_string()),
+                airway_row.icao_code.unwrap_or("NULL".to_string()),
+                None,
+                airway_row.waypoint_ref_table,
+            ));
 
-        if airway_row
-            .waypoint_description_code
-            .unwrap_or("   ".to_string())
-            .chars()
-            .nth(1)
-            == Some('E')
-        {
-            airway_complete = true;
-        }
+            if airway_row
+                .waypoint_description_code
+                .unwrap_or("   ".to_string())
+                .chars()
+                .nth(1)
+                == Some('E')
+            {
+                airway_complete = true;
+            }
 
-        airways
-    })
+            airways
+        })
 }

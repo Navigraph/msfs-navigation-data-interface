@@ -10,7 +10,9 @@ pub type Minutes = f64;
 pub type KiloHertz = f64;
 pub type MegaHertz = f64;
 
-pub(crate) fn feet_to_meters(metres: Meters) -> Feet { metres / 3.28084 }
+pub(crate) fn feet_to_meters(metres: Meters) -> Feet {
+    metres / 3.28084
+}
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub struct Coordinates {
@@ -74,8 +76,8 @@ impl Coordinates {
         let delta_lat: Radians = (other.lat - self.lat).to_radians();
         let delta_long: Degrees = (other.long - self.long).to_radians();
 
-        let a =
-            (delta_lat / 2.0).sin().powi(2) + self.lat.to_radians().cos().powi(2) * (delta_long / 2.0).sin().powi(2);
+        let a = (delta_lat / 2.0).sin().powi(2)
+            + self.lat.to_radians().cos().powi(2) * (delta_long / 2.0).sin().powi(2);
 
         let c = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
 

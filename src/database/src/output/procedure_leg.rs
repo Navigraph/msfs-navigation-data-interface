@@ -4,8 +4,7 @@ use super::fix::Fix;
 use crate::{
     enums::{AltitudeDescriptor, LegType, SpeedDescriptor, TurnDirection},
     math::{Degrees, Feet, Knots, Minutes, NauticalMiles},
-    sql_structs,
-    v2,
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
@@ -92,11 +91,15 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
             altitude: leg.altitude1.map(|altitude1| AltitudeContstraint {
                 altitude1,
                 altitude2: leg.altitude2,
-                descriptor: leg.altitude_description.unwrap_or(AltitudeDescriptor::AtAlt1),
+                descriptor: leg
+                    .altitude_description
+                    .unwrap_or(AltitudeDescriptor::AtAlt1),
             }),
             speed: leg.speed_limit.map(|speed| SpeedConstraint {
                 value: speed,
-                descriptor: leg.speed_limit_description.unwrap_or(SpeedDescriptor::Mandatory),
+                descriptor: leg
+                    .speed_limit_description
+                    .unwrap_or(SpeedDescriptor::Mandatory),
             }),
             vertical_angle: leg.vertical_angle,
             rnp: leg.rnp,
@@ -156,11 +159,15 @@ impl From<v2::sql_structs::Procedures> for ProcedureLeg {
             altitude: leg.altitude1.map(|altitude1| AltitudeContstraint {
                 altitude1,
                 altitude2: leg.altitude2,
-                descriptor: leg.altitude_description.unwrap_or(AltitudeDescriptor::AtAlt1),
+                descriptor: leg
+                    .altitude_description
+                    .unwrap_or(AltitudeDescriptor::AtAlt1),
             }),
             speed: leg.speed_limit.map(|speed| SpeedConstraint {
                 value: speed,
-                descriptor: leg.speed_limit_description.unwrap_or(SpeedDescriptor::Mandatory),
+                descriptor: leg
+                    .speed_limit_description
+                    .unwrap_or(SpeedDescriptor::Mandatory),
             }),
             vertical_angle: leg.vertical_angle,
             rnp: leg.rnp,
