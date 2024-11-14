@@ -109,9 +109,9 @@ export class NavigraphNavigationDataInterface {
   }
 
   /**
-   * Sets the active package in the database
+   * Deletes a package from the work folder
    *
-   * @param uuid - Sets active package to the uuid
+   * @param uuid - UUID of the package to delete
    * @returns A promise that returns void
    */
   public async delete_package(uuid: string): Promise<void> {
