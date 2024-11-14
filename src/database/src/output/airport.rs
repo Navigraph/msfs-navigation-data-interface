@@ -3,7 +3,8 @@ use serde::Serialize;
 use crate::{
     enums::{IfrCapability, RunwaySurfaceCode},
     math::{Coordinates, Degrees, Feet},
-    sql_structs, v2,
+    sql_structs,
+    v2,
 };
 
 #[serde_with::skip_serializing_none]
