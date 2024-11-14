@@ -24,6 +24,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
 
   private readonly activeDatabase = Subject.create<PackageInfo | null>(null)
   private readonly databases = ArraySubject.create<PackageInfo>([])
+  private readonly resetPackageList = Subject.create<boolean>(false)
   private readonly mainPageIndex = Subject.create(0)
   private readonly selectedDatabaseIndex = Subject.create(0)
   private readonly selectedDatabase = Subject.create<PackageInfo | null>(null)
@@ -65,6 +66,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
                   <Dashboard
                     activeDatabase={this.activeDatabase}
                     databases={this.databases}
+                    reloadPackageList={this.resetPackageList}
                     selectedDatabase={this.selectedDatabase}
                     selectedDatabaseIndex={this.selectedDatabaseIndex}
                     setSelectedDatabase={database => this.selectedDatabase.set(database)}
@@ -111,30 +113,22 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
       this.loadingRef.instance.style.display = "none"
     })
 
-    // this.executeIcaoButtonRef.instance.addEventListener("click", () => {
-    //   console.time("query")
-    //   this.navigationDataInterface
-    //     .get_arrivals_at_airport(this.icaoInputRef.instance.value)
-    //     .then(procedures => {
-    //       console.info(procedures)
-    //       this.outputRef.instance.textContent = JSON.stringify(procedures, null, 2)
-    //     })
-    //     .catch(e => console.error(e))
-    //     .finally(() => console.timeEnd("query"))
-    // })
+    this.resetPackageList.map(async val => {
+      if (!val) {
+        return
+      }
 
-    // this.loadDbRef.instance.addEventListener("click", () => this.handleLoadDbClick())
+      const pkgs = await this.navigationDataInterface.list_available_packages(true)
 
-    // this.executeSqlButtonRef.instance.addEventListener("click", () => {
-    //   console.time("query")
-    //   this.navigationDataInterface
-    //     .execute_sql(this.sqlInputRef.instance.value, [])
-    //     .then(result => {
-    //       console.info(result)
-    //       this.outputRef.instance.textContent = JSON.stringify(result, null, 2)
-    //     })
-    //     .catch(e => console.error(e))
-    //     .finally(() => console.timeEnd("query"))
-    // })
+      const activePackage = await this.navigationDataInterface.get_active_package()
+
+      this.activeDatabase.set(activePackage)
+      this.selectedDatabase.set(activePackage)
+      this.selectedDatabaseIndex.set(pkgs.findIndex(pkg => pkg.uuid === activePackage?.uuid))
+
+      this.databases.set(pkgs)
+
+      this.resetPackageList.set(false)
+    })
   }
 }

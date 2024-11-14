@@ -4,6 +4,7 @@ import {
   FSComponent,
   MappedSubject,
   MappedSubscribable,
+  MutableSubscribable,
   Subscribable,
   SubscribableArray,
   VNode,
@@ -14,6 +15,7 @@ import { Button, InterfaceNavbarItemV2, InterfaceSwitch } from "../../Utils"
 
 interface DashboardProps extends ComponentProps {
   databases: SubscribableArray<PackageInfo>
+  reloadPackageList: MutableSubscribable<boolean>
   selectedDatabase: Subscribable<PackageInfo | null>
   selectedDatabaseIndex: Subscribable<number>
   setSelectedDatabase: (database: PackageInfo) => void
@@ -61,6 +63,42 @@ export class Dashboard extends DisplayComponent<DashboardProps> {
       .set_active_package(selectedDatabase.uuid)
       .then(_res => {})
       .catch(err => console.error(err))
+
+    this.props.reloadPackageList.set(true)
+  }
+
+  private deleteSelected() {
+    const prevSelectedDatabase = this.props.selectedDatabase.get()
+
+    if (prevSelectedDatabase === null || this.props.databases.length <= 1) {
+      return
+    }
+
+    let pkg
+
+    try {
+      if (this.props.selectedDatabaseIndex.get() === 0) {
+        pkg = this.props.databases.get(1)
+      } else {
+        pkg = this.props.databases.get(0)
+      }
+    } catch {
+      return
+    }
+
+    if (this.showActiveDatabase.get()) {
+      this.props.interface
+        .set_active_package(pkg.uuid)
+        .then(_res => {})
+        .catch(err => console.error(err))
+    }
+
+    this.props.interface
+      .delete_package(prevSelectedDatabase.uuid)
+      .then(_res => {})
+      .catch(err => console.error(err))
+
+    this.props.reloadPackageList.set(true)
   }
 
   render(): VNode {
@@ -78,9 +116,17 @@ export class Dashboard extends DisplayComponent<DashboardProps> {
                 />
               </div>
             </div>
-            <Button onClick={() => this.setDatabase()} class="p-4 bg-blue-400 hover:bg-blue-800">
-              <p class="text-2xl">Select Database</p>
-            </Button>
+            <div class="flex flex-row">
+              <Button onClick={() => this.setDatabase()} class="p-4 bg-blue-400 hover:bg-blue-800 flex-grow w-full">
+                <p class="text-2xl">Select Database</p>
+              </Button>
+              <Button
+                onClick={() => this.deleteSelected()}
+                class="bg-red-900 hover:bg-red-500 w-[25%] flex items-center justify-center"
+              >
+                <span class="text-5xl">X</span>
+              </Button>
+            </div>
           </div>
           <ActiveDatabase selectedDatabase={this.props.selectedDatabase} showActiveDatabase={this.showActiveDatabase} />
         </div>
@@ -110,8 +156,12 @@ class ActiveDatabase extends DisplayComponent<ActiveDatabaseProps> {
             [1, <p class="text-3xl mb-4">Selected Database</p>],
           ]}
         />
-        <div class="mt-2 flex-grow bg-ng-background-700">
+        <div class="mt-2 flex-grow bg-ng-background-700 overflow-auto">
           <div class="p-4 flex flex-col align-middle items-start flex-start space-y-6 vertical">
+            <div class="flex flex-row space-x-2">
+              <span class="text-2xl">UUID:</span>
+              <span class="text-xl text-gray-400">{this.props.selectedDatabase.map(s => s?.uuid)}</span>
+            </div>
             <div class="flex flex-col space-y-2">
               <p class="text-3xl">Bundled</p>
               <p class="text-2xl text-gray-400">{this.props.selectedDatabase.map(s => s?.is_bundled)}</p>
