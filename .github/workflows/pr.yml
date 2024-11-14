@@ -62,6 +62,7 @@ jobs:
         run: |
           touch .env
           echo NAVIGATION_DATA_SIGNED_URL=${{ secrets.NAVIGATION_DATA_SIGNED_URL }} >> .env
+          echo NAVIGATION_DATA_SIGNED_URL_V2=${{ secrets.NAVIGATION_DATA_SIGNED_URL_V2 }} >> .env
 
       - name: Build WASM module
         run: npm run build:wasm-workflow
