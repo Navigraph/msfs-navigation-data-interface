@@ -212,6 +212,8 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn setup_packages(&self) -> Result<String, Box<dyn Error>> {
+        self.copy_old_data()?;
+
         self.copy_bundles()?;
 
         // Auto enable already activated cycle
@@ -305,6 +307,41 @@ impl<'a> Dispatcher<'a> {
         }
 
         Ok(true)
+    }
+
+    fn copy_old_data(&self) -> Result<(), Box<dyn Error>> {
+        let old_path = Path::new(consts::NAVIGATION_DATA_OLD_WORK_LOCATION);
+
+        if !util::path_exists(old_path) {
+            return Ok(())
+        }
+
+        let new_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
+
+        let old_uuid = util::generate_uuid_from_path(&old_path.join("cycle.json"))?;
+
+        let package_list = self.list_packages(false, false);
+
+        let uuid_list: Vec<String> = package_list
+            .into_iter()
+            .map(|package| package.uuid)
+            .collect();
+
+        if uuid_list.contains(&old_uuid) {
+            return Ok(())
+        }
+
+        let fix_file = old_path.join("filethatfixeseverything");
+
+        if !util::path_exists(&fix_file) {
+            fs::File::create(fix_file)?;
+        }
+
+        util::copy_files_to_folder(&old_path, &new_path.join(old_uuid))?;
+
+        util::delete_folder_recursively(old_path, None)?;
+
+        Ok(())
     }
 
     fn delete_package(&self, uuid: String) -> io::Result<()> {

@@ -99,6 +99,12 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
                     return Err(format!("Package {} already exists", cycle_uuid).into());
                 }
 
+                let fix_file = temp_dir.join("filethatfixeseverything");
+
+                if !util::path_exists(&fix_file) {
+                    fs::File::create(fix_file)?;
+                }
+
                 fs::rename(
                     temp_dir,
                     Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(&cycle_uuid),

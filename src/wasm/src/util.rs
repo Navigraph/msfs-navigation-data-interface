@@ -35,6 +35,11 @@ pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::
         let path = entry.path();
         let path_type = get_path_type(&path);
 
+        if path.file_name().unwrap() == "" {
+            eprintln!("[NAVIGRAPH]: Bugged entry");
+            continue;
+        }
+
         if path_type == PathType::Directory {
             delete_folder_recursively(&path, batch_size)?;
         } else if path_type == PathType::File {
@@ -82,6 +87,11 @@ pub fn copy_files_to_folder(from: &Path, to: &Path) -> io::Result<()> {
 
         let path = entry.path();
         let path_type = get_path_type(&path);
+
+        if path.file_name().unwrap() == "" {
+            eprintln!("[NAVIGRAPH]: Bugged entry");
+            continue;
+        }
 
         if path_type == PathType::Directory {
             let new_dir = to.join(path.file_name().unwrap());
