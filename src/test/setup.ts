@@ -243,7 +243,7 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
         return 3 // FS_NETWORK_HTTP_REQUEST_STATE_DATA_READY
       }
       return 2 // FS_NETWORK_HTTP_REQUEST_STATE_WAITING_FOR_DATA
-    },
+    }
   },
 }) as unknown as WasmInstance
 
