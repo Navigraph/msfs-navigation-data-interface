@@ -14,3 +14,4 @@ uuid = { version = "1.10.0", features = ["v3"] }
 zip = { version = "0.6.4", default-features = false, features = ["deflate"] }
 enum_dispatch = "0.3.13"
 navigation_database = { path = "../database" }
+libc = { version = "=0.2.164" }
