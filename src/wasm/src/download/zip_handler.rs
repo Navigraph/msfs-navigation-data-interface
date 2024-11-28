@@ -83,7 +83,7 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
 
                 let cycle_path = temp_dir.join("cycle.json");
 
-                if !Path::exists(&cycle_path) {
+                if !util::path_exists(&cycle_path) {
                     return Err("cycle.json not found".into());
                 };
 

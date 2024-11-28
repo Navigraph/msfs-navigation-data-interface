@@ -1,11 +1,4 @@
-use std::{
-    cell::RefCell,
-    error::Error,
-    fs,
-    io::{self},
-    path::Path,
-    rc::Rc,
-};
+use std::{cell::RefCell, error::Error, fs, path::Path, rc::Rc};
 
 use msfs::{commbus::*, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::{
@@ -108,7 +101,7 @@ impl<'a> Dispatcher<'a> {
     fn list_packages(&self, sort: bool, filter: bool) -> Vec<PackageInfo> {
         let navigation_data_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
 
-        if !Path::exists(navigation_data_path) {
+        if !util::path_exists(navigation_data_path) {
             fs::create_dir(navigation_data_path).unwrap();
         }
 
@@ -152,6 +145,12 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn set_package(&self, uuid: String) -> Result<bool, Box<dyn Error>> {
+        let download_status = self.downloader.download_status.borrow().clone();
+
+        if download_status == DownloadStatus::Downloading {
+            return Err("Cannot do operations while downloading!".into());
+        }
+
         let base_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
 
         let active_path = base_path.join("active");
@@ -191,6 +190,8 @@ impl<'a> Dispatcher<'a> {
 
         // Check for format change and updates the used interface
         if package_info.cycle.format != self.database.borrow().get_database_type().as_str() {
+            println!("Changing to: {}", package_info.cycle.format);
+
             let new_format = InterfaceFormat::from(&package_info.cycle.format);
 
             self.database.replace(match new_format {
@@ -281,7 +282,7 @@ impl<'a> Dispatcher<'a> {
 
             let cycle_path = file.path().join("cycle.json");
 
-            if !Path::exists(&cycle_path) {
+            if !path_exists(&cycle_path) {
                 println!(
                     "[NAVIGRAPH]: Can't find cycle.json in {}",
                     file.path().to_string_lossy()
@@ -312,8 +313,8 @@ impl<'a> Dispatcher<'a> {
     fn copy_old_data(&self) -> Result<(), Box<dyn Error>> {
         let old_path = Path::new(consts::NAVIGATION_DATA_OLD_WORK_LOCATION);
 
-        if !util::path_exists(old_path) {
-            return Ok(())
+        if !path_exists(old_path) {
+            return Ok(());
         }
 
         let new_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
@@ -328,7 +329,7 @@ impl<'a> Dispatcher<'a> {
             .collect();
 
         if uuid_list.contains(&old_uuid) {
-            return Ok(())
+            return Ok(());
         }
 
         let fix_file = old_path.join("filethatfixeseverything");
@@ -337,20 +338,35 @@ impl<'a> Dispatcher<'a> {
             fs::File::create(fix_file)?;
         }
 
-        util::copy_files_to_folder(&old_path, &new_path.join(old_uuid))?;
+        util::copy_files_to_folder(old_path, &new_path.join(old_uuid))?;
 
         util::delete_folder_recursively(old_path, None)?;
 
         Ok(())
     }
 
-    fn delete_package(&self, uuid: String) -> io::Result<()> {
+    fn delete_package(&self, uuid: String) -> Result<(), Box<dyn Error>> {
+        let download_status = self.downloader.download_status.borrow().clone();
+
+        if download_status == DownloadStatus::Downloading {
+            return Err("Cannot do operations while downloading!".into());
+        }
+
         let package_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(uuid);
 
-        util::delete_folder_recursively(&package_path, None)
+        match util::delete_folder_recursively(&package_path, None) {
+            Err(err) => Err(err.into()),
+            Ok(_) => Ok(()),
+        }
     }
 
     fn clean_up_packages(&self, count_max: Option<i32>) -> Result<(), Box<dyn Error>> {
+        let download_status = self.downloader.download_status.borrow().clone();
+
+        if download_status == DownloadStatus::Downloading {
+            return Err("Cannot do operations while downloading!".into());
+        }
+
         let bundle_path = Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION);
 
         let mut bundle_ids = vec![];
