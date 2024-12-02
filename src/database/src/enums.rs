@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum IfrCapability {
     #[serde(rename = "Y")]
     Yes,
+    // Never used, for linting
     #[default]
     #[serde(rename = "N")]
     No,
@@ -302,6 +303,7 @@ pub enum CommunicationType {
     Tower,
     #[serde(rename = "UAC")]
     UpperAreaControl,
+    // Never used, for linting
     #[default]
     #[serde(rename = "UNI")]
     Unicom,
@@ -317,6 +319,7 @@ pub enum FrequencyUnits {
     VeryHigh,
     #[serde(rename = "U")]
     UltraHigh,
+    // Never used, for linting
     #[default]
     #[serde(rename = "C")]
     /// Communication channel for 8.33 kHz spacing
@@ -327,6 +330,7 @@ pub enum FrequencyUnits {
 pub enum ApproachTypeIdentifier {
     #[serde(rename = "LPV")]
     LocalizerPerformanceVerticalGuidance,
+    // Never used, for linting
     #[default]
     #[serde(rename = "LP")]
     LocalizerPerformance,
