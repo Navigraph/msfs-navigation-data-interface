@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::math::Coordinates;
 
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub enum FixType {
     #[serde(rename = "A")]
     Airport,
@@ -16,13 +16,12 @@ pub enum FixType {
     IlsNavaid,
     #[serde(rename = "V")]
     VhfNavaid,
-    #[default]
     #[serde(rename = "W")]
     Waypoint,
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Clone, Default)]
+#[derive(Serialize, Clone)]
 /// Represents a fix which was used as a reference in a procedure or an airway.
 ///
 /// Every `Fix` will have a full data entry as one of these structs somewhere in the database with the same `ident` and
