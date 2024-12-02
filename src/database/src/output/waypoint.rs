@@ -53,7 +53,7 @@ impl From<v2::sql_structs::Waypoints> for Waypoint {
             area_code: waypoint.area_code,
             airport_ident: waypoint.region_code,
             // Not entirely sure if this is behaviour we intend
-            icao_code: waypoint.icao_code.unwrap_or_default(),
+            icao_code: waypoint.icao_code.unwrap_or("UNK".to_string()),
             ident: waypoint.waypoint_identifier,
             name: waypoint.waypoint_name,
             location: Coordinates {
