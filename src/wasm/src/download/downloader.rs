@@ -64,11 +64,6 @@ impl NavigationDataDownloader {
                     }
                     self.download_status
                         .replace(DownloadStatus::Downloaded(package_uuid));
-                    // Update the internal state (is this even needed?)
-                    // let res = meta::set_internal_state(InternalState { is_bundled: false });
-                    // if let Err(e) = res {
-                    //     println!("[NAVIGRAPH] Failed to set internal state: {}", e);
-                    // }
                 }
                 Ok(BatchReturn::MoreFilesToDelete) => {
                     self.download_status
@@ -277,7 +272,10 @@ impl NavigationDataDownloader {
     fn report_error(&self, message: String) {
         let borrowed_task = self.task.borrow();
         if (*borrowed_task).is_none() {
-            println!("[NAVIGRAPH] Task is none, but an error has been raised: {}", message);
+            println!(
+                "[NAVIGRAPH] Task is none, but an error has been raised: {}",
+                message
+            );
             return;
         }
         let mut borrowed_task = borrowed_task.as_ref().unwrap().borrow_mut();

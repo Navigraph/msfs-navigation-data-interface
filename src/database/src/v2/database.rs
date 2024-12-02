@@ -95,7 +95,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(DatabaseInfo::from(header_data))
     }
 
-    // v2 Compat
     fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -107,7 +106,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(Airport::from(airport_data))
     }
 
-    // v2 Compat
     fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -128,7 +126,6 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
-    // v2 Compat
     fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -141,7 +138,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(navaids_data.into_iter().map(VhfNavaid::from).collect())
     }
 
-    // v2 Compat
     fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -162,7 +158,6 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
-    // v2 Compat
     fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -175,7 +170,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(map_airways_v2(airways_data))
     }
 
-    // v2 Compat, might have performance issue
     fn get_airways_at_fix(
         &self,
         fix_ident: String,
@@ -203,7 +197,6 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
-    // should work, untested
     fn get_airports_in_range(
         &self,
         center: Coordinates,
@@ -226,7 +219,6 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
-    // should work, untested
     fn get_waypoints_in_range(
         &self,
         center: Coordinates,
@@ -255,7 +247,6 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
-    // should work, untested
     fn get_ndb_navaids_in_range(
         &self,
         center: Coordinates,
@@ -285,7 +276,6 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
-    // should work, untested
     fn get_vhf_navaids_in_range(
         &self,
         center: Coordinates,
@@ -308,7 +298,6 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
-    // should work, untested
     fn get_airways_in_range(
         &self,
         center: Coordinates,
@@ -339,7 +328,6 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
-    // should work, untested
     fn get_controlled_airspaces_in_range(
         &self,
         center: Coordinates,
@@ -368,7 +356,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(map_controlled_airspaces(airspaces_data))
     }
 
-    // should work, untested
     fn get_restrictive_airspaces_in_range(
         &self,
         center: Coordinates,
@@ -398,7 +385,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(map_restrictive_airspaces(airspaces_data))
     }
 
-    // should work, untested
     fn get_communications_in_range(
         &self,
         center: Coordinates,
@@ -429,7 +415,6 @@ impl DatabaseTrait for DatabaseV2 {
             .collect())
     }
 
-    // should work, untested
     fn get_runways_at_airport(
         &self,
         airport_ident: String,
@@ -445,7 +430,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(runways_data.into_iter().map(Into::into).collect())
     }
 
-    // v2 Compat
     fn get_departures_at_airport(
         &self,
         airport_ident: String,
@@ -470,7 +454,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(map_departures_v2(departures_data, runways_data))
     }
 
-    // should work, untested
     fn get_arrivals_at_airport(
         &self,
         airport_ident: String,
@@ -495,7 +478,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(map_arrivals_v2(arrivals_data, runways_data))
     }
 
-    // should work, untested
     fn get_approaches_at_airport(
         &self,
         airport_ident: String,
@@ -513,7 +495,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(map_approaches_v2(approaches_data))
     }
 
-    // should work, untested
     fn get_waypoints_at_airport(
         &self,
         airport_ident: String,
@@ -529,7 +510,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(waypoints_data.into_iter().map(Waypoint::from).collect())
     }
 
-    // should work, untested
     fn get_ndb_navaids_at_airport(
         &self,
         airport_ident: String,
@@ -545,7 +525,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(waypoints_data.into_iter().map(NdbNavaid::from).collect())
     }
 
-    // should work, untested
     fn get_gates_at_airport(&self, airport_ident: String) -> Result<Vec<Gate>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
@@ -559,7 +538,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(gates_data.into_iter().map(Gate::from).collect())
     }
 
-    // should work, untested
     fn get_communications_at_airport(
         &self,
         airport_ident: String,
@@ -578,7 +556,6 @@ impl DatabaseTrait for DatabaseV2 {
         Ok(gates_data.into_iter().map(Communication::from).collect())
     }
 
-    // should work, untested
     fn get_gls_navaids_at_airport(
         &self,
         airport_ident: String,

@@ -117,15 +117,3 @@ where
     }
     Ok(data)
 }
-
-// pub fn map_rows<T>(stmt: &mut rusqlite::Statement, params: [Rc<Vec<Value>>; 9]) -> Result<Vec<T>, Box<dyn Error>>
-// where
-//     T: for<'r> serde::Deserialize<'r>,
-// {
-//     let mut rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
-//     let mut data = Vec::new();
-//     while let Some(row) = rows.next() {
-//         data.push(row.map_err(|e| e.to_string())?);
-//     }
-//     Ok(data)
-// }

@@ -60,5 +60,3 @@ impl DatabaseTrait for DatabaseManual {
         Ok(header_data)
     }
 }
-
-// Empty Connection

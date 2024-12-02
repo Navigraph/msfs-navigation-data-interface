@@ -568,5 +568,3 @@ impl DatabaseTrait for DatabaseV1 {
         Ok(gates_data.into_iter().map(PathPoint::from).collect())
     }
 }
-
-// Empty Connection

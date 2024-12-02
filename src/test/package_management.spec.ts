@@ -5,13 +5,13 @@ const navigationDataInterface = new NavigraphNavigationDataInterface()
 describe("Package Management", () => {
     // This will run once for each test file
     beforeAll(async () => {
-      const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
-        return new Promise((resolve, _reject) => {
-          navDataInterface.onReady(() => resolve())
-        })
-      }
-    
-      await waitForReady(navigationDataInterface)
+        const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
+            return new Promise((resolve, _reject) => {
+                navDataInterface.onReady(() => resolve())
+            })
+        }
+
+        await waitForReady(navigationDataInterface)
     }, 30000)
 
     it("List packages contains bundled items", async () => {
@@ -76,11 +76,11 @@ describe("Package Management", () => {
 
             const newPackages = await navigationDataInterface.list_available_packages();
 
-            for (const newPackage of newPackages)  {
+            for (const newPackage of newPackages) {
                 expect(newPackage.uuid !== item.uuid || item.uuid === activePackage?.uuid).toBe(true)
             }
         }
-        
+
         expect(await navigationDataInterface.list_available_packages()).toHaveLength(activePackage ? 1 : 0);
     }, 30000);
 })
