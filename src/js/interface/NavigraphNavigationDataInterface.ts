@@ -12,13 +12,13 @@ import {
   GlsNavaid,
   NauticalMiles,
   NdbNavaid,
+  PackageInfo,
   PathPoint,
   RestrictiveAirspace,
   RunwayThreshold,
   VhfNavaid,
   Waypoint,
 } from "../types"
-import { NavigationDataStatus } from "../types/meta"
 import {
   Callback,
   CommBusMessage,
@@ -70,10 +70,11 @@ export class NavigraphNavigationDataInterface {
    * Downloads the navigation data from the given URL to the given path
    *
    * @param url - A valid signed URL to download the navigation data from
+   * @param setActive - Sets the newly downloaded package to active when complete
    * @returns A promise that resolves when the download is complete
    */
-  public async download_navigation_data(url: string): Promise<void> {
-    return await this.callWasmFunction("DownloadNavigationData", { url })
+  public async download_navigation_data(url: string, setActive?: boolean): Promise<void> {
+    return await this.callWasmFunction("DownloadNavigationData", { url, setActive })
   }
 
   /**
@@ -87,19 +88,58 @@ export class NavigraphNavigationDataInterface {
   }
 
   /**
-   * Gets the installation status of the navigation data
+   * Lists the available navigation data packages
    *
-   * @returns A promise that resolves with the installation status
+   * @param sort - Sets active package to the uuid
+   * @param filter - Sets active package to the uuid
+   * @returns A promise that resolves with the list of packages
    */
-  public async get_navigation_data_install_status(): Promise<NavigationDataStatus> {
-    return await this.callWasmFunction("GetNavigationDataInstallStatus", {})
+  public async list_available_packages(sort?: boolean, filter?: boolean): Promise<PackageInfo[]> {
+    return await this.callWasmFunction("ListAvailablePackages", { sort, filter })
+  }
+
+  /**
+   * Sets the active package in the database
+   *
+   * @param uuid - Sets active package to the uuid
+   * @returns A promise that returns a bool that shows whether a new package was set or not
+   */
+  public async set_active_package(uuid: string): Promise<boolean> {
+    return await this.callWasmFunction("SetActivePackage", { uuid })
+  }
+
+  /**
+   * Deletes a package from the work folder
+   *
+   * @param uuid - UUID of the package to delete
+   * @returns A promise that returns void
+   */
+  public async delete_package(uuid: string): Promise<void> {
+    return await this.callWasmFunction("DeletePackage", { uuid })
+  }
+
+  /**
+   * Cleans up packages by deleting non activated formats (keeps bundled packages)
+   *
+   * @param count - Amount of packages of current format to leave
+   * @returns A promise that returns void
+   */
+  public async clean_packages(count?: number): Promise<void> {
+    return await this.callWasmFunction("CleanPackages", { count })
+  }
+
+  /**
+   * Gets the package information for the currently active package
+   */
+  public async get_active_package(): Promise<PackageInfo | null> {
+    return await this.callWasmFunction("GetActivePackage", {})
   }
 
   /**
    * Gets information about the currently active database
    */
-  public async get_database_info(ident: string): Promise<DatabaseInfo> {
-    return await this.callWasmFunction("GetDatabaseInfo", { ident })
+  public async get_database_info(): Promise<DatabaseInfo> {
+    return await this.callWasmFunction("GetDatabaseInfo", {})
   }
 
   /**

@@ -8,13 +8,21 @@ pub mod functions {
         DownloadNavigationData,
         /// `SetDownloadOptionsParams`
         SetDownloadOptions,
-        /// `GetNavigationDataInstallStatus`
-        GetNavigationDataInstallStatus,
         /// `ExecuteSQLQueryParams`
         ExecuteSQLQuery,
 
         /// no Params
         GetDatabaseInfo,
+        /// `ListAvailablePackages`
+        ListAvailablePackages,
+        /// `SetActivePackage`
+        SetActivePackage,
+        /// `GetActivePackage`
+        GetActivePackage,
+        /// `DeletePackage`
+        DeletePackage,
+        /// `CleanPackages`
+        CleanPackages,
 
         /// `GetByIdentParams`
         GetAirport,
@@ -137,15 +145,39 @@ pub mod params {
     use navigation_database::math::{Coordinates, NauticalMiles};
 
     #[derive(serde::Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct DownloadNavigationDataParams {
         /// URL to download from
         pub url: String,
+        pub set_active: Option<bool>,
     }
 
     #[derive(serde::Deserialize)]
     pub struct SetDownloadOptionsParams {
         /// Batch size for deleting/extracting files
         pub batch_size: usize,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct ListAvailablePackages {
+        pub sort: Option<bool>,
+        pub filter: Option<bool>,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct SetActivePackage {
+        /// UUID that the package is stored as
+        pub uuid: String,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct DeletePackage {
+        pub uuid: String,
+    }
+
+    #[derive(serde::Deserialize)]
+    pub struct CleanPackages {
+        pub count: Option<i32>,
     }
 
     #[derive(serde::Deserialize)]

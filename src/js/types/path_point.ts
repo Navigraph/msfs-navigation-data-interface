@@ -16,7 +16,7 @@ export interface PathPoint {
   ident: string
   landing_threshold_location: Coordinates
   ltp_ellipsoid_height: Metres
-  fpap_ellipsoid_height: Metres
+  fpap_ellipsoid_height?: Metres
   ltp_orthometric_height?: Metres
   fpap_orthometric_height?: Metres
   glidepath_angle: Degrees

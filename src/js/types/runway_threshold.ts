@@ -7,7 +7,10 @@ export interface RunwayThreshold {
   width: Feet
   true_bearing: Degrees
   magnetic_bearing: Degrees
+  lights?: string
   gradient: Degrees
   location: Coordinates
   elevation: Feet
+  surface?: string
+  traffic_pattern?: string
 }

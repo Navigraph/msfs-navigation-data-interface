@@ -1,15 +1,21 @@
 use serde::Serialize;
 
 use crate::{
-    math::{Coordinates, Degrees, MegaHertz},
-    sql_structs,
+    math::{Coordinates, Degrees, MegaHertz, NauticalMiles},
+    sql_structs, v2,
 };
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 pub struct VhfNavaid {
     /// Represents the geographic region in which this VhfNavaid is located
     pub area_code: String,
+    /// Contenent of the navaid (v2 only)
+    pub continent: Option<String>,
+    /// Country of the navaid (v2 only)
+    pub country: Option<String>,
+    /// 3 Letter identifier describing the local horizontal identifier (v2 only)
+    pub datum_code: Option<String>,
     /// The identifier of the airport that this VhfNavaid is associated with, if any
     pub airport_ident: Option<String>,
     /// The icao prefix of the region that this VhfNavaid is in.
@@ -24,6 +30,10 @@ pub struct VhfNavaid {
     pub location: Coordinates,
     /// The magnetic declination of this `VhfNavaid` in degrees
     pub station_declination: Option<Degrees>,
+    /// Magnetic variation
+    pub magnetic_variation: Option<Degrees>,
+    /// VOR range (v2 only)
+    pub range: Option<NauticalMiles>,
 }
 
 impl From<sql_structs::VhfNavaids> for VhfNavaid {
@@ -40,6 +50,36 @@ impl From<sql_structs::VhfNavaids> for VhfNavaid {
                 long: navaid.vor_longitude,
             },
             station_declination: navaid.station_declination,
+            magnetic_variation: Some(navaid.magnetic_variation),
+            ..Default::default()
+        }
+    }
+}
+
+impl From<v2::sql_structs::VhfNavaids> for VhfNavaid {
+    fn from(navaid: v2::sql_structs::VhfNavaids) -> Self {
+        Self {
+            area_code: navaid.area_code,
+            airport_ident: navaid.airport_identifier,
+            // Not entirely sure if this is behaviour we intend
+            icao_code: navaid.icao_code.unwrap_or_default(),
+            ident: navaid.navaid_identifier,
+            name: navaid.navaid_name,
+            frequency: navaid.navaid_frequency,
+            location: Coordinates {
+                lat: navaid
+                    .navaid_latitude
+                    .unwrap_or(navaid.dme_latitude.unwrap_or_default()),
+                long: navaid
+                    .navaid_longitude
+                    .unwrap_or(navaid.dme_longitude.unwrap_or_default()),
+            },
+            station_declination: navaid.station_declination,
+            continent: navaid.continent,
+            country: navaid.country,
+            magnetic_variation: navaid.magnetic_variation,
+            range: navaid.range,
+            datum_code: navaid.datum_code,
         }
     }
 }

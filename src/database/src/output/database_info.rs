@@ -2,18 +2,37 @@ use std::str::FromStr;
 
 use serde::Serialize;
 
-use crate::sql_structs;
+use crate::{sql_structs, v2};
 
 #[derive(Serialize)]
 pub struct DatabaseInfo {
     /// The AIRAC cycle that this database is.
     ///
     /// e.g. `2313` or `2107`
-    airac_cycle: String,
+    pub airac_cycle: String,
     /// The effective date range of this AIRAC cycle.
-    effective_from_to: (String, String),
+    pub effective_from_to: (String, String),
     /// The effective date range of the previous AIRAC cycle
-    previous_from_to: (String, String),
+    pub previous_from_to: (String, String),
+}
+
+impl DatabaseInfo {
+    pub fn new(
+        cycle: String,
+        effective_from: String,
+        effective_to: String,
+        previous_from: Option<String>,
+        previous_to: Option<String>,
+    ) -> Self {
+        DatabaseInfo {
+            airac_cycle: cycle,
+            effective_from_to: (effective_from, effective_to),
+            previous_from_to: (
+                previous_from.unwrap_or("depricated".to_string()),
+                previous_to.unwrap_or("depricated".to_string()),
+            ),
+        }
+    }
 }
 
 /// Converts a string of the format `DDMMDDMMYY` into a tuple of two strings of the format `DD-MM-YYYY`.
@@ -26,7 +45,11 @@ fn parse_from_to(data: String) -> Result<(String, String), <u32 as FromStr>::Err
     let to_month = data[6..8].parse::<u32>()?;
     let to_year = data[8..10].parse::<u32>()?;
 
-    let from_year = if to_month < from_month { to_year - 1 } else { to_year };
+    let from_year = if to_month < from_month {
+        to_year - 1
+    } else {
+        to_year
+    };
 
     Ok((
         format!("{from_day:0>2}-{from_month:0>2}-20{from_year:0>2}"),
@@ -40,6 +63,16 @@ impl From<sql_structs::Header> for DatabaseInfo {
             airac_cycle: header.current_airac,
             effective_from_to: parse_from_to(header.effective_fromto).unwrap(),
             previous_from_to: parse_from_to(header.previous_fromto).unwrap(),
+        }
+    }
+}
+
+impl From<v2::sql_structs::Header> for DatabaseInfo {
+    fn from(header: v2::sql_structs::Header) -> Self {
+        Self {
+            airac_cycle: header.cycle,
+            effective_from_to: parse_from_to(header.effective_fromto).unwrap(),
+            previous_from_to: ("depricated".to_string(), "depricated".to_string()),
         }
     }
 }

@@ -4,11 +4,14 @@
     "src/js/*"
   ],
   "scripts": {
+    "docker": ".\\scripts\\run_docker_cmd.bat",
     "format": "prettier --write .",
     "lint:js": "eslint \"src/js/**/*.ts\"",
+    "build:gauge": ".\\scripts\\build_gauge.bat",
+    "build:js": ".\\scripts\\build_js.bat",
     "build:wasm": ".\\scripts\\build.bat",
     "build:wasm-workflow": "./scripts/run_docker_cmd.sh ./scripts/build.sh",
-    "jest": "jest --verbose",
+    "jest": "jest --verbose --runInBand",
     "test": ".\\scripts\\test.bat",
     "test-workflow": "./scripts/test.sh"
   },

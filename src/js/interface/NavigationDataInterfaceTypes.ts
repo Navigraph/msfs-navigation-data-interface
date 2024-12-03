@@ -25,7 +25,11 @@ export interface DownloadProgressData {
 export enum NavigraphFunction {
   DownloadNavigationData = "DownloadNavigationData",
   SetDownloadOptions = "SetDownloadOptions",
-  GetNavigationDataInstallStatus = "GetNavigationDataInstallStatus",
+  ListAvailablePackages = "ListPackages",
+  GetActivePackage = "GetActivePackage",
+  SetActivePackage = "SetActivePackage",
+  DeletePackage = "DeletePackage",
+  CleanPackages = "CleanPackages",
   ExecuteSQLQuery = "ExecuteSQLQuery",
   GetDatabaseInfo = "GetDatabaseInfo",
   GetAirport = "GetAirport",

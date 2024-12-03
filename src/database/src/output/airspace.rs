@@ -36,8 +36,13 @@ pub struct Path {
 
 impl Path {
     fn from_data(
-        latitude: Option<f64>, longitude: Option<f64>, arc_latitude: Option<f64>, arc_longitude: Option<f64>,
-        arc_distance: Option<f64>, arc_bearing: Option<f64>, boundary_via: String,
+        latitude: Option<f64>,
+        longitude: Option<f64>,
+        arc_latitude: Option<f64>,
+        arc_longitude: Option<f64>,
+        arc_distance: Option<f64>,
+        arc_bearing: Option<f64>,
+        boundary_via: String,
     ) -> Self {
         let boundary_char = boundary_via.chars().nth(0).unwrap();
         match boundary_char {
@@ -57,7 +62,7 @@ impl Path {
                 arc: None,
                 path_type: match boundary_char {
                     'G' => PathType::GreatCircle,
-                    'H' | _ => PathType::RhumbLine,
+                    _ => PathType::RhumbLine, // Also covers 'H'
                 },
             },
             'L' | 'R' => Self {
@@ -74,7 +79,7 @@ impl Path {
                     bearing: arc_bearing.unwrap(),
                     direction: match boundary_char {
                         'R' => TurnDirection::Right,
-                        'L' | _ => TurnDirection::Left,
+                        _ => TurnDirection::Left, // Also covers 'L'
                     },
                 }),
                 path_type: PathType::Arc,
@@ -104,11 +109,13 @@ pub struct RestrictiveAirspace {
     pub boundary_paths: Vec<Path>,
 }
 
-pub(crate) fn map_controlled_airspaces(data: Vec<sql_structs::ControlledAirspace>) -> Vec<ControlledAirspace> {
+pub(crate) fn map_controlled_airspaces(
+    data: Vec<sql_structs::ControlledAirspace>,
+) -> Vec<ControlledAirspace> {
     let mut airspace_complete = false;
 
     data.into_iter().fold(Vec::new(), |mut airspaces, row| {
-        if airspaces.len() == 0 || airspace_complete {
+        if airspaces.is_empty() || airspace_complete {
             airspaces.push(ControlledAirspace {
                 area_code: row.area_code.clone(),
                 icao_code: row.icao_code.clone(),
@@ -117,7 +124,7 @@ pub(crate) fn map_controlled_airspaces(data: Vec<sql_structs::ControlledAirspace
                     .controlled_airspace_name
                     .clone()
                     .expect("First row of an airspace data must have a name"),
-                airspace_type: row.airspace_type.clone(),
+                airspace_type: row.airspace_type,
                 boundary_paths: Vec::new(),
             });
 
@@ -144,11 +151,13 @@ pub(crate) fn map_controlled_airspaces(data: Vec<sql_structs::ControlledAirspace
     })
 }
 
-pub(crate) fn map_restrictive_airspaces(data: Vec<sql_structs::RestrictiveAirspace>) -> Vec<RestrictiveAirspace> {
+pub(crate) fn map_restrictive_airspaces(
+    data: Vec<sql_structs::RestrictiveAirspace>,
+) -> Vec<RestrictiveAirspace> {
     let mut airspace_complete = false;
 
     data.into_iter().fold(Vec::new(), |mut airspaces, row| {
-        if airspaces.len() == 0 || airspace_complete {
+        if airspaces.is_empty() || airspace_complete {
             airspaces.push(RestrictiveAirspace {
                 area_code: row.area_code.clone(),
                 icao_code: row.icao_code.clone(),
@@ -157,7 +166,7 @@ pub(crate) fn map_restrictive_airspaces(data: Vec<sql_structs::RestrictiveAirspa
                     .restrictive_airspace_name
                     .clone()
                     .expect("First row of an airspace data must have a name"),
-                airspace_type: row.restrictive_type.clone(),
+                airspace_type: row.restrictive_type,
                 boundary_paths: Vec::new(),
             });
 

@@ -3,7 +3,7 @@ import { argv, env } from "node:process"
 import { WASI } from "wasi"
 import { v4 } from "uuid"
 import { NavigraphNavigationDataInterface } from "../js"
-import { WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
+import { DEFAULT_DATA_PATH, WEBASSEMBLY_PATH, WORK_FOLDER_PATH } from "./constants"
 import "dotenv/config"
 import { random } from "./randomBigint"
 
@@ -84,6 +84,10 @@ function malloc(size: number): number {
 function readString(pointer: number): string {
   let lastChar = pointer
 
+  if (memoryBuffer.length == 0) {
+    return ""
+  }
+
   while (memoryBuffer[lastChar] !== 0) {
     lastChar++
   }
@@ -144,6 +148,7 @@ const wasiSystem = new WASI({
   env,
   preopens: {
     "\\work": WORK_FOLDER_PATH,
+    ".\\bundled-navigation-data": DEFAULT_DATA_PATH,
   },
 })
 
@@ -161,7 +166,7 @@ const failedRequests: bigint[] = []
 
 wasmInstance = new WebAssembly.Instance(wasmModule, {
   wasi_snapshot_preview1: Object.assign(wasiSystem.wasiImport, {
-    commit_pages: () => { }, // Empty implementation of this function as it is needed for the WASM module to properly load
+    commit_pages: () => {}, // Empty implementation of this function as it is needed for the WASM module to properly load
   }),
   env: {
     fsCommBusCall: (eventNamePointer: number, args: number) => {
@@ -240,7 +245,7 @@ wasmInstance = new WebAssembly.Instance(wasmModule, {
       return 2 // FS_NETWORK_HTTP_REQUEST_STATE_WAITING_FOR_DATA
     }
   },
-}) as WasmInstance
+}) as unknown as WasmInstance
 
 // Initially assign `memoryBuffer` to a new Uint8Array linked to the exported memoryBuffer
 memoryBuffer = new Uint8Array(wasmInstance.exports.memory.buffer)
@@ -254,9 +259,9 @@ const fsContext = BigInt(0)
 wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.PRE_INSTALL, 0)
 wasmInstance.exports.navigation_data_interface_gauge_callback(fsContext, PanelService.POST_INITIALIZE, 0)
 
-const drawRate = 30
-
 let runLifecycle = true
+
+const drawRate = 30
 
 /**
  * Runs the life cycle loop for the gauge
@@ -282,29 +287,11 @@ async function lifeCycle() {
   }
 }
 
-// This will run once for each test file
-beforeAll(async () => {
-  const navigationDataInterface = new NavigraphNavigationDataInterface()
-
-  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
-
-  if (!downloadUrl) {
-    throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL`")
-  }
-
-  // Utility function to convert onReady to a promise
-  const waitForReady = (navDataInterface: NavigraphNavigationDataInterface): Promise<void> => {
-    return new Promise((resolve, _reject) => {
-      navDataInterface.onReady(() => resolve())
-    })
-  }
-
-  await waitForReady(navigationDataInterface)
-
-  await navigationDataInterface.download_navigation_data(downloadUrl)
-}, 30000)
-
 void lifeCycle()
+
+beforeAll(() => {
+  runLifecycle = true;
+})
 
 // Cancel the lifeCycle after all tests have completed
 afterAll(() => {

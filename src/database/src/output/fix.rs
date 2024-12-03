@@ -1,8 +1,8 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::math::Coordinates;
 
-#[derive(Serialize, Copy, Clone)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug)]
 pub enum FixType {
     #[serde(rename = "A")]
     Airport,
@@ -33,6 +33,7 @@ pub enum FixType {
 /// - `IlsNavaid`
 /// - `VhfNavaid`
 /// - `Waypoint`
+#[derive(Debug)]
 pub struct Fix {
     /// The type of fix
     pub fix_type: FixType,
@@ -41,7 +42,7 @@ pub struct Fix {
     pub ident: String,
     /// The icao prefix of the region that this fix is in.
     pub icao_code: String,
-    /// The geographic location of this fix
+    /// The geographic location of this fix (this does not exist on v2)
     pub location: Coordinates,
     /// The identifier of the airport that this fix is associated with, if any
     pub airport_ident: Option<String>,
@@ -50,15 +51,17 @@ pub struct Fix {
 impl Fix {
     /// Creates a `Fix` by using the latitude and longitude fields, and by parsing the linked id field from a procedure
     /// or airway row.
-    pub fn from_row_data(lat: f64, long: f64, id: String) -> Self {
-        let table = id.split("|").nth(0).unwrap();
-        let id = id.split("|").nth(1).unwrap();
-        let (airport_identifier, icao_code, ident) =
-            if table.starts_with("tbl_terminal") || table == "tbl_localizers_glideslopes" || table == "tbl_gls" {
-                (Some(&id[0..4]), &id[4..6], &id[6..])
-            } else {
-                (None, &id[0..2], &id[2..])
-            };
+    pub fn from_row_data(lat: f64, long: f64, id_raw: String) -> Self {
+        let table = id_raw.split('|').nth(0).unwrap();
+        let id = id_raw.split('|').nth(1).unwrap();
+        let (airport_identifier, icao_code, ident) = if table.starts_with("tbl_terminal")
+            || table == "tbl_localizers_glideslopes"
+            || table == "tbl_gls"
+        {
+            (Some(&id[0..4]), &id[4..6], &id[6..])
+        } else {
+            (None, &id[0..2], &id[2..])
+        };
 
         let fix_type = match table {
             "tbl_airports" => FixType::Airport,
@@ -77,6 +80,34 @@ impl Fix {
             icao_code: icao_code.to_string(),
             location: Coordinates { lat, long },
             airport_ident: airport_identifier.map(|s| s.to_string()),
+        }
+    }
+
+    pub fn from_row_data_v2(
+        lat: f64,
+        long: f64,
+        ident: String,
+        icao_code: String,
+        airport_ident: Option<String>,
+        ref_table: String,
+    ) -> Self {
+        let fix_type = match ref_table.as_str() {
+            "PA" => FixType::Airport,
+            "PN" | "DB" => FixType::NdbNavaid,
+            "PG" => FixType::RunwayThreshold,
+            "PT" => FixType::GlsNavaid,
+            "PI" => FixType::IlsNavaid,
+            "D " => FixType::VhfNavaid,
+            "EA" | "PC" => FixType::Waypoint,
+            x => panic!("Unexpected table: '{x}'"),
+        };
+
+        Self {
+            fix_type,
+            ident,
+            icao_code,
+            location: Coordinates { lat, long },
+            airport_ident,
         }
     }
 }

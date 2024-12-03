@@ -2,6 +2,7 @@
 
 rm -rf test_work
 mkdir test_work
+mkdir test_work/navigraph-test
 
-source "${BASH_SOURCE%/*}/run_docker_cmd.sh" npm ci
-npm run jest
+bash ./scripts/run_docker_cmd.sh npm ci
+bash ./scripts/run_docker_cmd.sh npm run jest

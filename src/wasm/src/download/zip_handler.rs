@@ -1,13 +1,19 @@
-use std::{fs, io, path::PathBuf};
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
 
-use crate::util;
+use crate::{
+    consts,
+    util::{self, generate_uuid_from_path, path_exists},
+};
 
 #[derive(PartialEq, Eq)]
 
 pub enum BatchReturn {
     MoreFilesToDelete,
     MoreFilesToUnzip,
-    Finished,
+    Finished(String),
 }
 
 pub struct ZipFileHandler<R: io::Read + io::Seek> {
@@ -41,7 +47,10 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
         }
     }
 
-    pub fn unzip_batch(&mut self, batch_size: usize) -> Result<BatchReturn, Box<dyn std::error::Error>> {
+    pub fn unzip_batch(
+        &mut self,
+        batch_size: usize,
+    ) -> Result<BatchReturn, Box<dyn std::error::Error>> {
         if self.zip_archive.is_none() {
             return Err("No zip archive to extract".to_string().into());
         }
@@ -67,7 +76,41 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
             if self.current_file_index >= self.zip_file_count {
                 // Done extracting, drop the zip archive
                 self.zip_archive = None;
-                return Ok(BatchReturn::Finished);
+
+                let work_dir = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
+
+                let temp_dir = &work_dir.join("temp");
+
+                let cycle_path = temp_dir.join("cycle.json");
+
+                if !util::path_exists(&cycle_path) {
+                    return Err("cycle.json not found".into());
+                };
+
+                let cycle_uuid = generate_uuid_from_path(cycle_path)?;
+
+                let active_cycle =
+                    generate_uuid_from_path(work_dir.join("active").join("cycle.json")).ok();
+
+                let is_active = active_cycle.is_some_and(|active_uuid| active_uuid == cycle_uuid);
+
+                if path_exists(&work_dir.join(&cycle_uuid)) || is_active {
+                    util::delete_folder_recursively(temp_dir, None)?;
+                    return Err(format!("Package {} already exists", cycle_uuid).into());
+                }
+
+                let fix_file = temp_dir.join("filethatfixeseverything");
+
+                if !util::path_exists(&fix_file) {
+                    fs::File::create(fix_file)?;
+                }
+
+                fs::rename(
+                    temp_dir,
+                    Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join(&cycle_uuid),
+                )?;
+
+                return Ok(BatchReturn::Finished(cycle_uuid));
             }
 
             let mut file = zip_archive.by_index(self.current_file_index)?;
@@ -91,14 +134,17 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
             }
 
             if (*file.name()).ends_with('/') {
-                fs::create_dir_all(outpath).map_err(|_| "Failed to create directory".to_string())?;
+                fs::create_dir_all(outpath)
+                    .map_err(|_| "Failed to create directory".to_string())?;
             } else {
                 if let Some(p) = outpath.parent() {
                     if !util::path_exists(p) {
-                        fs::create_dir_all(p).map_err(|_| "Failed to create directory".to_string())?;
+                        fs::create_dir_all(p)
+                            .map_err(|_| "Failed to create directory".to_string())?;
                     }
                 }
-                let mut outfile = fs::File::create(outpath).map_err(|_| "Failed to create file".to_string())?;
+                let mut outfile =
+                    fs::File::create(outpath).map_err(|_| "Failed to create file".to_string())?;
                 io::copy(&mut file, &mut outfile).map_err(|_| "Failed to copy file".to_string())?;
             }
             self.current_file_index += 1;

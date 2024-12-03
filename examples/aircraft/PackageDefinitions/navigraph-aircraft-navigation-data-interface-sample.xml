@@ -27,14 +27,6 @@
 			<AssetDir>PackageSources\Data\</AssetDir>
 			<OutputDir>Data\</OutputDir>
 		</AssetGroup>
-		<AssetGroup Name="NavigationData">
-			<Type>Copy</Type>
-			<Flags>
-				<FSXCompatibility>false</FSXCompatibility>
-			</Flags>
-			<AssetDir>PackageSources\NavigationData\</AssetDir>
-			<OutputDir>NavigationData\</OutputDir>
-		</AssetGroup>
 		<AssetGroup Name="SimObject">
 			<Type>SimObject</Type>
 			<Flags>
@@ -42,6 +34,14 @@
 			</Flags>
 			<AssetDir>PackageSources\SimObjects\Airplanes\Navigraph_Navigation_Data_Interface_Aircraft\</AssetDir>
 			<OutputDir>SimObjects\Airplanes\Navigraph_Navigation_Data_Interface_Aircraft\</OutputDir>
+		</AssetGroup>
+		<AssetGroup Name="bundled-navigation-data">
+			<Type>Copy</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageSources\bundled-navigation-data\</AssetDir>
+			<OutputDir>bundled-navigation-data\</OutputDir>
 		</AssetGroup>
 		<AssetGroup Name="html_ui">
 			<Type>Copy</Type>

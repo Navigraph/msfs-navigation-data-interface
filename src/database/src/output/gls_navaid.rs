@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::{
     math::{Coordinates, Degrees, Feet},
-    sql_structs,
+    sql_structs, v2,
 };
 
 #[derive(Serialize)]
@@ -51,6 +51,28 @@ impl From<sql_structs::Gls> for GlsNavaid {
             },
             approach_angle: gls.gls_approach_slope,
             magnetic_variation: gls.magentic_variation,
+            elevation: gls.station_elevation,
+        }
+    }
+}
+
+impl From<v2::sql_structs::Gls> for GlsNavaid {
+    fn from(gls: v2::sql_structs::Gls) -> Self {
+        Self {
+            area_code: gls.area_code,
+            airport_ident: gls.airport_identifier,
+            icao_code: gls.icao_code,
+            ident: gls.gls_ref_path_identifier,
+            category: gls.gls_category,
+            runway_ident: gls.runway_identifier,
+            channel: gls.gls_channel,
+            magnetic_approach_bearing: gls.gls_approach_bearing,
+            location: Coordinates {
+                lat: gls.station_latitude,
+                long: gls.station_longitude,
+            },
+            approach_angle: gls.gls_approach_slope,
+            magnetic_variation: gls.magnetic_variation,
             elevation: gls.station_elevation,
         }
     }

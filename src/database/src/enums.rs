@@ -1,9 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub enum IfrCapability {
     #[serde(rename = "Y")]
     Yes,
+    // Never used, for linting
+    #[default]
     #[serde(rename = "N")]
     No,
 }
@@ -217,7 +219,7 @@ pub enum RestrictiveAirspaceType {
     Unknown,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub enum CommunicationType {
     #[serde(rename = "ACC")]
     AreaControlCenter,
@@ -301,13 +303,15 @@ pub enum CommunicationType {
     Tower,
     #[serde(rename = "UAC")]
     UpperAreaControl,
+    // Never used, for linting
+    #[default]
     #[serde(rename = "UNI")]
     Unicom,
     #[serde(rename = "VOL")]
     Volmet,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub enum FrequencyUnits {
     #[serde(rename = "H")]
     High,
@@ -315,15 +319,80 @@ pub enum FrequencyUnits {
     VeryHigh,
     #[serde(rename = "U")]
     UltraHigh,
+    // Never used, for linting
+    #[default]
     #[serde(rename = "C")]
     /// Communication channel for 8.33 kHz spacing
     CommChannel,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, Default)]
 pub enum ApproachTypeIdentifier {
     #[serde(rename = "LPV")]
     LocalizerPerformanceVerticalGuidance,
+    // Never used, for linting
+    #[default]
     #[serde(rename = "LP")]
     LocalizerPerformance,
+}
+
+#[derive(Debug)]
+pub enum InterfaceFormat {
+    DFDv1,
+    DFDv2,
+    Custom,
+}
+
+impl InterfaceFormat {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::DFDv1 => "dfd",
+            Self::DFDv2 => "dfdv2",
+            Self::Custom => "custom",
+        }
+    }
+}
+
+impl From<&String> for InterfaceFormat {
+    fn from(value: &String) -> Self {
+        match value.as_str() {
+            "dfd" => Self::DFDv1,
+            "dfdv2" => Self::DFDv2,
+            _ => Self::Custom,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum TrafficPattern {
+    #[serde(rename = "L")]
+    Left,
+    #[serde(rename = "R")]
+    Right,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum RunwayLights {
+    #[serde(rename = "Y")]
+    Yes,
+    #[serde(rename = "N")]
+    No,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum RunwaySurface {
+    #[serde(rename = "ASPH")]
+    Asphalt,
+    #[serde(rename = "TURF")]
+    Turf,
+    #[serde(rename = "GRVL")]
+    Gravel,
+    #[serde(rename = "CONC")]
+    Concrete,
+    #[serde(rename = "WATE")]
+    Water,
+    #[serde(rename = "BITU")]
+    Bitumen,
+    #[serde(rename = "UNPV")]
+    Unpaved,
 }
