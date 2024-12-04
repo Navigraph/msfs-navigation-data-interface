@@ -101,6 +101,8 @@ impl<'a> Dispatcher<'a> {
     fn list_packages(&self, sort: bool, filter: bool) -> Vec<PackageInfo> {
         let navigation_data_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
 
+        println!("What");
+
         if !util::path_exists(navigation_data_path) {
             fs::create_dir(navigation_data_path).unwrap();
         }
@@ -110,15 +112,21 @@ impl<'a> Dispatcher<'a> {
         let mut packages = vec![];
 
         for file in navigation_data_folder.unwrap() {
+            println!("Where");
+
             let Ok(file) = file else {
                 continue;
             };
+
+            println!("does");
 
             match self.get_package_info(&file.path()) {
                 Ok(package_info) => packages.push(package_info),
                 Err(err) => eprintln!("{:?}", err),
             }
         }
+
+        println!("it");
 
         if filter {
             let interface_type = self
@@ -213,10 +221,13 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn setup_packages(&self) -> Result<String, Box<dyn Error>> {
+        println!("here 1");
         self.copy_old_data()?;
 
+        println!("here 2");
         self.copy_bundles()?;
 
+        println!("here 3");
         // Auto enable already activated cycle
         let work_path = Path::new(consts::NAVIGATION_DATA_WORK_LOCATION);
         let active_path = work_path.join("active");
@@ -276,9 +287,13 @@ impl<'a> Dispatcher<'a> {
         };
 
         for file in bundled_dir {
+            println!("got here");
             let Ok(file) = file else {
                 continue;
             };
+
+            println!("got here x2");
+            println!("{}", file.path().to_string_lossy());
 
             let cycle_path = file.path().join("cycle.json");
 

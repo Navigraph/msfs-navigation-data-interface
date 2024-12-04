@@ -19,6 +19,8 @@ async fn navigation_data_interface(
     let mut dispatcher: dispatcher::Dispatcher<'_> =
         dispatcher::Dispatcher::new(navigation_database::enums::InterfaceFormat::DFDv2);
     while let Some(event) = gauge.next_event().await {
+        println!("Event: {:?}", event);
+
         dispatcher.on_msfs_event(event);
     }
 
