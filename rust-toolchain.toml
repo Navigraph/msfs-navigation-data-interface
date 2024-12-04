@@ -1,4 +1,4 @@
 [toolchain]
 profile = "default"
-channel = "1.79.0"
-targets = ["wasm32-wasi"]
+channel = "1.83"
+targets = ["wasm32-wasip1"]

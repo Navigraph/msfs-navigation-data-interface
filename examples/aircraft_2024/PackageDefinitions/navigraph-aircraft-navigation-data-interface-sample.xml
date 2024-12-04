@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AssetPackage Version="0.1.0">
+	<ItemSettings>
+		<ContentType>AIRCRAFT</ContentType>
+		<Title>Navigraph Navigation Data Interface Sample Aircraft</Title>
+		<Manufacturer>My Manufacturer</Manufacturer>
+		<Creator>Navigraph</Creator>
+	</ItemSettings>
+	<Flags>
+		<VisibleInStore>true</VisibleInStore>
+		<CanBeReferenced>true</CanBeReferenced>
+	</Flags>
+	<AssetGroups>
+		<AssetGroup Name="ContentInfo">
+			<Type Version="0">Copy</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageDefinitions\navigraph-aircraft-navigation-data-interface-sample\ContentInfo\</AssetDir>
+			<OutputDir>ContentInfo\navigraph-aircraft-navigation-data-interface-sample\</OutputDir>
+		</AssetGroup>
+		<AssetGroup Name="Data">
+			<Type Version="0">Copy</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageSources\Data\</AssetDir>
+			<OutputDir>Data\</OutputDir>
+		</AssetGroup>
+		<AssetGroup Name="SimObject">
+			<Type Version="1">SimObject</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageSources\SimObjects\Airplanes\Navigraph_Navigation_Data_Interface_Aircraft\</AssetDir>
+			<OutputDir>SimObjects\Airplanes\Navigraph_Navigation_Data_Interface_Aircraft\</OutputDir>
+		</AssetGroup>
+		<AssetGroup Name="bundled-navigation-data">
+			<Type Version="0">Copy</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageSources\bundled-navigation-data\</AssetDir>
+			<OutputDir>bundled-navigation-data\</OutputDir>
+		</AssetGroup>
+		<AssetGroup Name="html_ui">
+			<Type Version="0">Copy</Type>
+			<Flags>
+				<FSXCompatibility>false</FSXCompatibility>
+			</Flags>
+			<AssetDir>PackageSources\html_ui\</AssetDir>
+			<OutputDir>html_ui\</OutputDir>
+		</AssetGroup>
+	</AssetGroups>
+</AssetPackage>
+

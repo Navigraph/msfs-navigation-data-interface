@@ -8,4 +8,4 @@ lto = true
 strip = true
 
 [patch.crates-io]
-rusqlite = { git = "https://github.com/navigraph/rusqlite", rev = "7921774" }
+rusqlite = { git = "https://github.com/navigraph/rusqlite", rev = "f716d5c" }
