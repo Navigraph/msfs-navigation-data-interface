@@ -233,12 +233,13 @@ impl NavigationDataDownloader {
 
         // Clear our task
         self.task.replace(None);
+
+        // Needs to be here so if download fails, you can try again
+        self.download_status.replace(DownloadStatus::NoDownload);
     }
 
     /// This must be called to clear the download status and reset the download
     pub fn acknowledge_download(&self) {
-        self.download_status.replace(DownloadStatus::NoDownload);
-
         self.reset_download();
     }
 
