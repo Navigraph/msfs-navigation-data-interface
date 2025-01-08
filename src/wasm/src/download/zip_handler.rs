@@ -48,6 +48,7 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
 
         // If we haven't cleaned the destination folder yet, do so now
         if !self.cleaned_destination {
+            println!("[NAVIGRAPH] Cleaning Destination");
             util::delete_folder_recursively(&self.path_buf, Some(batch_size))?;
             if !util::path_exists(&self.path_buf) {
                 fs::create_dir_all(&self.path_buf)?;
@@ -56,6 +57,8 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
             }
             self.deleted += batch_size;
             return Ok(BatchReturn::MoreFilesToDelete);
+        } else {
+            println!("[NAVIGRAPH] Done Cleaning");
         }
 
         let zip_archive = self
