@@ -199,6 +199,16 @@ export class TestPage extends DisplayComponent<TestPageProps> {
       name: "GetPathPointsAtAirport",
       functionCallback: input => this.props.interface.get_path_points_at_airport(input ?? ""),
     },
+    {
+      index: 26,
+      arguments: ["sql: string", "params: string[]"],
+      name: "ExecuteSQLQuery",
+      functionCallback: (input, inputAlt) =>
+        this.props.interface.execute_sql(
+          input ?? "",
+          inputAlt?.replace("[", "").replace("]", "").replace('"', "").split(",") ?? [],
+        ),
+    },
   ]
 
   private readonly input1 = Subject.create("")
