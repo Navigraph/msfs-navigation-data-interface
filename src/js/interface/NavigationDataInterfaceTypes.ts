@@ -1,3 +1,5 @@
+export * from "../types/meta"
+
 export interface CommBusMessage {
   id: string
   resolve: (value?: unknown) => void

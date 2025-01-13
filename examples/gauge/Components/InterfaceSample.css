@@ -45,11 +45,23 @@
   padding: 2rem;
 }
 
+.horizontal-no-pad {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: flex-start;
+}
+
 .vertical {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+.scrollable {
+  overflow: scroll;
+  height: 400px;
 }
 
 .text-field {
