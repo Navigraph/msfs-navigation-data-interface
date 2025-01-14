@@ -33,6 +33,7 @@ use crate::{
     sql_structs, util,
 };
 
+#[derive(Default)]
 pub struct Database {
     database: Option<Connection>,
     pub path: Option<String>,
@@ -51,10 +52,7 @@ impl Error for NoDatabaseOpen {}
 
 impl Database {
     pub fn new() -> Self {
-        Database {
-            database: None,
-            path: None,
-        }
+        Default::default()
     }
 
     fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {

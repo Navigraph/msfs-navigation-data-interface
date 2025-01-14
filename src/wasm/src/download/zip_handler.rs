@@ -73,7 +73,7 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
             if self.current_file_index >= self.zip_file_count {
                 let fix_file = &self.path_buf.join("foo.txt");
 
-                if !util::path_exists(&fix_file) {
+                if !util::path_exists(fix_file) {
                     fs::File::create(fix_file)?;
                 }
 

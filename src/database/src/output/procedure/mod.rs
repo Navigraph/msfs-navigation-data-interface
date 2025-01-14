@@ -26,7 +26,7 @@ fn mut_find_or_insert<T, P: FnMut(&T) -> bool>(vec: &mut Vec<T>, condition: P, v
 }
 
 /// Applies the neccesary logic for adding a leg with an enroute transition route type into a procedure
-pub(self) fn apply_enroute_transition_leg(
+fn apply_enroute_transition_leg(
     leg: ProcedureLeg,
     transition_identifier: String,
     enroute_transitions: &mut Vec<Transition>,
@@ -44,12 +44,12 @@ pub(self) fn apply_enroute_transition_leg(
 }
 
 /// Applies the neccesary logic for adding a leg with a common leg route type into a procedure
-pub(self) fn apply_common_leg(
+fn apply_common_leg(
     leg: ProcedureLeg,
     transition_identifier: Option<String>,
     runway_transitions: &mut Vec<Transition>,
     common_legs: &mut Vec<ProcedureLeg>,
-    runways: &Vec<Runways>,
+    runways: &[Runways],
 ) {
     // Common legs can still have a transition identifier, meaning that this procedure is only for
     // specific runways, but with the same legs for each runway.
@@ -113,11 +113,11 @@ pub(self) fn apply_common_leg(
 }
 
 /// Applies the neccesary logic for adding a leg with a runway transition route type into a procedure
-pub(self) fn apply_runway_transition_leg(
+fn apply_runway_transition_leg(
     leg: ProcedureLeg,
     transition_identifier: String,
     runway_transitions: &mut Vec<Transition>,
-    runways: &Vec<Runways>,
+    runways: &[Runways],
 ) {
     // If transition identifier ends in B, it means this transition serves all runways with the same
     // number. To make this easier to use in an FMS, we duplicate the transitions for all runways which

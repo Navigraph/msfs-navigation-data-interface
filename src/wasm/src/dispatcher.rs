@@ -141,7 +141,8 @@ impl<'a> Dispatcher<'a> {
         };
 
         // Determine if we are bundled ONLY and the bundled cycle is newer than the installed (old bundled) cycle
-        let bundled_updated = if is_bundled.is_some() && is_bundled.unwrap() {
+        let bundled_updated = if is_bundled.is_some_and(|x| x) {
+            // Clippy yells but this isn't good to switch until if-let chaining is implemented (Rust 2024)
             if installed_cycle.is_some() && bundled_cycle.is_some() {
                 bundled_cycle.unwrap() > installed_cycle.unwrap()
             } else {
@@ -157,8 +158,8 @@ impl<'a> Dispatcher<'a> {
         // If we are bundled and the installed cycle is older than the bundled cycle, we need to copy the bundled database to the work location. Or if we haven't installed anything yet, we need to copy the bundled database to the work location
         if bundled_updated || need_to_copy {
             match util::copy_files_to_folder(
-                &Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION),
-                &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION),
+                Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION),
+                Path::new(consts::NAVIGATION_DATA_WORK_LOCATION),
             ) {
                 Ok(_) => {
                     // Set the internal state to bundled
@@ -178,7 +179,7 @@ impl<'a> Dispatcher<'a> {
         }
 
         // Finally, set the active database
-        if path_exists(&Path::new(consts::NAVIGATION_DATA_WORK_LOCATION)) {
+        if path_exists(Path::new(consts::NAVIGATION_DATA_WORK_LOCATION)) {
             match self
                 .database
                 .set_active_database(consts::NAVIGATION_DATA_WORK_LOCATION.to_owned())
@@ -196,16 +197,13 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn on_download_finish(&mut self) {
-        match navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_WORK_LOCATION) {
-            Ok(path) => {
-                match self.database.set_active_database(path) {
-                    Ok(_) => {}
-                    Err(e) => {
-                        println!("[NAVIGRAPH] Failed to set active database: {}", e);
-                    }
-                };
-            }
-            Err(_) => {}
+        if let Ok(path) = navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_WORK_LOCATION) {
+            match self.database.set_active_database(path) {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("[NAVIGRAPH] Failed to set active database: {}", e);
+                }
+            };
         }
     }
 

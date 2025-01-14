@@ -62,7 +62,7 @@ impl Path {
                 arc: None,
                 path_type: match boundary_char {
                     'G' => PathType::GreatCircle,
-                    'H' | _ => PathType::RhumbLine,
+                    _ => PathType::RhumbLine,
                 },
             },
             'L' | 'R' => Self {
@@ -79,7 +79,7 @@ impl Path {
                     bearing: arc_bearing.unwrap(),
                     direction: match boundary_char {
                         'R' => TurnDirection::Right,
-                        'L' | _ => TurnDirection::Left,
+                        _ => TurnDirection::Left,
                     },
                 }),
                 path_type: PathType::Arc,
@@ -115,7 +115,7 @@ pub(crate) fn map_controlled_airspaces(
     let mut airspace_complete = false;
 
     data.into_iter().fold(Vec::new(), |mut airspaces, row| {
-        if airspaces.len() == 0 || airspace_complete {
+        if airspaces.is_empty() || airspace_complete {
             airspaces.push(ControlledAirspace {
                 area_code: row.area_code.clone(),
                 icao_code: row.icao_code.clone(),
@@ -124,7 +124,7 @@ pub(crate) fn map_controlled_airspaces(
                     .controlled_airspace_name
                     .clone()
                     .expect("First row of an airspace data must have a name"),
-                airspace_type: row.airspace_type.clone(),
+                airspace_type: row.airspace_type,
                 boundary_paths: Vec::new(),
             });
 
@@ -157,7 +157,7 @@ pub(crate) fn map_restrictive_airspaces(
     let mut airspace_complete = false;
 
     data.into_iter().fold(Vec::new(), |mut airspaces, row| {
-        if airspaces.len() == 0 || airspace_complete {
+        if airspaces.is_empty() || airspace_complete {
             airspaces.push(RestrictiveAirspace {
                 area_code: row.area_code.clone(),
                 icao_code: row.icao_code.clone(),
@@ -166,7 +166,7 @@ pub(crate) fn map_restrictive_airspaces(
                     .restrictive_airspace_name
                     .clone()
                     .expect("First row of an airspace data must have a name"),
-                airspace_type: row.restrictive_type.clone(),
+                airspace_type: row.restrictive_type,
                 boundary_paths: Vec::new(),
             });
 

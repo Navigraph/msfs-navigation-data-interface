@@ -17,17 +17,14 @@ pub enum PathType {
 /// We aren't able to get file metadata in the sim so we can't use some of the standard library file system functions
 /// (like is_dir, exists, and some others)
 pub fn get_path_type(path: &Path) -> PathType {
-    match fs::read_dir(path) {
-        Ok(mut dir_res) => {
-            let next = dir_res.next();
+    if let Ok(mut dir_res) = fs::read_dir(path) {
+        let next = dir_res.next();
 
-            if let Some(result) = next {
-                if result.is_ok() {
-                    return PathType::Directory;
-                }
+        if let Some(result) = next {
+            if result.is_ok() {
+                return PathType::Directory;
             }
         }
-        Err(_) => {}
     };
 
     let file_res = fs::File::open(path);
@@ -39,7 +36,7 @@ pub fn get_path_type(path: &Path) -> PathType {
 }
 
 pub fn find_sqlite_file(path: &str) -> Result<String, Box<dyn Error>> {
-    if get_path_type(&Path::new(path)) != PathType::Directory {
+    if get_path_type(Path::new(path)) != PathType::Directory {
         return Err("Path is not a directory".into());
     }
 
@@ -50,7 +47,7 @@ pub fn find_sqlite_file(path: &str) -> Result<String, Box<dyn Error>> {
         if get_path_type(&path) == PathType::File {
             let path = path.to_str().ok_or("Invalid path")?;
 
-            let extension = path.split(".").last();
+            let extension = path.split('.').last();
 
             if extension == Some("s3db") {
                 return Ok(path.to_string());
@@ -61,7 +58,7 @@ pub fn find_sqlite_file(path: &str) -> Result<String, Box<dyn Error>> {
 }
 
 pub fn is_sqlite_file(path: &str) -> Result<bool, Box<dyn Error>> {
-    if get_path_type(&Path::new(path)) != PathType::File {
+    if get_path_type(Path::new(path)) != PathType::File {
         return Ok(false);
     }
 
@@ -90,9 +87,9 @@ pub fn fetch_rows<T>(
 where
     T: for<'r> serde::Deserialize<'r>,
 {
-    let mut rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
+    let rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
     let mut data = Vec::new();
-    while let Some(row) = rows.next() {
+    for row in rows {
         data.push(row.map_err(|e| e.to_string())?);
     }
     Ok(data)
