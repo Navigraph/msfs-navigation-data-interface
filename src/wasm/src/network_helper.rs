@@ -12,9 +12,13 @@ pub struct NetworkHelper {
 
 impl NetworkHelper {
     pub fn make_request(
-        url: &str, method: Method, headers: Option<Vec<&str>>, data: Option<&mut [u8]>,
+        url: &str,
+        method: Method,
+        headers: Option<Vec<&str>>,
+        data: Option<&mut [u8]>,
     ) -> Result<Self, Box<dyn Error>> {
-        let mut builder = NetworkRequestBuilder::new(url).ok_or("Failed to create NetworkRequestBuilder")?;
+        let mut builder =
+            NetworkRequestBuilder::new(url).ok_or("Failed to create NetworkRequestBuilder")?;
 
         // Add headers
         if let Some(headers) = headers {

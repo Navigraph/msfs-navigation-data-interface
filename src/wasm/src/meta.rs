@@ -90,20 +90,28 @@ pub fn set_internal_state(internal_state: InternalState) -> Result<(), Box<dyn E
 }
 
 pub fn start_network_request(task: Rc<RefCell<Task>>) {
-    let request = NetworkHelper::make_request("https://navdata.api.navigraph.com/info", Method::Get, None, None);
+    let request = NetworkHelper::make_request(
+        "https://navdata.api.navigraph.com/info",
+        Method::Get,
+        None,
+        None,
+    );
     let request = match request {
         Ok(request) => request,
         Err(e) => {
             task.borrow_mut().status = TaskStatus::Failure(e.to_string());
             return;
-        },
+        }
     };
     task.borrow_mut().associated_network_request = Some(request);
 }
 
-pub fn get_installed_cycle_from_json(path: &Path) -> Result<InstalledNavigationDataCycleInfo, Box<dyn Error>> {
+pub fn get_installed_cycle_from_json(
+    path: &Path,
+) -> Result<InstalledNavigationDataCycleInfo, Box<dyn Error>> {
     let json_file = std::fs::File::open(path)?;
-    let installed_cycle_info: InstalledNavigationDataCycleInfo = serde_json::from_reader(json_file)?;
+    let installed_cycle_info: InstalledNavigationDataCycleInfo =
+        serde_json::from_reader(json_file)?;
 
     Ok(installed_cycle_info)
 }
@@ -118,16 +126,17 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
                     Err(e) => {
                         task.borrow_mut().status = TaskStatus::Failure(e.to_string());
                         return;
-                    },
+                    }
                 }
             } else {
                 return;
             }
-        },
+        }
         None => {
-            task.borrow_mut().status = TaskStatus::Failure("No associated network request".to_string());
+            task.borrow_mut().status =
+                TaskStatus::Failure("No associated network request".to_string());
             return;
-        },
+        }
     };
 
     let response_struct: CurrentCycleResponse = match serde_json::from_slice(&response_bytes) {
@@ -135,7 +144,7 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
         Err(e) => {
             task.borrow_mut().status = TaskStatus::Failure(e.to_string());
             return;
-        },
+        }
     };
 
     // figure out install status
@@ -168,19 +177,20 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
                 Err(e) => {
                     task.borrow_mut().status = TaskStatus::Failure(e.to_string());
                     return;
-                },
+                }
             };
 
-            let installed_cycle_info: InstalledNavigationDataCycleInfo = match serde_json::from_reader(json_file) {
-                Ok(installed_cycle_info) => installed_cycle_info,
-                Err(e) => {
-                    task.borrow_mut().status = TaskStatus::Failure(e.to_string());
-                    return;
-                },
-            };
+            let installed_cycle_info: InstalledNavigationDataCycleInfo =
+                match serde_json::from_reader(json_file) {
+                    Ok(installed_cycle_info) => installed_cycle_info,
+                    Err(e) => {
+                        task.borrow_mut().status = TaskStatus::Failure(e.to_string());
+                        return;
+                    }
+                };
 
             Some(installed_cycle_info)
-        },
+        }
         None => None,
     };
 
@@ -215,7 +225,7 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
         Err(e) => {
             task.borrow_mut().status = TaskStatus::Failure(e.to_string());
             return;
-        },
+        }
     };
 
     task.borrow_mut().status = TaskStatus::Success(Some(status_as_value));

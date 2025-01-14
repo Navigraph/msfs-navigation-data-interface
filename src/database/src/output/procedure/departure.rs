@@ -2,7 +2,9 @@ use std::collections::{hash_map::Entry, HashMap};
 
 use serde::Serialize;
 
-use super::{apply_common_leg, apply_enroute_transition_leg, apply_runway_transition_leg, Transition};
+use super::{
+    apply_common_leg, apply_enroute_transition_leg, apply_runway_transition_leg, Transition,
+};
 use crate::{output::procedure_leg::ProcedureLeg, sql_structs};
 
 #[derive(Serialize)]

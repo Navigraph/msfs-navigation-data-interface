@@ -1,7 +1,9 @@
 use serde::Serialize;
 
 use crate::{
-    enums::{RunwayLights, RunwaySurface, TrafficPattern}, math::{Coordinates, Degrees, Feet}, sql_structs
+    enums::{RunwayLights, RunwaySurface, TrafficPattern},
+    math::{Coordinates, Degrees, Feet},
+    sql_structs,
 };
 
 #[derive(Serialize, Clone)]

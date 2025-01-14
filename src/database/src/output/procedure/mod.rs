@@ -27,7 +27,9 @@ fn mut_find_or_insert<T, P: FnMut(&T) -> bool>(vec: &mut Vec<T>, condition: P, v
 
 /// Applies the neccesary logic for adding a leg with an enroute transition route type into a procedure
 pub(self) fn apply_enroute_transition_leg(
-    leg: ProcedureLeg, transition_identifier: String, enroute_transitions: &mut Vec<Transition>,
+    leg: ProcedureLeg,
+    transition_identifier: String,
+    enroute_transitions: &mut Vec<Transition>,
 ) {
     let transition = mut_find_or_insert(
         enroute_transitions,

@@ -1,6 +1,9 @@
 use serde::Serialize;
 
-use crate::{math::{Coordinates, Degrees}, sql_structs};
+use crate::{
+    math::{Coordinates, Degrees},
+    sql_structs,
+};
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize)]

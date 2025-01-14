@@ -26,7 +26,11 @@ fn parse_from_to(data: String) -> Result<(String, String), <u32 as FromStr>::Err
     let to_month = data[6..8].parse::<u32>()?;
     let to_year = data[8..10].parse::<u32>()?;
 
-    let from_year = if to_month < from_month { to_year - 1 } else { to_year };
+    let from_year = if to_month < from_month {
+        to_year - 1
+    } else {
+        to_year
+    };
 
     Ok((
         format!("{from_day:0>2}-{from_month:0>2}-20{from_year:0>2}"),

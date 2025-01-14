@@ -10,7 +10,10 @@ use super::output::{airport::Airport, airway::map_airways, procedure::departure:
 use crate::{
     math::{Coordinates, NauticalMiles},
     output::{
-        airspace::{map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace, RestrictiveAirspace},
+        airspace::{
+            map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace,
+            RestrictiveAirspace,
+        },
         airway::Airway,
         communication::Communication,
         database_info::DatabaseInfo,
@@ -77,14 +80,20 @@ impl Database {
     pub fn open_connection(&mut self, path: String) -> Result<(), Box<dyn Error>> {
         // We have to open with flags because the SQLITE_OPEN_CREATE flag with the default open causes the file to
         // be overwritten
-        let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+        let flags = OpenFlags::SQLITE_OPEN_READ_ONLY
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX;
         let conn = Connection::open_with_flags(path, flags)?;
         self.database = Some(conn);
 
         Ok(())
     }
 
-    pub fn execute_sql_query(&self, sql: String, params: Vec<String>) -> Result<Value, Box<dyn Error>> {
+    pub fn execute_sql_query(
+        &self,
+        sql: String,
+        params: Vec<String>,
+    ) -> Result<Value, Box<dyn Error>> {
         // Execute query
         let conn = self.get_database()?;
         let mut stmt = conn.prepare(&sql)?;
@@ -99,7 +108,9 @@ impl Database {
             let mut map = serde_json::Map::new();
             for (i, name) in names.iter().enumerate() {
                 let value = match row.get_ref(i)? {
-                    ValueRef::Text(text) => Some(Value::String(String::from_utf8(text.into()).unwrap())),
+                    ValueRef::Text(text) => {
+                        Some(Value::String(String::from_utf8(text.into()).unwrap()))
+                    }
                     ValueRef::Integer(int) => Some(Value::Number(Number::from(int))),
                     ValueRef::Real(real) => Some(Value::Number(Number::from_f64(real).unwrap())),
                     ValueRef::Null => None,
@@ -170,8 +181,7 @@ impl Database {
         let mut stmt =
             conn.prepare("SELECT * FROM tbl_d_vhfnavaids WHERE navaid_identifier = (?1)")?;
 
-        let navaids_data =
-            util::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, params![ident])?;
+        let navaids_data = util::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, params![ident])?;
 
         Ok(navaids_data.into_iter().map(VhfNavaid::from).collect())
     }
@@ -302,8 +312,7 @@ impl Database {
         )?;
 
         let enroute_data = util::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, [])?;
-        let terminal_data =
-            util::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, [])?;
+        let terminal_data = util::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, [])?;
 
         // Filter into a circle of range
         Ok(enroute_data
@@ -484,10 +493,8 @@ impl Database {
             &mut departures_stmt,
             params![airport_ident],
         )?;
-        let runways_data = util::fetch_rows::<sql_structs::Runways>(
-            &mut runways_stmt,
-            params![airport_ident],
-        )?;
+        let runways_data =
+            util::fetch_rows::<sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
 
         Ok(map_departures(departures_data, runways_data))
     }
@@ -508,10 +515,8 @@ impl Database {
             &mut arrivals_stmt,
             params![airport_ident],
         )?;
-        let runways_data = util::fetch_rows::<sql_structs::Runways>(
-            &mut runways_stmt,
-            params![airport_ident],
-        )?;
+        let runways_data =
+            util::fetch_rows::<sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
 
         Ok(map_arrivals(arrivals_data, runways_data))
     }
@@ -570,8 +575,7 @@ impl Database {
             conn.prepare("SELECT * FROM tbl_pb_gates WHERE airport_identifier = (?1)")?;
 
         // Same as v1, same struct can be used
-        let gates_data =
-            util::fetch_rows::<sql_structs::Gate>(&mut stmt, params![airport_ident])?;
+        let gates_data = util::fetch_rows::<sql_structs::Gate>(&mut stmt, params![airport_ident])?;
 
         Ok(gates_data.into_iter().map(Gate::from).collect())
     }
@@ -602,8 +606,7 @@ impl Database {
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_pt_gls WHERE airport_identifier = (?1)")?;
 
-        let gates_data =
-            util::fetch_rows::<sql_structs::Gls>(&mut stmt, params![airport_ident])?;
+        let gates_data = util::fetch_rows::<sql_structs::Gls>(&mut stmt, params![airport_ident])?;
 
         Ok(gates_data.into_iter().map(GlsNavaid::from).collect())
     }
