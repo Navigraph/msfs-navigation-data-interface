@@ -49,6 +49,7 @@ pub struct NavigationDataStatus {
     pub latest_cycle: String,
 }
 
+#[allow(dead_code)]
 #[derive(serde::Deserialize)]
 pub struct CurrentCycleResponse {
     pub name: String,
@@ -57,6 +58,7 @@ pub struct CurrentCycleResponse {
     pub cycle: String,
 }
 
+#[allow(dead_code)]
 #[derive(serde::Deserialize)]
 pub struct InstalledNavigationDataCycleInfo {
     pub cycle: String,

@@ -23,12 +23,8 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
   private readonly loadingRef = FSComponent.createRef<HTMLDivElement>()
   private readonly authContainerRef = FSComponent.createRef<HTMLDivElement>()
 
-  private readonly activeDatabase = Subject.create<null>(null)
-  // private readonly databases = ArraySubject.create<PackageInfo>([])
-  // private readonly resetPackageList = Subject.create<boolean>(false)
   private readonly mainPageIndex = Subject.create(0)
-  // private readonly selectedDatabaseIndex = Subject.create(0)
-  private readonly selectedDatabase = Subject.create<NavigationDataStatus | null>(null)
+  private readonly databaseInfo = Subject.create<NavigationDataStatus | null>(null)
 
   private navigationDataInterface: NavigraphNavigationDataInterface
 
@@ -62,9 +58,15 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
               class="bg-ng-background-400"
               active={this.mainPageIndex}
               pages={[
-                [0, <Dashboard selectedDatabase={this.selectedDatabase} interface={this.navigationDataInterface} />],
+                [0, <Dashboard databaseInfo={this.databaseInfo} interface={this.navigationDataInterface} />],
                 [1, <TestPage interface={this.navigationDataInterface} />],
-                [2, <AuthPage navigationDataInterface={this.navigationDataInterface} />],
+                [
+                  2,
+                  <AuthPage
+                    navigationDataInterface={this.navigationDataInterface}
+                    setDatabaseInfo={value => this.databaseInfo.set(value)}
+                  />,
+                ],
               ]}
             />
           </div>
@@ -80,7 +82,7 @@ export class InterfaceSample extends DisplayComponent<InterfaceSampleProps> {
     this.navigationDataInterface.onReady(async () => {
       const activePackage = await this.navigationDataInterface.get_navigation_data_install_status()
 
-      this.selectedDatabase.set(activePackage)
+      this.databaseInfo.set(activePackage)
 
       // show the auth container
       this.authContainerRef.instance.style.display = "block"

@@ -7,7 +7,7 @@ use crate::{
 };
 
 #[serde_with::skip_serializing_none]
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Default)]
 /// Represents a communication station at an airport or in an enroute fir
 pub struct Communication {
     /// The Geographic region where this communication is
@@ -28,6 +28,14 @@ pub struct Communication {
     pub name: Option<String>,
     /// The location of this communication
     pub location: Coordinates,
+    /// Facility in which an RCO will be transmitting through
+    pub remote_facility: Option<String>, // new
+    pub remote_facility_icao_code: Option<String>, // new
+    /// Sector associated with the communication
+    pub sector_facility: Option<String>, // new
+    pub sector_facility_icao_code: Option<String>, // new
+    /// Bearings from the sector facility is applicable to the communication
+    pub sectorization: Option<String>, // new
 }
 
 impl From<sql_structs::AirportCommunication> for Communication {
@@ -45,6 +53,11 @@ impl From<sql_structs::AirportCommunication> for Communication {
                 lat: row.latitude,
                 long: row.longitude,
             },
+            remote_facility: row.remote_facility,
+            remote_facility_icao_code: row.remote_facility_icao_code,
+            sector_facility: row.sector_facility,
+            sector_facility_icao_code: row.sector_facility_icao_code,
+            sectorization: row.sectorization,
         }
     }
 }
@@ -64,6 +77,9 @@ impl From<sql_structs::EnrouteCommunication> for Communication {
                 lat: row.latitude,
                 long: row.longitude,
             },
+            remote_facility: row.remote_facility,
+            remote_facility_icao_code: row.remote_facility_icao_code,
+            ..Default::default()
         }
     }
 }

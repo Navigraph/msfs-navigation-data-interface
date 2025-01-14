@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use crate::{
-    math::{Coordinates, KiloHertz},
+    math::{Coordinates, KiloHertz, NauticalMiles},
     sql_structs,
 };
 
@@ -10,6 +10,12 @@ use crate::{
 pub struct NdbNavaid {
     /// Represents the geographic region in which this NdbNavaid is located
     pub area_code: String,
+    /// Continent of the waypoint (v2 only)
+    pub continent: Option<String>,
+    /// Country of the waypoint (v2 only)
+    pub country: Option<String>,
+    /// 3 Letter identifier describing the local horizontal identifier (v2 only)
+    pub datum_code: Option<String>,
     /// The identifier of the airport that this NdbNavaid is associated with, if any
     pub airport_ident: Option<String>,
     /// The icao prefix of the region that this NdbNavaid is in.
@@ -22,6 +28,8 @@ pub struct NdbNavaid {
     pub frequency: KiloHertz,
     /// The geographic location of thie NdbNavaid
     pub location: Coordinates,
+    /// Range of the NDB (v2 only)
+    pub range: Option<NauticalMiles>,
 }
 
 impl From<sql_structs::NdbNavaids> for NdbNavaid {
@@ -29,14 +37,18 @@ impl From<sql_structs::NdbNavaids> for NdbNavaid {
         Self {
             area_code: navaid.area_code,
             airport_ident: navaid.airport_identifier,
-            icao_code: navaid.icao_code,
-            ident: navaid.ndb_identifier,
-            name: navaid.ndb_name,
-            frequency: navaid.ndb_frequency,
+            icao_code: navaid.icao_code.unwrap_or(String::from("N/A")),
+            ident: navaid.navaid_identifier.unwrap_or(String::from("N/A")),
+            name: navaid.navaid_name,
+            frequency: navaid.navaid_frequency,
             location: Coordinates {
-                lat: navaid.ndb_latitude,
-                long: navaid.ndb_longitude,
+                lat: navaid.navaid_latitude.unwrap_or_default(),
+                long: navaid.navaid_longitude.unwrap_or_default(),
             },
+            continent: navaid.continent,
+            country: navaid.country,
+            datum_code: navaid.datum_code,
+            range: navaid.range,
         }
     }
 }

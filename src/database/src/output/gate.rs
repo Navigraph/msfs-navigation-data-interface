@@ -27,7 +27,7 @@ impl From<sql_structs::Gate> for Gate {
                 lat: row.gate_latitude,
                 long: row.gate_longitude,
             },
-            name: row.name,
+            name: row.name.unwrap_or(String::from("N/A")),
         }
     }
 }

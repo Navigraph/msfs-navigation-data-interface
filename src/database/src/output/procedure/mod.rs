@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 use super::procedure_leg::ProcedureLeg;
-use crate::sql_structs;
+use crate::sql_structs::Runways;
 
 pub mod approach;
 pub mod arrival;
@@ -43,8 +43,11 @@ pub(self) fn apply_enroute_transition_leg(
 
 /// Applies the neccesary logic for adding a leg with a common leg route type into a procedure
 pub(self) fn apply_common_leg(
-    leg: ProcedureLeg, transition_identifier: Option<String>, runway_transitions: &mut Vec<Transition>,
-    common_legs: &mut Vec<ProcedureLeg>, runways: &Vec<sql_structs::Runways>,
+    leg: ProcedureLeg,
+    transition_identifier: Option<String>,
+    runway_transitions: &mut Vec<Transition>,
+    common_legs: &mut Vec<ProcedureLeg>,
+    runways: &Vec<Runways>,
 ) {
     // Common legs can still have a transition identifier, meaning that this procedure is only for
     // specific runways, but with the same legs for each runway.
@@ -109,8 +112,10 @@ pub(self) fn apply_common_leg(
 
 /// Applies the neccesary logic for adding a leg with a runway transition route type into a procedure
 pub(self) fn apply_runway_transition_leg(
-    leg: ProcedureLeg, transition_identifier: String, runway_transitions: &mut Vec<Transition>,
-    runways: &Vec<sql_structs::Runways>,
+    leg: ProcedureLeg,
+    transition_identifier: String,
+    runway_transitions: &mut Vec<Transition>,
+    runways: &Vec<Runways>,
 ) {
     // If transition identifier ends in B, it means this transition serves all runways with the same
     // number. To make this easier to use in an FMS, we duplicate the transitions for all runways which

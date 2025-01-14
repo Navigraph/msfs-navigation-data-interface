@@ -1,6 +1,7 @@
 import { ComponentProps, DisplayComponent, FSComponent, Subscribable, VNode } from "@microsoft/msfs-sdk"
 import {
   DownloadProgressPhase,
+  NavigationDataStatus,
   NavigraphEventType,
   NavigraphNavigationDataInterface,
 } from "@navigraph/msfs-navigation-data-interface"
@@ -10,6 +11,7 @@ import { AuthService } from "../../../Services/AuthService"
 import { Dropdown } from "../../Dropdown"
 
 interface AuthPageProps extends ComponentProps {
+  setDatabaseInfo: (value: NavigationDataStatus) => void
   navigationDataInterface: NavigraphNavigationDataInterface
 }
 
@@ -119,7 +121,7 @@ export class AuthPage extends DisplayComponent<AuthPageProps> {
       await this.props.navigationDataInterface.download_navigation_data(pkg.file.url)
 
       // Update navigation data status
-      // this.props.setActiveDatabase(await this.props.navigationDataInterface.get_active_package())
+      this.props.setDatabaseInfo(await this.props.navigationDataInterface.get_navigation_data_install_status())
 
       this.displayMessage("Navigation data downloaded")
     } catch (err) {

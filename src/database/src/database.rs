@@ -63,9 +63,10 @@ impl Database {
             Ok(new_path) => new_path,
             Err(_) => path,
         };
-        println!("[NAVIGRAPH] Setting active database to {}", path);
+        println!("[NAVIGRAPH] Trying to set active database to {}", path);
         self.close_connection();
         if util::is_sqlite_file(&path)? {
+            println!("[NAVIGRAPH] Setting active database to {}", path);
             self.open_connection(path.clone())?;
         }
         self.path = Some(path);
@@ -125,9 +126,9 @@ impl Database {
     pub fn get_database_info(&self) -> Result<DatabaseInfo, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_header")?;
+        let mut stmt = conn.prepare("SELECT * FROM tbl_hdr_header")?;
 
-        let header_data = Database::fetch_row::<sql_structs::Header>(&mut stmt, params![])?;
+        let header_data = util::fetch_row::<sql_structs::Header>(&mut stmt, params![])?;
 
         Ok(DatabaseInfo::from(header_data))
     }
@@ -135,9 +136,10 @@ impl Database {
     pub fn get_airport(&self, ident: String) -> Result<Airport, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_airports WHERE airport_identifier = (?1)")?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM tbl_pa_airports WHERE airport_identifier = (?1)")?;
 
-        let airport_data = Database::fetch_row::<sql_structs::Airports>(&mut stmt, params![ident])?;
+        let airport_data = util::fetch_row::<sql_structs::Airports>(&mut stmt, params![ident])?;
 
         Ok(Airport::from(airport_data))
     }
@@ -145,16 +147,19 @@ impl Database {
     pub fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut enroute_stmt = conn.prepare("SELECT * FROM tbl_enroute_waypoints WHERE waypoint_identifier = (?1)")?;
-        let mut terminal_stmt =
-            conn.prepare("SELECT * FROM tbl_terminal_waypoints WHERE waypoint_identifier = (?1)")?;
+        let mut enroute_stmt = conn
+            .prepare("SELECT * FROM tbl_ea_enroute_waypoints WHERE waypoint_identifier = (?1)")?;
+        let mut terminal_stmt = conn
+            .prepare("SELECT * FROM tbl_pc_terminal_waypoints WHERE waypoint_identifier = (?1)")?;
 
-        let enroute_data = Database::fetch_rows::<sql_structs::Waypoints>(&mut enroute_stmt, params![ident])?;
-        let terminal_data = Database::fetch_rows::<sql_structs::Waypoints>(&mut terminal_stmt, params![ident])?;
+        let enroute_data =
+            util::fetch_rows::<sql_structs::Waypoints>(&mut enroute_stmt, params![ident])?;
+        let terminal_data =
+            util::fetch_rows::<sql_structs::Waypoints>(&mut terminal_stmt, params![ident])?;
 
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(Waypoint::from)
             .collect())
     }
@@ -162,9 +167,11 @@ impl Database {
     pub fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_vhfnavaids WHERE vor_identifier = (?1)")?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM tbl_d_vhfnavaids WHERE navaid_identifier = (?1)")?;
 
-        let navaids_data = Database::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, params![ident])?;
+        let navaids_data =
+            util::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, params![ident])?;
 
         Ok(navaids_data.into_iter().map(VhfNavaid::from).collect())
     }
@@ -172,15 +179,19 @@ impl Database {
     pub fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut enroute_stmt = conn.prepare("SELECT * FROM tbl_enroute_ndbnavaids WHERE ndb_identifier = (?1)")?;
-        let mut terminal_stmt = conn.prepare("SELECT * FROM tbl_terminal_ndbnavaids WHERE ndb_identifier = (?1)")?;
+        let mut enroute_stmt =
+            conn.prepare("SELECT * FROM tbl_db_enroute_ndbnavaids WHERE navaid_identifier = (?1)")?;
+        let mut terminal_stmt = conn
+            .prepare("SELECT * FROM tbl_pn_terminal_ndbnavaids WHERE navaid_identifier = (?1)")?;
 
-        let enroute_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, params![ident])?;
-        let terminal_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, params![ident])?;
+        let enroute_data =
+            util::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, params![ident])?;
+        let terminal_data =
+            util::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, params![ident])?;
 
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(NdbNavaid::from)
             .collect())
     }
@@ -188,22 +199,30 @@ impl Database {
     pub fn get_airways(&self, ident: String) -> Result<Vec<Airway>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_enroute_airways WHERE route_identifier = (?1)")?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM tbl_er_enroute_airways WHERE route_identifier = (?1)")?;
 
-        let airways_data = Database::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, params![ident])?;
+        let airways_data =
+            util::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, params![ident])?;
 
         Ok(map_airways(airways_data))
     }
 
-    pub fn get_airways_at_fix(&self, fix_ident: String, fix_icao_code: String) -> Result<Vec<Airway>, Box<dyn Error>> {
+    pub fn get_airways_at_fix(
+        &self,
+        fix_ident: String,
+        fix_icao_code: String,
+    ) -> Result<Vec<Airway>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
         let mut stmt: rusqlite::Statement<'_> = conn.prepare(
-            "SELECT * FROM tbl_enroute_airways WHERE route_identifier IN (SELECT route_identifier FROM \
-             tbl_enroute_airways WHERE waypoint_identifier = (?1) AND icao_code = (?2))",
+            "SELECT * FROM tbl_er_enroute_airways WHERE route_identifier IN (SELECT route_identifier FROM \
+             tbl_er_enroute_airways WHERE waypoint_identifier = (?1) AND icao_code = (?2))",
         )?;
-        let all_airways =
-            Database::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, params![fix_ident, fix_icao_code])?;
+        let all_airways = util::fetch_rows::<sql_structs::EnrouteAirways>(
+            &mut stmt,
+            params![fix_ident, fix_icao_code],
+        )?;
 
         Ok(map_airways(all_airways)
             .into_iter()
@@ -217,15 +236,18 @@ impl Database {
     }
 
     pub fn get_airports_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<Airport>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let where_string = Self::range_query_where(center, range, "airport_ref");
+        let where_string = util::range_query_where(center, range, "airport_ref");
 
-        let mut stmt = conn.prepare(format!("SELECT * FROM tbl_airports WHERE {where_string}").as_str())?;
+        let mut stmt =
+            conn.prepare(format!("SELECT * FROM tbl_pa_airports WHERE {where_string}").as_str())?;
 
-        let airports_data = Database::fetch_rows::<sql_structs::Airports>(&mut stmt, [])?;
+        let airports_data = util::fetch_rows::<sql_structs::Airports>(&mut stmt, [])?;
 
         // Filter into a circle of range
         Ok(airports_data
@@ -236,63 +258,75 @@ impl Database {
     }
 
     pub fn get_waypoints_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let where_string = Self::range_query_where(center, range, "waypoint");
+        let where_string = util::range_query_where(center, range, "waypoint");
 
-        let mut enroute_stmt =
-            conn.prepare(format!("SELECT * FROM tbl_enroute_waypoints WHERE {where_string}").as_str())?;
-        let mut terminal_stmt =
-            conn.prepare(format!("SELECT * FROM tbl_terminal_waypoints WHERE {where_string}").as_str())?;
+        let mut enroute_stmt = conn.prepare(
+            format!("SELECT * FROM tbl_ea_enroute_waypoints WHERE {where_string}").as_str(),
+        )?;
+        let mut terminal_stmt = conn.prepare(
+            format!("SELECT * FROM tbl_pc_terminal_waypoints WHERE {where_string}").as_str(),
+        )?;
 
-        let enroute_data = Database::fetch_rows::<sql_structs::Waypoints>(&mut enroute_stmt, [])?;
-        let terminal_data = Database::fetch_rows::<sql_structs::Waypoints>(&mut terminal_stmt, [])?;
+        let enroute_data = util::fetch_rows::<sql_structs::Waypoints>(&mut enroute_stmt, [])?;
+        let terminal_data = util::fetch_rows::<sql_structs::Waypoints>(&mut terminal_stmt, [])?;
 
         // Filter into a circle of range
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(Waypoint::from)
             .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
             .collect())
     }
 
     pub fn get_ndb_navaids_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let where_string = Self::range_query_where(center, range, "ndb");
+        let where_string = util::range_query_where(center, range, "navaid");
 
-        let mut enroute_stmt =
-            conn.prepare(format!("SELECT * FROM tbl_enroute_ndbnavaids WHERE {where_string}").as_str())?;
-        let mut terminal_stmt =
-            conn.prepare(format!("SELECT * FROM tbl_terminal_ndbnavaids WHERE {where_string}").as_str())?;
+        let mut enroute_stmt = conn.prepare(
+            format!("SELECT * FROM tbl_db_enroute_ndbnavaids WHERE {where_string}").as_str(),
+        )?;
+        let mut terminal_stmt = conn.prepare(
+            format!("SELECT * FROM tbl_pn_terminal_ndbnavaids WHERE {where_string}").as_str(),
+        )?;
 
-        let enroute_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, [])?;
-        let terminal_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, [])?;
+        let enroute_data = util::fetch_rows::<sql_structs::NdbNavaids>(&mut enroute_stmt, [])?;
+        let terminal_data =
+            util::fetch_rows::<sql_structs::NdbNavaids>(&mut terminal_stmt, [])?;
 
         // Filter into a circle of range
         Ok(enroute_data
             .into_iter()
-            .chain(terminal_data.into_iter())
+            .chain(terminal_data)
             .map(NdbNavaid::from)
             .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
             .collect())
     }
 
     pub fn get_vhf_navaids_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<VhfNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let where_string = Self::range_query_where(center, range, "vor");
+        let where_string = util::range_query_where(center, range, "navaid");
 
-        let mut stmt = conn.prepare(format!("SELECT * FROM tbl_vhfnavaids WHERE {where_string}").as_str())?;
+        let mut stmt =
+            conn.prepare(format!("SELECT * FROM tbl_d_vhfnavaids WHERE {where_string}").as_str())?;
 
-        let navaids_data = Database::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, [])?;
+        let navaids_data = util::fetch_rows::<sql_structs::VhfNavaids>(&mut stmt, [])?;
 
         // Filter into a circle of range
         Ok(navaids_data
@@ -303,21 +337,23 @@ impl Database {
     }
 
     pub fn get_airways_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<Airway>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let where_string = Self::range_query_where(center, range, "waypoint");
+        let where_string = util::range_query_where(center, range, "waypoint");
 
         let mut stmt = conn.prepare(
             format!(
-                "SELECT * FROM tbl_enroute_airways WHERE route_identifier IN (SELECT route_identifier FROM \
-                 tbl_enroute_airways WHERE {where_string})"
+                "SELECT * FROM tbl_er_enroute_airways WHERE route_identifier IN (SELECT route_identifier FROM \
+                 tbl_er_enroute_airways WHERE {where_string})"
             )
             .as_str(),
         )?;
 
-        let airways_data = Database::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, [])?;
+        let airways_data = util::fetch_rows::<sql_structs::EnrouteAirways>(&mut stmt, [])?;
 
         Ok(map_airways(airways_data)
             .into_iter()
@@ -331,69 +367,83 @@ impl Database {
     }
 
     pub fn get_controlled_airspaces_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<ControlledAirspace>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let where_string = Self::range_query_where(center, range, "");
-        let arc_where_string = Self::range_query_where(center, range, "arc_origin");
+        let where_string = util::range_query_where(center, range, "");
+        let arc_where_string = util::range_query_where(center, range, "arc_origin");
 
         let range_query = format!(
-            "SELECT airspace_center, multiple_code FROM tbl_controlled_airspace WHERE {where_string} OR \
-             {arc_where_string}"
-        );
-
-        let mut stmt = conn.prepare(
-            format!("SELECT * FROM tbl_controlled_airspace WHERE (airspace_center, multiple_code) IN ({range_query})")
-                .as_str(),
-        )?;
-
-        let airspaces_data = Database::fetch_rows::<sql_structs::ControlledAirspace>(&mut stmt, [])?;
-
-        Ok(map_controlled_airspaces(airspaces_data))
-    }
-
-    pub fn get_restrictive_airspaces_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
-    ) -> Result<Vec<RestrictiveAirspace>, Box<dyn Error>> {
-        let conn = self.get_database()?;
-
-        let where_string = Self::range_query_where(center, range, "");
-        let arc_where_string = Self::range_query_where(center, range, "arc_origin");
-
-        let range_query: String = format!(
-            "SELECT restrictive_airspace_designation, icao_code FROM tbl_restrictive_airspace WHERE {where_string} OR \
+            "SELECT airspace_center, multiple_code FROM tbl_uc_controlled_airspace WHERE {where_string} OR \
              {arc_where_string}"
         );
 
         let mut stmt = conn.prepare(
             format!(
-                "SELECT * FROM tbl_restrictive_airspace WHERE (restrictive_airspace_designation, icao_code) IN \
+                "SELECT * FROM tbl_uc_controlled_airspace WHERE (airspace_center, multiple_code) IN ({range_query})"
+            )
+            .as_str(),
+        )?;
+
+        // No changes since v1, able to use same struct
+        let airspaces_data = util::fetch_rows::<sql_structs::ControlledAirspace>(&mut stmt, [])?;
+
+        Ok(map_controlled_airspaces(airspaces_data))
+    }
+
+    pub fn get_restrictive_airspaces_in_range(
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
+    ) -> Result<Vec<RestrictiveAirspace>, Box<dyn Error>> {
+        let conn = self.get_database()?;
+
+        let where_string = util::range_query_where(center, range, "");
+        let arc_where_string = util::range_query_where(center, range, "arc_origin");
+
+        let range_query: String = format!(
+            "SELECT restrictive_airspace_designation, icao_code FROM tbl_ur_restrictive_airspace WHERE {where_string} \
+             OR {arc_where_string}"
+        );
+
+        let mut stmt = conn.prepare(
+            format!(
+                "SELECT * FROM tbl_ur_restrictive_airspace WHERE (restrictive_airspace_designation, icao_code) IN \
                  ({range_query})"
             )
             .as_str(),
         )?;
 
-        let airspaces_data = Database::fetch_rows::<sql_structs::RestrictiveAirspace>(&mut stmt, [])?;
+        // No changes since v1, able to use same struct
+        let airspaces_data = util::fetch_rows::<sql_structs::RestrictiveAirspace>(&mut stmt, [])?;
 
         Ok(map_restrictive_airspaces(airspaces_data))
     }
 
     pub fn get_communications_in_range(
-        &self, center: Coordinates, range: NauticalMiles,
+        &self,
+        center: Coordinates,
+        range: NauticalMiles,
     ) -> Result<Vec<Communication>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let where_string = Self::range_query_where(center, range, "");
+        let where_string = util::range_query_where(center, range, "");
 
-        let mut enroute_stmt =
-            conn.prepare(format!("SELECT * FROM tbl_enroute_communication WHERE {where_string}").as_str())?;
+        let mut enroute_stmt = conn.prepare(
+            format!("SELECT * FROM tbl_ev_enroute_communication WHERE {where_string}").as_str(),
+        )?;
 
-        let mut terminal_stmt =
-            conn.prepare(format!("SELECT * FROM tbl_airport_communication WHERE {where_string}").as_str())?;
+        let mut terminal_stmt = conn.prepare(
+            format!("SELECT * FROM tbl_pv_airport_communication WHERE {where_string}").as_str(),
+        )?;
 
-        let enroute_data = Database::fetch_rows::<sql_structs::EnrouteCommunication>(&mut enroute_stmt, [])?;
-        let terminal_data = Database::fetch_rows::<sql_structs::AirportCommunication>(&mut terminal_stmt, [])?;
+        let enroute_data =
+            util::fetch_rows::<sql_structs::EnrouteCommunication>(&mut enroute_stmt, [])?;
+        let terminal_data =
+            util::fetch_rows::<sql_structs::AirportCommunication>(&mut terminal_stmt, [])?;
 
         Ok(enroute_data
             .into_iter()
@@ -403,71 +453,112 @@ impl Database {
             .collect())
     }
 
-    pub fn get_runways_at_airport(&self, airport_ident: String) -> Result<Vec<RunwayThreshold>, Box<dyn Error>> {
+    pub fn get_runways_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<RunwayThreshold>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_runways WHERE airport_identifier = (?1)")?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM tbl_pg_runways WHERE airport_identifier = (?1)")?;
 
-        let runways_data = Database::fetch_rows::<sql_structs::Runways>(&mut stmt, params![airport_ident])?;
+        let runways_data =
+            util::fetch_rows::<sql_structs::Runways>(&mut stmt, params![airport_ident])?;
 
         Ok(runways_data.into_iter().map(Into::into).collect())
     }
 
-    pub fn get_departures_at_airport(&self, airport_ident: String) -> Result<Vec<Departure>, Box<dyn Error>> {
+    pub fn get_departures_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<Departure>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut departures_stmt = conn.prepare("SELECT * FROM tbl_sids WHERE airport_identifier = (?1)")?;
+        let mut departures_stmt =
+            conn.prepare("SELECT * FROM tbl_pd_sids WHERE airport_identifier = (?1)")?;
 
-        let mut runways_stmt = conn.prepare("SELECT * FROM tbl_runways WHERE airport_identifier = (?1)")?;
+        let mut runways_stmt =
+            conn.prepare("SELECT * FROM tbl_pg_runways WHERE airport_identifier = (?1)")?;
 
-        let departures_data =
-            Database::fetch_rows::<sql_structs::Procedures>(&mut departures_stmt, params![airport_ident])?;
-        let runways_data = Database::fetch_rows::<sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
+        let departures_data = util::fetch_rows::<sql_structs::Procedures>(
+            &mut departures_stmt,
+            params![airport_ident],
+        )?;
+        let runways_data = util::fetch_rows::<sql_structs::Runways>(
+            &mut runways_stmt,
+            params![airport_ident],
+        )?;
 
         Ok(map_departures(departures_data, runways_data))
     }
 
-    pub fn get_arrivals_at_airport(&self, airport_ident: String) -> Result<Vec<Arrival>, Box<dyn Error>> {
+    pub fn get_arrivals_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<Arrival>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut arrivals_stmt = conn.prepare("SELECT * FROM tbl_stars WHERE airport_identifier = (?1)")?;
+        let mut arrivals_stmt =
+            conn.prepare("SELECT * FROM tbl_pe_stars WHERE airport_identifier = (?1)")?;
 
-        let mut runways_stmt = conn.prepare("SELECT * FROM tbl_runways WHERE airport_identifier = (?1)")?;
+        let mut runways_stmt =
+            conn.prepare("SELECT * FROM tbl_pg_runways WHERE airport_identifier = (?1)")?;
 
-        let arrivals_data =
-            Database::fetch_rows::<sql_structs::Procedures>(&mut arrivals_stmt, params![airport_ident])?;
-        let runways_data = Database::fetch_rows::<sql_structs::Runways>(&mut runways_stmt, params![airport_ident])?;
+        let arrivals_data = util::fetch_rows::<sql_structs::Procedures>(
+            &mut arrivals_stmt,
+            params![airport_ident],
+        )?;
+        let runways_data = util::fetch_rows::<sql_structs::Runways>(
+            &mut runways_stmt,
+            params![airport_ident],
+        )?;
 
         Ok(map_arrivals(arrivals_data, runways_data))
     }
 
-    pub fn get_approaches_at_airport(&self, airport_ident: String) -> Result<Vec<Approach>, Box<dyn Error>> {
+    pub fn get_approaches_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<Approach>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut approachs_stmt = conn.prepare("SELECT * FROM tbl_iaps WHERE airport_identifier = (?1)")?;
+        let mut approachs_stmt =
+            conn.prepare("SELECT * FROM tbl_pf_iaps WHERE airport_identifier = (?1)")?;
 
-        let approaches_data =
-            Database::fetch_rows::<sql_structs::Procedures>(&mut approachs_stmt, params![airport_ident])?;
+        let approaches_data = util::fetch_rows::<sql_structs::Procedures>(
+            &mut approachs_stmt,
+            params![airport_ident],
+        )?;
 
         Ok(map_approaches(approaches_data))
     }
 
-    pub fn get_waypoints_at_airport(&self, airport_ident: String) -> Result<Vec<Waypoint>, Box<dyn Error>> {
+    pub fn get_waypoints_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<Waypoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_terminal_waypoints WHERE region_code = (?1)")?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM tbl_pc_terminal_waypoints WHERE region_code = (?1)")?;
 
-        let waypoints_data = Database::fetch_rows::<sql_structs::Waypoints>(&mut stmt, params![airport_ident])?;
+        let waypoints_data =
+            util::fetch_rows::<sql_structs::Waypoints>(&mut stmt, params![airport_ident])?;
 
         Ok(waypoints_data.into_iter().map(Waypoint::from).collect())
     }
 
-    pub fn get_ndb_navaids_at_airport(&self, airport_ident: String) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
+    pub fn get_ndb_navaids_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<NdbNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_terminal_ndbnavaids WHERE airport_identifier = (?1)")?;
+        let mut stmt = conn
+            .prepare("SELECT * FROM tbl_pn_terminal_ndbnavaids WHERE airport_identifier = (?1)")?;
 
-        let waypoints_data = Database::fetch_rows::<sql_structs::NdbNavaids>(&mut stmt, params![airport_ident])?;
+        let waypoints_data =
+            util::fetch_rows::<sql_structs::NdbNavaids>(&mut stmt, params![airport_ident])?;
 
         Ok(waypoints_data.into_iter().map(NdbNavaid::from).collect())
     }
@@ -475,88 +566,61 @@ impl Database {
     pub fn get_gates_at_airport(&self, airport_ident: String) -> Result<Vec<Gate>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_gate WHERE airport_identifier = (?1)")?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM tbl_pb_gates WHERE airport_identifier = (?1)")?;
 
-        let gates_data = Database::fetch_rows::<sql_structs::Gate>(&mut stmt, params![airport_ident])?;
+        // Same as v1, same struct can be used
+        let gates_data =
+            util::fetch_rows::<sql_structs::Gate>(&mut stmt, params![airport_ident])?;
 
         Ok(gates_data.into_iter().map(Gate::from).collect())
     }
 
-    pub fn get_communications_at_airport(&self, airport_ident: String) -> Result<Vec<Communication>, Box<dyn Error>> {
+    pub fn get_communications_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<Communication>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_airport_communication WHERE airport_identifier = (?1)")?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM tbl_pv_airport_communication WHERE airport_identifier = (?1)",
+        )?;
 
-        let gates_data = Database::fetch_rows::<sql_structs::AirportCommunication>(&mut stmt, params![airport_ident])?;
+        let gates_data = util::fetch_rows::<sql_structs::AirportCommunication>(
+            &mut stmt,
+            params![airport_ident],
+        )?;
 
         Ok(gates_data.into_iter().map(Communication::from).collect())
     }
 
-    pub fn get_gls_navaids_at_airport(&self, airport_ident: String) -> Result<Vec<GlsNavaid>, Box<dyn Error>> {
+    pub fn get_gls_navaids_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<GlsNavaid>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_gls WHERE airport_identifier = (?1)")?;
+        let mut stmt = conn.prepare("SELECT * FROM tbl_pt_gls WHERE airport_identifier = (?1)")?;
 
-        let gates_data = Database::fetch_rows::<sql_structs::Gls>(&mut stmt, params![airport_ident])?;
+        let gates_data =
+            util::fetch_rows::<sql_structs::Gls>(&mut stmt, params![airport_ident])?;
 
         Ok(gates_data.into_iter().map(GlsNavaid::from).collect())
     }
 
-    pub fn get_path_points_at_airport(&self, airport_ident: String) -> Result<Vec<PathPoint>, Box<dyn Error>> {
+    pub fn get_path_points_at_airport(
+        &self,
+        airport_ident: String,
+    ) -> Result<Vec<PathPoint>, Box<dyn Error>> {
         let conn = self.get_database()?;
 
-        let mut stmt = conn.prepare("SELECT * FROM tbl_pathpoints WHERE airport_identifier = (?1)")?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM tbl_pp_pathpoint WHERE airport_identifier = (?1)")?;
 
-        let gates_data = Database::fetch_rows::<sql_structs::Pathpoints>(&mut stmt, params![airport_ident])?;
+        let gates_data =
+            util::fetch_rows::<sql_structs::Pathpoints>(&mut stmt, params![airport_ident])?;
 
         Ok(gates_data.into_iter().map(PathPoint::from).collect())
-    }
-
-    fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str) -> String {
-        let (bottom_left, top_right) = center.distance_bounds(range);
-
-        let prefix = if prefix.is_empty() {
-            String::new()
-        } else {
-            format!("{prefix}_")
-        };
-
-        if bottom_left.long > top_right.long {
-            format!(
-                "{prefix}latitude BETWEEN {} AND {} AND ({prefix}longitude >= {} OR {prefix}longitude <= {})",
-                bottom_left.lat, top_right.lat, bottom_left.long, top_right.long
-            )
-        } else if bottom_left.lat.max(top_right.lat) > 80.0 {
-            format!("{prefix}latitude >= {}", bottom_left.lat.min(top_right.lat))
-        } else if bottom_left.lat.min(top_right.lat) < -80.0 {
-            format!("{prefix}latitude <= {}", bottom_left.lat.max(top_right.lat))
-        } else {
-            format!(
-                "{prefix}latitude BETWEEN {} AND {} AND {prefix}longitude BETWEEN {} AND {}",
-                bottom_left.lat, top_right.lat, bottom_left.long, top_right.long
-            )
-        }
-    }
-
-    fn fetch_row<T>(stmt: &mut rusqlite::Statement, params: impl rusqlite::Params) -> Result<T, Box<dyn Error>>
-    where
-        T: for<'r> serde::Deserialize<'r>,
-    {
-        let mut rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
-        let row = rows.next().ok_or("No row found")??;
-        Ok(row)
-    }
-
-    fn fetch_rows<T>(stmt: &mut rusqlite::Statement, params: impl rusqlite::Params) -> Result<Vec<T>, Box<dyn Error>>
-    where
-        T: for<'r> serde::Deserialize<'r>,
-    {
-        let mut rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
-        let mut data = Vec::new();
-        while let Some(row) = rows.next() {
-            data.push(row.map_err(|e| e.to_string())?);
-        }
-        Ok(data)
     }
 
     pub fn close_connection(&mut self) {

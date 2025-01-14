@@ -91,51 +91,64 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
             altitude: leg.altitude1.map(|altitude1| AltitudeContstraint {
                 altitude1,
                 altitude2: leg.altitude2,
-                descriptor: leg.altitude_description.unwrap_or(AltitudeDescriptor::AtAlt1),
+                descriptor: leg
+                    .altitude_description
+                    .unwrap_or(AltitudeDescriptor::AtAlt1),
             }),
             speed: leg.speed_limit.map(|speed| SpeedConstraint {
                 value: speed,
-                descriptor: leg.speed_limit_description.unwrap_or(SpeedDescriptor::Mandatory),
+                descriptor: leg
+                    .speed_limit_description
+                    .unwrap_or(SpeedDescriptor::Mandatory),
             }),
             vertical_angle: leg.vertical_angle,
             rnp: leg.rnp,
-            fix: if !leg.id.is_empty() {
+            fix: if leg.waypoint_identifier.is_some() {
                 Some(Fix::from_row_data(
                     leg.waypoint_latitude.unwrap(),
                     leg.waypoint_longitude.unwrap(),
-                    leg.id,
+                    leg.waypoint_identifier.unwrap(),
+                    leg.waypoint_icao_code.unwrap(),
+                    Some(leg.airport_identifier.clone()),
+                    leg.waypoint_ref_table,
                 ))
             } else {
                 None
             },
-            recommended_navaid: if !leg.recommanded_id.is_empty() {
+            recommended_navaid: if leg.recommended_navaid.is_some() {
                 Some(Fix::from_row_data(
-                    leg.recommanded_navaid_latitude.unwrap(),
-                    leg.recommanded_navaid_longitude.unwrap(),
-                    leg.recommanded_id,
+                    leg.recommended_navaid_latitude.unwrap(),
+                    leg.recommended_navaid_longitude.unwrap(),
+                    leg.recommended_navaid.unwrap(),
+                    leg.recommended_navaid_icao_code.unwrap(),
+                    Some(leg.airport_identifier.clone()),
+                    leg.recommended_navaid_ref_table,
                 ))
             } else {
                 None
             },
             theta: leg.theta,
             rho: leg.rho,
-            magnetic_course: leg.magnetic_course,
-            length: if leg.distance_time == Some("D".to_string()) {
-                leg.route_distance_holding_distance_time
+            magnetic_course: None,
+            length: if leg.route_distance_holding_distance_time == Some("D".to_string()) {
+                leg.distance_time
             } else {
                 None
             },
-            length_time: if leg.distance_time == Some("T".to_string()) {
-                leg.route_distance_holding_distance_time
+            length_time: if leg.route_distance_holding_distance_time == Some("T".to_string()) {
+                leg.distance_time
             } else {
                 None
             },
             turn_direction: leg.turn_direction,
-            arc_center_fix: if !leg.center_id.is_empty() {
+            arc_center_fix: if leg.center_waypoint.is_some() {
                 Some(Fix::from_row_data(
                     leg.center_waypoint_latitude.unwrap(),
                     leg.center_waypoint_longitude.unwrap(),
-                    leg.center_id,
+                    leg.center_waypoint.unwrap(),
+                    leg.center_waypoint_icao_code.unwrap(),
+                    Some(leg.airport_identifier),
+                    leg.center_waypoint_ref_table,
                 ))
             } else {
                 None

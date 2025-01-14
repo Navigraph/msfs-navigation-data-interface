@@ -50,33 +50,31 @@ pub struct Fix {
 impl Fix {
     /// Creates a `Fix` by using the latitude and longitude fields, and by parsing the linked id field from a procedure
     /// or airway row.
-    pub fn from_row_data(lat: f64, long: f64, id: String) -> Self {
-        let table = id.split("|").nth(0).unwrap();
-        let id = id.split("|").nth(1).unwrap();
-        let (airport_identifier, icao_code, ident) =
-            if table.starts_with("tbl_terminal") || table == "tbl_localizers_glideslopes" || table == "tbl_gls" {
-                (Some(&id[0..4]), &id[4..6], &id[6..])
-            } else {
-                (None, &id[0..2], &id[2..])
-            };
-
-        let fix_type = match table {
-            "tbl_airports" => FixType::Airport,
-            "tbl_terminal_ndbnavaids" | "tbl_enroute_ndbnavaids" => FixType::NdbNavaid,
-            "tbl_runways" => FixType::RunwayThreshold,
-            "tbl_gls" => FixType::GlsNavaid,
-            "tbl_localizers_glideslopes" => FixType::IlsNavaid,
-            "tbl_vhfnavaids" => FixType::VhfNavaid,
-            "tbl_enroute_waypoints" | "tbl_terminal_waypoints" => FixType::Waypoint,
+    pub fn from_row_data(
+        lat: f64,
+        long: f64,
+        ident: String,
+        icao_code: String,
+        airport_ident: Option<String>,
+        ref_table: String,
+    ) -> Self {
+        let fix_type = match ref_table.as_str() {
+            "PA" => FixType::Airport,
+            "PN" | "DB" => FixType::NdbNavaid,
+            "PG" => FixType::RunwayThreshold,
+            "PT" => FixType::GlsNavaid,
+            "PI" => FixType::IlsNavaid,
+            "D " => FixType::VhfNavaid,
+            "EA" | "PC" => FixType::Waypoint,
             x => panic!("Unexpected table: '{x}'"),
         };
 
         Self {
             fix_type,
-            ident: ident.to_string(),
-            icao_code: icao_code.to_string(),
+            ident,
+            icao_code,
             location: Coordinates { lat, long },
-            airport_ident: airport_identifier.map(|s| s.to_string()),
+            airport_ident,
         }
     }
 }

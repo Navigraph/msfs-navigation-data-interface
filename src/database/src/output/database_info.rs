@@ -37,9 +37,9 @@ fn parse_from_to(data: String) -> Result<(String, String), <u32 as FromStr>::Err
 impl From<sql_structs::Header> for DatabaseInfo {
     fn from(header: sql_structs::Header) -> Self {
         Self {
-            airac_cycle: header.current_airac,
+            airac_cycle: header.cycle,
             effective_from_to: parse_from_to(header.effective_fromto).unwrap(),
-            previous_from_to: parse_from_to(header.previous_fromto).unwrap(),
+            previous_from_to: ("depricated".to_string(), "depricated".to_string()),
         }
     }
 }

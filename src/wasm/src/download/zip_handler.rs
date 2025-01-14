@@ -68,6 +68,12 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
 
         for _ in 0..batch_size {
             if self.current_file_index >= self.zip_file_count {
+                let fix_file = &self.path_buf.join("foo.txt");
+
+                if !util::path_exists(&fix_file) {
+                    fs::File::create(fix_file)?;
+                }
+
                 // Done extracting, drop the zip archive
                 self.zip_archive = None;
                 return Ok(BatchReturn::Finished);

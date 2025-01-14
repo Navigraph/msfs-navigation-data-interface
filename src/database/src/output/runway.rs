@@ -1,8 +1,7 @@
 use serde::Serialize;
 
 use crate::{
-    math::{Coordinates, Degrees, Feet},
-    sql_structs,
+    enums::{RunwayLights, RunwaySurface, TrafficPattern}, math::{Coordinates, Degrees, Feet}, sql_structs
 };
 
 #[derive(Serialize, Clone)]
@@ -27,23 +26,32 @@ pub struct RunwayThreshold {
     pub location: Coordinates,
     /// The elevation of the landing threshold of this runway in feet
     pub elevation: Feet,
+    /// Whether or not the runway has lights (v2 only)
+    pub lights: Option<RunwayLights>,
+    /// Material that the runway is made out of (v2 only)
+    pub surface: Option<RunwaySurface>,
+    /// The traffic pattern of the runway (v2 only)
+    pub traffic_pattern: Option<TrafficPattern>,
 }
 
 impl From<sql_structs::Runways> for RunwayThreshold {
     fn from(runway: sql_structs::Runways) -> Self {
         Self {
             ident: runway.runway_identifier,
-            icao_code: runway.icao_code,
+            icao_code: runway.icao_code.unwrap_or("UNK".to_string()),
             length: runway.runway_length,
             width: runway.runway_width,
-            true_bearing: runway.runway_true_bearing,
-            magnetic_bearing: runway.runway_magnetic_bearing,
-            gradient: runway.runway_gradient,
+            true_bearing: runway.runway_true_bearing.unwrap_or_default(),
+            magnetic_bearing: runway.runway_magnetic_bearing.unwrap_or_default(),
+            gradient: runway.runway_gradient.unwrap_or_default(),
             location: Coordinates {
-                lat: runway.runway_latitude,
-                long: runway.runway_longitude,
+                lat: runway.runway_latitude.unwrap_or_default(),
+                long: runway.runway_longitude.unwrap_or_default(),
             },
             elevation: runway.landing_threshold_elevation,
+            surface: runway.surface_code,
+            traffic_pattern: runway.traffic_pattern,
+            lights: runway.runway_lights,
         }
     }
 }

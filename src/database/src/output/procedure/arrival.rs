@@ -43,7 +43,10 @@ pub struct Arrival {
 /// ```sql
 /// SELECT * FROM tbl_stars WHERE airport_identifier = (?1)
 /// ```
-pub(crate) fn map_arrivals(data: Vec<sql_structs::Procedures>, runways: Vec<sql_structs::Runways>) -> Vec<Arrival> {
+pub(crate) fn map_arrivals(
+    data: Vec<sql_structs::Procedures>,
+    runways: Vec<sql_structs::Runways>,
+) -> Vec<Arrival> {
     data.into_iter()
         .fold(HashMap::new(), |mut arrivals, row| {
             let arrival = match arrivals.entry(row.procedure_identifier.clone()) {
@@ -67,7 +70,8 @@ pub(crate) fn map_arrivals(data: Vec<sql_structs::Procedures>, runways: Vec<sql_
             match route_type.as_str() {
                 "1" | "4" | "7" | "F" => apply_enroute_transition_leg(
                     leg,
-                    transition_identifier.expect("Enroute transition leg was found without a transition identifier"),
+                    transition_identifier
+                        .expect("Enroute transition leg was found without a transition identifier"),
                     &mut arrival.enroute_transitions,
                 ),
                 // These route types are for common legs
@@ -81,7 +85,8 @@ pub(crate) fn map_arrivals(data: Vec<sql_structs::Procedures>, runways: Vec<sql_
                 // These route types are for runway transitions
                 "3" | "6" | "9" | "S" => apply_runway_transition_leg(
                     leg,
-                    transition_identifier.expect("Runway transition leg was found without a transition identifier"),
+                    transition_identifier
+                        .expect("Runway transition leg was found without a transition identifier"),
                     &mut arrival.runway_transitions,
                     &runways,
                 ),
