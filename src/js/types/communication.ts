@@ -65,4 +65,9 @@ export interface Communication {
   callsign?: string
   name?: string
   location: Coordinates
+  remote_facility?: string
+  remote_facility_icao_code?: string
+  sector_facility?: string
+  sector_facility_icao_code?: string
+  sectorization?: string
 }
