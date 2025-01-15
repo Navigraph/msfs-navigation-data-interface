@@ -3,9 +3,9 @@ use serde::Deserialize;
 
 use crate::enums::{
     AirwayDirection, AirwayLevel, AirwayRouteType, AltitudeDescriptor, ApproachTypeIdentifier,
-    CommunicationType, ControlledAirspaceType, FrequencyUnits, IfrCapability, LegType,
-    RestrictiveAirspaceType, RunwayLights, RunwaySurface, RunwaySurfaceCode, SpeedDescriptor,
-    TrafficPattern, TurnDirection,
+    AuthorizationRequired, CommunicationType, ControlledAirspaceType, FrequencyUnits,
+    IfrCapability, LegType, ProcedureTypeApproved, RestrictiveAirspaceType, RunwayLights,
+    RunwaySurface, RunwaySurfaceCode, SpeedDescriptor, TrafficPattern, TurnDirection,
 };
 
 #[derive(Deserialize, Debug)]
@@ -187,7 +187,7 @@ pub struct EnrouteAirways {
     pub waypoint_identifier: Option<String>,
     pub waypoint_latitude: Option<f64>,
     pub waypoint_longitude: Option<f64>,
-    pub waypoint_ref_table: String,
+    pub waypoint_ref_table: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -337,21 +337,26 @@ pub struct Procedures {
     pub altitude2: Option<f64>,
     pub arc_radius: Option<f64>,
     pub area_code: String,
-    pub authorization_required: Option<String>,    // new
-    pub center_waypoint_icao_code: Option<String>, // new
+    pub authorization_required: Option<AuthorizationRequired>, // new
+    pub center_waypoint_icao_code: Option<String>,             // new
     pub center_waypoint_latitude: Option<f64>,
     pub center_waypoint_longitude: Option<f64>,
-    pub center_waypoint_ref_table: String, // new
+    pub center_waypoint_ref_table: Option<String>, // new
     pub center_waypoint: Option<String>,
     pub course_flag: Option<String>, // new
     pub course: Option<f64>,         // new
     pub distance_time: Option<f64>,
+    pub gnss_fms_indication: Option<String>, // New
+    pub lnav_authorized_sbas: Option<ProcedureTypeApproved>, // New
+    pub lnav_level_service_name: Option<String>, // New
+    pub lnav_vnav_authorized_sbas: Option<ProcedureTypeApproved>, // New
+    pub lnav_vnav_level_service_name: Option<String>, // New
     pub path_termination: LegType,
     pub procedure_identifier: String,
     pub recommended_navaid_icao_code: Option<String>, // new
     pub recommended_navaid_latitude: Option<f64>,
     pub recommended_navaid_longitude: Option<f64>,
-    pub recommended_navaid_ref_table: String, // new
+    pub recommended_navaid_ref_table: Option<String>, // new
     pub recommended_navaid: Option<String>,
     pub rho: Option<f64>,
     pub rnp: Option<f64>,
@@ -370,7 +375,7 @@ pub struct Procedures {
     pub waypoint_identifier: Option<String>,
     pub waypoint_latitude: Option<f64>,
     pub waypoint_longitude: Option<f64>,
-    pub waypoint_ref_table: String, // new
+    pub waypoint_ref_table: Option<String>, // new
 }
 
 #[derive(Deserialize, Debug)]

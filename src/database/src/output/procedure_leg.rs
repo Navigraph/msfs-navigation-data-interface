@@ -2,7 +2,10 @@ use serde::Serialize;
 
 use super::fix::Fix;
 use crate::{
-    enums::{AltitudeDescriptor, LegType, SpeedDescriptor, TurnDirection},
+    enums::{
+        AltitudeDescriptor, AuthorizationRequired, LegType, ProcedureTypeApproved, SpeedDescriptor,
+        TurnDirection,
+    },
     math::{Degrees, Feet, Knots, Minutes, NauticalMiles},
     sql_structs,
 };
@@ -19,6 +22,13 @@ pub struct AltitudeContstraint {
 pub struct SpeedConstraint {
     value: Knots,
     descriptor: SpeedDescriptor,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Serialize, Clone)]
+pub struct ProcedureType {
+    authorized: Option<ProcedureTypeApproved>,
+    name: Option<String>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -44,6 +54,8 @@ pub struct ProcedureLeg {
 
     /// The rnp (required navigational performance) of this leg in nautical miles
     rnp: Option<NauticalMiles>,
+    /// Authorization Required
+    ar: Option<AuthorizationRequired>,
 
     /// The fix that this leg terminates at
     ///
@@ -80,6 +92,13 @@ pub struct ProcedureLeg {
 
     /// The radius of the arc to be flown for an `RF` leg
     arc_radius: Option<NauticalMiles>,
+
+    /// Check Appendix 3.45 for usage, making this into an enum would lose information
+    gnss_fms_indication: Option<String>,
+
+    /// Level of service approved (Yes (A) / No (N))
+    lnav_authorized: Option<ProcedureType>,
+    lnav_vnav_authorized: Option<ProcedureType>,
 }
 
 impl From<sql_structs::Procedures> for ProcedureLeg {
@@ -103,6 +122,7 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
             }),
             vertical_angle: leg.vertical_angle,
             rnp: leg.rnp,
+            ar: leg.authorization_required,
             fix: if leg.waypoint_identifier.is_some() {
                 Some(Fix::from_row_data(
                     leg.waypoint_latitude.unwrap(),
@@ -155,6 +175,27 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
             },
             arc_radius: leg.arc_radius,
             leg_type: leg.path_termination,
+            gnss_fms_indication: leg.gnss_fms_indication,
+            lnav_authorized: if leg.lnav_authorized_sbas.is_some()
+                || leg.lnav_level_service_name.is_some()
+            {
+                Some(ProcedureType {
+                    authorized: leg.lnav_authorized_sbas,
+                    name: leg.lnav_level_service_name,
+                })
+            } else {
+                None
+            },
+            lnav_vnav_authorized: if leg.lnav_vnav_authorized_sbas.is_some()
+                || leg.lnav_vnav_level_service_name.is_some()
+            {
+                Some(ProcedureType {
+                    authorized: leg.lnav_vnav_authorized_sbas,
+                    name: leg.lnav_vnav_level_service_name,
+                })
+            } else {
+                None
+            },
         }
     }
 }

@@ -369,3 +369,19 @@ pub enum RunwaySurface {
     #[serde(rename = "UNPV")]
     Unpaved,
 }
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum ProcedureTypeApproved {
+    #[serde(rename = "A")]
+    Yes,
+    #[serde(rename = "N")]
+    No,
+}
+
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+pub enum AuthorizationRequired {
+    #[serde(rename = "Y")]
+    Yes,
+    #[serde(rename = "N")]
+    No,
+}

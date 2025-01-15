@@ -197,7 +197,9 @@ impl<'a> Dispatcher<'a> {
     }
 
     fn on_download_finish(&mut self) {
-        if let Ok(path) = navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_WORK_LOCATION) {
+        if let Ok(path) =
+            navigation_database::util::find_sqlite_file(consts::NAVIGATION_DATA_WORK_LOCATION)
+        {
             match self.database.set_active_database(path) {
                 Ok(_) => {}
                 Err(e) => {

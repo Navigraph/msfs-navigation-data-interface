@@ -18,6 +18,8 @@ pub enum FixType {
     VhfNavaid,
     #[serde(rename = "W")]
     Waypoint,
+    #[serde(rename = "U")]
+    None,
 }
 
 #[serde_with::skip_serializing_none]
@@ -35,7 +37,7 @@ pub enum FixType {
 /// - `Waypoint`
 pub struct Fix {
     /// The type of fix
-    pub fix_type: FixType,
+    pub fix_type: Option<FixType>,
     /// The identifier of this fix (not unique), such as `KLAX` or `BI` or `RW17L` or `G07J` or `ISYK` or `YXM` or
     /// `GLENN`
     pub ident: String,
@@ -56,17 +58,21 @@ impl Fix {
         ident: String,
         icao_code: String,
         airport_ident: Option<String>,
-        ref_table: String,
+        ref_table: Option<String>,
     ) -> Self {
-        let fix_type = match ref_table.as_str() {
-            "PA" => FixType::Airport,
-            "PN" | "DB" => FixType::NdbNavaid,
-            "PG" => FixType::RunwayThreshold,
-            "PT" => FixType::GlsNavaid,
-            "PI" => FixType::IlsNavaid,
-            "D " => FixType::VhfNavaid,
-            "EA" | "PC" => FixType::Waypoint,
-            x => panic!("Unexpected table: '{x}'"),
+        let fix_type = if let Some(ref_table) = ref_table {
+            Some(match ref_table.as_str() {
+                "PA" => FixType::Airport,
+                "PN" | "DB" => FixType::NdbNavaid,
+                "PG" => FixType::RunwayThreshold,
+                "PT" => FixType::GlsNavaid,
+                "PI" => FixType::IlsNavaid,
+                "D " => FixType::VhfNavaid,
+                "EA" | "PC" => FixType::Waypoint,
+                x => panic!("Unexpected table: '{x}'"),
+            })
+        } else {
+            None
         };
 
         Self {

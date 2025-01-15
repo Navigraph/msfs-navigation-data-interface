@@ -190,15 +190,23 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
 
     let navigation_data_status = NavigationDataStatus {
         status,
-        installed_format: installed_cycle_info.as_ref().map(|installed_cycle_info| installed_cycle_info.format.clone()),
-        installed_revision: installed_cycle_info.as_ref().map(|installed_cycle_info| installed_cycle_info.revision.clone()),
-        installed_cycle: installed_cycle_info.as_ref().map(|installed_cycle_info| installed_cycle_info.cycle.clone()),
+        installed_format: installed_cycle_info
+            .as_ref()
+            .map(|installed_cycle_info| installed_cycle_info.format.clone()),
+        installed_revision: installed_cycle_info
+            .as_ref()
+            .map(|installed_cycle_info| installed_cycle_info.revision.clone()),
+        installed_cycle: installed_cycle_info
+            .as_ref()
+            .map(|installed_cycle_info| installed_cycle_info.cycle.clone()),
         install_path: if status == InstallStatus::Manual {
             Some(consts::NAVIGATION_DATA_WORK_LOCATION.to_string())
         } else {
             None
         },
-        validity_period: installed_cycle_info.as_ref().map(|installed_cycle_info| installed_cycle_info.validity_period.clone()),
+        validity_period: installed_cycle_info
+            .as_ref()
+            .map(|installed_cycle_info| installed_cycle_info.validity_period.clone()),
         latest_cycle: response_struct.cycle,
     };
 
