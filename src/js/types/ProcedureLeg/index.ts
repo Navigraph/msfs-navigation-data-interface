@@ -96,6 +96,35 @@ export interface SpeedConstraint {
   descriptor: SpeedDescriptor
 }
 
+export enum RequiresAuthentication {
+  Authorized = "Y",
+  NotAuthorized = "N",
+}
+
+export enum GnssFmsIndication {
+  NotAuthorized = "0",
+  GnssMonitored = "1",
+  GnssNotMonitored = "2",
+  GnssAuthorized = "3",
+  FmsAuthorized = "4",
+  GnssFmsAuthorized = "5",
+  RnavSbasAuthorized = "A",
+  RnavSbasNotAuthorized = "B",
+  RnavSbasUnspecified = "C",
+  GpsProcedure = "D",
+  Unspecified = "U",
+}
+
+export interface ProcedureAuthorization {
+  authorized: Authorized
+  name: string
+}
+
+export enum Authorized {
+  Authorized = "A",
+  NotAuthorized = "N",
+}
+
 export interface ProcedureLegBase {
   overfly: boolean
 
@@ -106,6 +135,15 @@ export interface ProcedureLegBase {
   vertical_angle?: Degrees
 
   rnp?: NauticalMiles
+
+  // I'm not sure what types of legs these are in so it'll be here until I have more info
+  ra?: RequiresAuthentication
+
+  gnss_fms_indication?: GnssFmsIndication
+
+  lnav_authorized?: ProcedureAuthorization
+
+  lnav_vnav_authorized?: ProcedureAuthorization
 }
 
 export type HXLegData = HALegData | HFLegData | HMLegData
