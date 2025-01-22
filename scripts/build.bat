@@ -2,7 +2,7 @@
 
 cd %~dp0
 
-call .\run_docker_cmd.bat ./scripts/build.sh
+cargo-msfs build msfs2020 -i .. -o ..\out\msfs_navigation_data_interface.wasm
 
 cd %~dp0
 

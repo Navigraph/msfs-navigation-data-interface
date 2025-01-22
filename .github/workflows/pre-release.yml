@@ -25,24 +25,24 @@ jobs:
           generate_release_notes: true
 
   # Enable in future to automate publishing of NPM package
-  release-js:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  # release-js:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          registry-url: 'https://registry.npmjs.org'
-          cache: "npm"
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "18"
+  #         registry-url: 'https://registry.npmjs.org'
+  #         cache: "npm"
 
-      - name: Install node modules
-        run: npm ci
+  #     - name: Install node modules
+  #       run: npm ci
 
-      - name: Build JS Interface
-        run: cd src/js && npm run build
+  #     - name: Build JS Interface
+  #       run: cd src/js && npm run build
 
-      - name: Publish to NPM
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: cd src/js && npm publish --tag next
+  #     - name: Publish to NPM
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #       run: cd src/js && npm publish --tag next
