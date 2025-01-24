@@ -10,12 +10,15 @@ run-name: Create pre-release for `${{ github.ref_name }}`
 
 jobs:
   release-wasm:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup
+        run: npm run setup
+
       - name: Build WASM module
-        run: npm run build:wasm-workflow
+        run: npm run build:wasm
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v1

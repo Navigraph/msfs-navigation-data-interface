@@ -6,6 +6,7 @@
   "scripts": {
     "format": "prettier --write .",
     "lint:js": "eslint \"src/js/**/*.ts\"",
+    "setup": ".\\scripts\\setup.bat",
     "build:wasm": ".\\scripts\\build.bat",
     "build:wasm-workflow": "./scripts/build.sh",
     "build:js": "cd .\\src\\js && npm run build",
