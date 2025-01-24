@@ -10,7 +10,7 @@ run-name: Create pre-release for `${{ github.ref_name }}`
 
 jobs:
   release-wasm:
-    runs-on: windows-latest
+    runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
 
