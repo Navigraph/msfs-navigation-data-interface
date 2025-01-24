@@ -10,7 +10,7 @@ run-name: Create pre-release for `${{ github.ref_name }}`
 
 jobs:
   release-wasm:
-    runs-on: ubuntu-24.04
+    runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
 
@@ -26,8 +26,8 @@ jobs:
           path: $HOME/.cargo/bin
           key: ${{ runner.os }}-cargo-msfs
 
-      # - name: Setup
-      #   run: npm run setup
+      - name: Setup
+        run: npm run setup
 
       - name: Build WASM module
         run: npm run build:wasm-workflow
