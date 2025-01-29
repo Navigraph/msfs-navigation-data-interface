@@ -14,11 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Clang
-        uses: egor-tensin/setup-clang@v1
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2.0.5
         with:
-          version: 17
-          platform: x64
+          version: "17.0.6"
 
       - name: Cache cargo-msfs
         uses: actions/cache@v4
