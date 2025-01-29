@@ -8,7 +8,7 @@
     "lint:js": "eslint \"src/js/**/*.ts\"",
     "setup": ".\\scripts\\setup.bat",
     "build:wasm": ".\\scripts\\build.bat",
-    "build:wasm-workflow": "./scripts/build.sh",
+    "build:wasm-workflow": ".\\scripts\\build_workflow.bat",
     "build:js": "cd .\\src\\js && npm run build",
     "build:gauge": "cd .\\examples\\gauge && npm run build",
     "dev:gauge": "cd .\\examples\\gauge && npm run dev",
