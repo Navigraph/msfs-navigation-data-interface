@@ -60,20 +60,16 @@ impl Fix {
         airport_ident: Option<String>,
         ref_table: Option<String>,
     ) -> Self {
-        let fix_type = if let Some(ref_table) = ref_table {
-            Some(match ref_table.as_str() {
-                "PA" => FixType::Airport,
-                "PN" | "DB" => FixType::NdbNavaid,
-                "PG" => FixType::RunwayThreshold,
-                "PT" => FixType::GlsNavaid,
-                "PI" => FixType::IlsNavaid,
-                "D " => FixType::VhfNavaid,
-                "EA" | "PC" => FixType::Waypoint,
-                x => panic!("Unexpected table: '{x}'"),
-            })
-        } else {
-            None
-        };
+        let fix_type = ref_table.map(|ref_table| match ref_table.as_str() {
+            "PA" => FixType::Airport,
+            "PN" | "DB" => FixType::NdbNavaid,
+            "PG" => FixType::RunwayThreshold,
+            "PT" => FixType::GlsNavaid,
+            "PI" => FixType::IlsNavaid,
+            "D " => FixType::VhfNavaid,
+            "EA" | "PC" => FixType::Waypoint,
+            x => panic!("Unexpected table: '{x}'"),
+        });
 
         Self {
             fix_type,

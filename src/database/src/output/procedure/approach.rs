@@ -20,7 +20,7 @@ pub struct Approach {
     ///
     /// For approaches which are for a specific runway, it will have a format such as `I08L` or `R12-M`.
     /// - The first character identifies the type of approach, however this will not always match the `approach_type`
-    /// field. The next three characters represent the runway identifier, such as `08L` or `12`.
+    ///   field. The next three characters represent the runway identifier, such as `08L` or `12`.
     /// - The 5th character (optional) is the multiple indicator of the approach, it can be any capital letter.
     /// - For approaches with a multiple indicator and no `LCR` on the runway, the 4th character will be a `-`
     ///
