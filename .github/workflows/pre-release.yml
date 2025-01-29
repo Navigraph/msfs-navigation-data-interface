@@ -22,7 +22,7 @@ jobs:
       - name: Cache cargo-msfs
         uses: actions/cache@v4
         with:
-          path: $HOME/.cargo/bin
+          path: ~\.cargo\bin
           key: ${{ runner.os }}-cargo-msfs
 
       - name: Setup
