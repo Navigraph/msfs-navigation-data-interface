@@ -10,7 +10,7 @@ run-name: Create pre-release for `${{ github.ref_name }}`
 
 jobs:
   release-wasm:
-    runs-on: windows-2025
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
 
@@ -30,7 +30,7 @@ jobs:
         run: npm run setup
 
       - name: Build WASM module
-        run: npm run build:wasm-workflow
+        run: npm run build:wasm
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
