@@ -286,10 +286,10 @@ async function lifeCycle() {
 beforeAll(async () => {
   const navigationDataInterface = new NavigraphNavigationDataInterface()
 
-  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL
+  const downloadUrl = process.env.NAVIGATION_DATA_SIGNED_URL_V2
 
   if (!downloadUrl) {
-    throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL`")
+    throw new Error("Please specify the env var `NAVIGATION_DATA_SIGNED_URL_V2`")
   }
 
   // Utility function to convert onReady to a promise
