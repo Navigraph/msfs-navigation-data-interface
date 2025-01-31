@@ -14,7 +14,7 @@
     "dev:gauge": "cd .\\examples\\gauge && npm run dev",
     "jest": "jest --verbose",
     "test": ".\\scripts\\test.bat",
-    "test-workflow": "./scripts/test.sh",
+    "test-workflow": ".\\scripts\\test_workflow.bat",
     "docker": ".\\scripts\\run_docker_cmd.bat"
   },
   "devDependencies": {
