@@ -13,5 +13,5 @@ export interface XRLegData extends ProcedureLegBase {
 
   rho: NauticalMiles
 
-  magnetic_course: Degrees
+  course: Degrees
 }

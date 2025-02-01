@@ -15,7 +15,7 @@ export interface FALegData extends ProcedureLegBase {
 
   rho: NauticalMiles
 
-  magnetic_course: Degrees
+  course: Degrees
 
   altitude: {
     altitude1: Feet

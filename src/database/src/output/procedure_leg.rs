@@ -74,9 +74,9 @@ pub struct ProcedureLeg {
     /// The distance in nautical miles from the `recommended_navaid` to the `fix`
     rho: Option<NauticalMiles>,
 
-    /// The magnetic course to be flown for legs which are defined by a course or heading to a termination, or the
+    /// The course to be flown for legs which are defined by a course or heading to a termination, or the
     /// radial from the `recomended_navaid` to the expected start location on an `AF` leg
-    magnetic_course: Option<Degrees>,
+    course: Option<Degrees>,
 
     /// The length of the leg in nautical miles
     length: Option<NauticalMiles>,
@@ -149,7 +149,7 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
             },
             theta: leg.theta,
             rho: leg.rho,
-            magnetic_course: None,
+            course: leg.course,
             length: if leg.route_distance_holding_distance_time == Some("D".to_string()) {
                 leg.distance_time
             } else {

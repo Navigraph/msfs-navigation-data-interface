@@ -9,7 +9,7 @@ export interface XDLegData extends ProcedureLegBase {
 
   recommended_navaid: Fix
 
-  magnetic_course: Degrees
+  course: Degrees
 
   length: NauticalMiles
 }

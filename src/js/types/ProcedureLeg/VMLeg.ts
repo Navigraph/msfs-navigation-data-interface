@@ -6,5 +6,5 @@ export interface VMLegData extends ProcedureLegBase {
 
   turn_direction?: TurnDirection
 
-  magnetic_course: Degrees
+  course: Degrees
 }

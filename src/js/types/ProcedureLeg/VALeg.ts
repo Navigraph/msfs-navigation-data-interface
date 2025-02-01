@@ -6,7 +6,7 @@ export interface VALegData extends ProcedureLegBase {
 
   turn_direction?: TurnDirection
 
-  magnetic_course: Degrees
+  course: Degrees
 
   altitude: {
     altitude1: Feet

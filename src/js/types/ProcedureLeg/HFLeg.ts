@@ -13,7 +13,7 @@ export interface HFLegData extends ProcedureLegBase {
 
   rho?: NauticalMiles
 
-  magnetic_course: Degrees
+  course: Degrees
 
   length?: NauticalMiles
 

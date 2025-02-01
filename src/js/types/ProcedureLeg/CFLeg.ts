@@ -15,7 +15,7 @@ export interface CFLegData extends ProcedureLegBase {
 
   rho: NauticalMiles
 
-  magnetic_course: Degrees
+  course: Degrees
 
   length: NauticalMiles
 }
