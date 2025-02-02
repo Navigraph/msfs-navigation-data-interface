@@ -106,6 +106,7 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
         ProcedureLeg {
             overfly: leg
                 .waypoint_description_code
+                .clone()
                 .map_or(false, |x| x.chars().nth(1) == Some('Y')),
             altitude: leg.altitude1.map(|altitude1| AltitudeContstraint {
                 altitude1,
@@ -131,6 +132,7 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
                     leg.waypoint_icao_code.unwrap(),
                     Some(leg.airport_identifier.clone()),
                     leg.waypoint_ref_table,
+                    leg.waypoint_description_code.clone(),
                 ))
             } else {
                 None
@@ -143,6 +145,7 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
                     leg.recommended_navaid_icao_code.unwrap(),
                     Some(leg.airport_identifier.clone()),
                     leg.recommended_navaid_ref_table,
+                    leg.waypoint_description_code.clone(),
                 ))
             } else {
                 None
@@ -169,6 +172,7 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
                     leg.center_waypoint_icao_code.unwrap(),
                     Some(leg.airport_identifier),
                     leg.center_waypoint_ref_table,
+                    leg.waypoint_description_code,
                 ))
             } else {
                 None

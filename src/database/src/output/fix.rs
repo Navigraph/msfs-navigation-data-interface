@@ -38,6 +38,7 @@ pub enum FixType {
 pub struct Fix {
     /// The type of fix
     pub fix_type: Option<FixType>,
+    pub fix_code: Option<String>,
     /// The identifier of this fix (not unique), such as `KLAX` or `BI` or `RW17L` or `G07J` or `ISYK` or `YXM` or
     /// `GLENN`
     pub ident: String,
@@ -59,6 +60,7 @@ impl Fix {
         icao_code: String,
         airport_ident: Option<String>,
         ref_table: Option<String>,
+        fix_code: Option<String>,
     ) -> Self {
         let fix_type = ref_table.map(|ref_table| match ref_table.as_str() {
             "PA" => FixType::Airport,
@@ -77,6 +79,7 @@ impl Fix {
             icao_code,
             location: Coordinates { lat, long },
             airport_ident,
+            fix_code,
         }
     }
 }
