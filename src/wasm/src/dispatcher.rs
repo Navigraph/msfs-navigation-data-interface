@@ -51,7 +51,7 @@ pub struct Dispatcher<'a> {
     queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
 }
 
-impl<'a> Dispatcher<'a> {
+impl Dispatcher<'_> {
     pub fn new() -> Self {
         Dispatcher {
             commbus: CommBus::default(),
@@ -128,7 +128,7 @@ impl<'a> Dispatcher<'a> {
         let installed_cycle = match meta::get_installed_cycle_from_json(
             &Path::new(consts::NAVIGATION_DATA_WORK_LOCATION).join("cycle.json"),
         ) {
-            Ok(cycle) => Some(cycle.cycle),
+            Ok(cycle) => Some(cycle),
             Err(_) => None,
         };
 
@@ -136,15 +136,19 @@ impl<'a> Dispatcher<'a> {
         let bundled_cycle = match meta::get_installed_cycle_from_json(
             &Path::new(consts::NAVIGATION_DATA_DEFAULT_LOCATION).join("cycle.json"),
         ) {
-            Ok(cycle) => Some(cycle.cycle),
+            Ok(cycle) => Some(cycle),
             Err(_) => None,
         };
 
         // Determine if we are bundled ONLY and the bundled cycle is newer than the installed (old bundled) cycle
         let bundled_updated = if is_bundled.is_some_and(|x| x) {
             // Clippy yells but this isn't good to switch until if-let chaining is implemented (Rust 2024)
-            if installed_cycle.is_some() && bundled_cycle.is_some() {
-                bundled_cycle.unwrap() > installed_cycle.unwrap()
+            if let (Some(installed_cycle), Some(bundled_cycle)) = (installed_cycle, bundled_cycle) {
+                bundled_cycle
+                    .cycle
+                    .cmp(&installed_cycle.cycle)
+                    .then(bundled_cycle.revision.cmp(&installed_cycle.revision))
+                    .is_gt()
             } else {
                 false
             }

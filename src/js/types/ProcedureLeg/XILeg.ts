@@ -9,5 +9,5 @@ export interface XILegData extends ProcedureLegBase {
 
   recommended_navaid?: Fix
 
-  magnetic_course: Degrees
+  course: Degrees
 }

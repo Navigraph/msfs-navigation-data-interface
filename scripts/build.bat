@@ -2,8 +2,8 @@
 
 cd %~dp0
 
-call .\run_docker_cmd.bat ./scripts/build.sh
+mkdir ..\out
 
-cd %~dp0
+cargo-msfs build msfs2020 -i .. -o ..\out\msfs_navigation_data_interface.wasm
 
 copy ..\out\msfs_navigation_data_interface.wasm ..\examples\aircraft\PackageSources\SimObjects\Airplanes\Navigraph_Navigation_Data_Interface_Aircraft\panel

@@ -67,6 +67,7 @@ pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway>
                 airway_row.icao_code.unwrap_or("NULL".to_string()),
                 None,
                 airway_row.waypoint_ref_table,
+                airway_row.waypoint_description_code.clone(),
             ));
 
             if airway_row

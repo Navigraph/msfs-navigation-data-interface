@@ -30,12 +30,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "allocator-api2"
-version = "0.2.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
-
-[[package]]
 name = "android-tzdata"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -375,7 +369,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
 dependencies = [
  "ahash",
- "allocator-api2",
 ]
 
 [[package]]
@@ -386,9 +379,9 @@ checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
 
 [[package]]
 name = "hashlink"
-version = "0.8.4"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8094feaf31ff591f651a2664fb9cfd92bba7a60ce3197265e9482ebe753c8f7"
+checksum = "6ba4ff7128dee98c7dc9794b6a411377e1404dba1c97deb8d1a55297bd25d8af"
 dependencies = [
  "hashbrown 0.14.5",
 ]
@@ -505,8 +498,8 @@ dependencies = [
 
 [[package]]
 name = "libsqlite3-sys"
-version = "0.27.0"
-source = "git+https://github.com/navigraph/rusqlite?rev=7921774#792177423621228221ae7a0dc54d828d6b3871d2"
+version = "0.30.1"
+source = "git+https://github.com/navigraph/rusqlite?rev=f716d5c#f716d5cface7fe7763db63e549482e846ed39db2"
 dependencies = [
  "cc",
  "pkg-config",
@@ -561,7 +554,7 @@ dependencies = [
 
 [[package]]
 name = "msfs-navigation-data-interface"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "msfs",
  "navigation_database",
@@ -716,8 +709,8 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
 name = "rusqlite"
-version = "0.30.0"
-source = "git+https://github.com/navigraph/rusqlite?rev=7921774#792177423621228221ae7a0dc54d828d6b3871d2"
+version = "0.32.1"
+source = "git+https://github.com/navigraph/rusqlite?rev=f716d5c#f716d5cface7fe7763db63e549482e846ed39db2"
 dependencies = [
  "bitflags",
  "fallible-iterator",
@@ -786,9 +779,9 @@ dependencies = [
 
 [[package]]
 name = "serde_rusqlite"
-version = "0.34.0"
+version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4600dac14aada464c5584d327baa164e372153309bc4c0fb1498bbfbaa5a028b"
+checksum = "b741cc5ef185cd96157e762c3bba743c4e94c8dc6af0edb053c48d2b3c27e691"
 dependencies = [
  "rusqlite",
  "serde",

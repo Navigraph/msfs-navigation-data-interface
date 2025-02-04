@@ -6,14 +6,15 @@
   "scripts": {
     "format": "prettier --write .",
     "lint:js": "eslint \"src/js/**/*.ts\"",
+    "setup": ".\\scripts\\setup.bat",
     "build:wasm": ".\\scripts\\build.bat",
-    "build:wasm-workflow": "./scripts/run_docker_cmd.sh ./scripts/build.sh",
+    "build:wasm-workflow": ".\\scripts\\build_workflow.bat",
     "build:js": "cd .\\src\\js && npm run build",
     "build:gauge": "cd .\\examples\\gauge && npm run build",
     "dev:gauge": "cd .\\examples\\gauge && npm run dev",
     "jest": "jest --verbose",
     "test": ".\\scripts\\test.bat",
-    "test-workflow": "./scripts/test.sh",
+    "test-workflow": ".\\scripts\\test_workflow.bat",
     "docker": ".\\scripts\\run_docker_cmd.bat"
   },
   "devDependencies": {

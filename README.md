@@ -62,7 +62,7 @@ Before building, make sure you have properly created and set an `.env` file in `
 
 ## Building the WASM Module Yourself
 
-1. [Download](https://www.docker.com/products/docker-desktop/) Docker Desktop
+1. [Install](https://github.com/navigraph/cargo-msfs) cargo-msfs
 2. Run `npm run build:wasm` (must be on Windows)
    - This will take a while to download and build the first time, but subsequent runs will be quicker
 3. The compiled WASM module will be copied to `out` **and** `examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel`

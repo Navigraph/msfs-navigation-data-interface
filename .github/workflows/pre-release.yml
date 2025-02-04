@@ -10,9 +10,23 @@ run-name: Create pre-release for `${{ github.ref_name }}`
 
 jobs:
   release-wasm:
-    runs-on: ubuntu-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v2.0.5
+        with:
+          version: "17.0.6"
+
+      - name: Cache cargo-msfs
+        uses: actions/cache@v4
+        with:
+          path: ~\.cargo\bin
+          key: ${{ runner.os }}-cargo-msfs
+
+      - name: Setup
+        run: npm run setup
 
       - name: Build WASM module
         run: npm run build:wasm-workflow

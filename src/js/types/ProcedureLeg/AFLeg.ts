@@ -15,5 +15,5 @@ export interface AFLegData extends ProcedureLegBase {
 
   rho: NauticalMiles
 
-  magnetic_course: Degrees
+  course: Degrees
 }

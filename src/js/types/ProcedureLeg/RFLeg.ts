@@ -13,7 +13,7 @@ export interface RFLegData extends ProcedureLegBase {
 
   theta?: Degrees
 
-  magnetic_course?: Degrees
+  course?: Degrees
 
   length: NauticalMiles
 

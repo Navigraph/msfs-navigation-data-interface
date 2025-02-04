@@ -15,5 +15,5 @@ export interface FMLegData extends ProcedureLegBase {
 
   rho: NauticalMiles
 
-  magnetic_course: Degrees
+  course: Degrees
 }
