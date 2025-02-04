@@ -10,8 +10,13 @@ dotenv.config()
 
 // eslint-disable-next-line no-undef
 const DEBUG = process.env.DEBUG === "true"
+// eslint-disable-next-line no-undef
+const is2024 = process.env.VERSION === "2024"
 
 let outputDest = "../aircraft/PackageSources"
+if (is2024) {
+  outputDest = "../aircraft_2024/PackageSources"
+}
 if (DEBUG) {
   outputDest = "../aircraft/Packages/navigraph-aircraft-navigation-data-interface-sample"
 }
