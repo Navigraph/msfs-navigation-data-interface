@@ -4,4 +4,4 @@ set image="ghcr.io/flybywiresim/dev-env@sha256:aa36c0e4b8c66c2ec0195a104f8ae04a8
 
 cd %~dp0
 
-winpty docker run --rm -it -v "%cd%\..\:/external" -v "%cd%\..\out:/out" %image% %*
+docker run --rm -it -v "%cd%\..\:/external" -v "%cd%\..\out:/out" %image% %*
