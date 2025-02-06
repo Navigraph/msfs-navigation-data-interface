@@ -23,9 +23,9 @@ jobs:
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
         with:
-          files: 
-            - ./interface-2020.zip
-            - ./interface-2024.zip
+          files: |
+            ./interface-2020.zip
+            ./interface-2024.zip
           prerelease: true
           generate_release_notes: true
 
