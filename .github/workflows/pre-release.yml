@@ -10,7 +10,7 @@ run-name: Create pre-release for `${{ github.ref_name }}`
 
 jobs:
   release-wasm:
-    runs-on: ubuntu
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
