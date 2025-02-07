@@ -1,13 +1,9 @@
-mkdir ../out
+mkdir ../out20
+mkdir ../out24
 
-cargo-msfs info
+cargo-msfs install msfs2020
+cargo-msfs install msfs2024
 
-cargo-msfs build msfs2020 -i .. -o ../out/msfs_navigation_data_interface.wasm
+cargo-msfs build msfs2020 -i .. -o ../out20/msfs_navigation_data_interface.wasm
+cargo-msfs build msfs2024 -i .. -o ../out24/msfs_navigation_data_interface.wasm
 
-zip ../interface-2020.zip ../out/msfs_navigation_data_interface.wasm
-
-rm -rf ../out
-
-cargo-msfs build msfs2024 -i .. -o ../out/msfs_navigation_data_interface.wasm
-
-zip ../interface-2024.zip ../out/msfs_navigation_data_interface.wasm

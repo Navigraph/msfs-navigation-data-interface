@@ -20,12 +20,17 @@ jobs:
           token: ${{ secrets.BOT_TOKEN }}
           run: ./scripts/build.sh
 
+      = name: Zip Modules
+        run: |
+          zip -j interface2020.zip out20/*
+          zip -j interface2024.zip out24/*
+
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./interface-2020.zip
-            ./interface-2024.zip
+            ./interface2020.zip
+            ./interface2024.zip
           prerelease: true
           generate_release_notes: true
 
