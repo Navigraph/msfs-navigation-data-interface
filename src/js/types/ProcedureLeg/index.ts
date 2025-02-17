@@ -4,6 +4,7 @@ import { CALegData } from "./CALeg"
 import { CFLegData } from "./CFLeg"
 import { DFLegData } from "./DFLeg"
 import { FALegData } from "./FALeg"
+import { FCLegData } from "./FCLeg"
 import { FDLegData } from "./FDLeg"
 import { FMLegData } from "./FMLeg"
 import { HALegData } from "./HALeg"
@@ -148,7 +149,7 @@ export interface ProcedureLegBase {
 
 export type HXLegData = HALegData | HFLegData | HMLegData
 export type XFLegData = AFLegData | CFLegData | DFLegData | IFLegData | RFLegData | TFLegData | HXLegData
-export type FXLegData = FALegData | FMLegData | FDLegData
+export type FXLegData = FALegData | FCLegData | FMLegData | FDLegData
 export type ProcedureLeg = XFLegData | FXLegData | CALegData | XILegData | XDLegData | VALegData | VMLegData | XRLegData
 
 export * from "./AFLeg"
@@ -156,6 +157,7 @@ export * from "./CALeg"
 export * from "./CFLeg"
 export * from "./DFLeg"
 export * from "./FALeg"
+export * from "./FCLeg"
 export * from "./FDLeg"
 export * from "./FMLeg"
 export * from "./HALeg"
