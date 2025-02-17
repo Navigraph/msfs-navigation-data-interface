@@ -11,6 +11,7 @@ import { HALegData } from "./HALeg"
 import { HFLegData } from "./HFLeg"
 import { HMLegData } from "./HMLeg"
 import { IFLegData } from "./IFLeg"
+import { PILegData } from "./PILeg"
 import { RFLegData } from "./RFLeg"
 import { TFLegData } from "./TFLeg"
 import { VALegData } from "./VALeg"
@@ -150,7 +151,16 @@ export interface ProcedureLegBase {
 export type HXLegData = HALegData | HFLegData | HMLegData
 export type XFLegData = AFLegData | CFLegData | DFLegData | IFLegData | RFLegData | TFLegData | HXLegData
 export type FXLegData = FALegData | FCLegData | FMLegData | FDLegData
-export type ProcedureLeg = XFLegData | FXLegData | CALegData | XILegData | XDLegData | VALegData | VMLegData | XRLegData
+export type ProcedureLeg =
+  | XFLegData
+  | FXLegData
+  | CALegData
+  | XILegData
+  | XDLegData
+  | VALegData
+  | VMLegData
+  | XRLegData
+  | PILegData
 
 export * from "./AFLeg"
 export * from "./CALeg"
@@ -164,6 +174,7 @@ export * from "./HALeg"
 export * from "./HFLeg"
 export * from "./HMLeg"
 export * from "./IFLeg"
+export * from "./PILeg"
 export * from "./RFLeg"
 export * from "./TFLeg"
 export * from "./VALeg"
