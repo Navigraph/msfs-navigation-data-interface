@@ -1,3 +1,5 @@
+#!/bin/bash
+
 docker build -t local .
 
 ./scripts/run_docker_cmd.sh ./scripts/build.sh both
