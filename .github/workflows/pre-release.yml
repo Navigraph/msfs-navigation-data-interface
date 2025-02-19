@@ -14,16 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build WASM module
-        uses: Navigraph/cargo-msfs@v1
-        with:
-          token: ${{ secrets.BOT_TOKEN }}
-          run: ./scripts/build.sh
-
-      - name: Zip Modules
-        run: |
-          zip -j interface2020.zip out20/*
-          zip -j interface2024.zip out24/*
+      - name: Workflow Script
+        run: ./scripts/workflow.sh
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
