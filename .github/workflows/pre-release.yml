@@ -14,15 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Workflow Script
+      - name: Build WASM
         run: ./scripts/workflow.sh
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./interface2020.zip
-            ./interface2024.zip
+            ./2020.zip
+            ./2024.zip
           prerelease: true
           generate_release_notes: true
 

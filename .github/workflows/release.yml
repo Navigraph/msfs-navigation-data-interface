@@ -15,13 +15,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build WASM module
-        run: npm run build:wasm-workflow
+      - name: Build WASM
+        run: ./scripts/workflow.sh
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./out/msfs_navigation_data_interface.wasm
+          files: |
+            ./2020.zip
+            ./2024.zip
           generate_release_notes: true
 
   # Enable in future to automate publishing of NPM package

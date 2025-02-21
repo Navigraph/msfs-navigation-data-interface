@@ -6,5 +6,5 @@ docker build -t local .
 
 echo "Building done, now zipping"
 
-zip -j interface2020.zip out20/*
-zip -j interface2024.zip out24/*
+zip -j 2020.zip out20/*
+zip -j 2024.zip out24/*
