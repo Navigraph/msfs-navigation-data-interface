@@ -1,7 +1,4 @@
-use std::{
-    env::{self, VarError},
-    time,
-};
+use std::env;
 
 mod consts;
 mod dispatcher;
