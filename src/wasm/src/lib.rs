@@ -16,7 +16,11 @@ async fn navigation_data_interface(
 
     if env::var("GITHUB_REPOSITORY").is_err() {
         let time = chrono::Utc::now();
-        hash = format!("{}-{}", hash, time.to_rfc3339());
+        hash = format!(
+            "{}-{}",
+            hash,
+            time.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+        );
     }
 
     // Log the current version of the module
