@@ -49,6 +49,7 @@ pub struct Dispatcher<'a> {
     database: Database,
     delta_time: std::time::Duration,
     queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
+    first_update: bool,
 }
 
 impl Dispatcher<'_> {
@@ -57,17 +58,15 @@ impl Dispatcher<'_> {
             commbus: CommBus::default(),
             downloader: Rc::new(NavigationDataDownloader::new()),
             database: Database::new(),
-            delta_time: std::time::Duration::from_secs(u64::MAX), /* Initialize to max so that we send a heartbeat on
-                                                                   * the first update */
+            delta_time: std::time::Duration::from_secs(0), /* Initialize to max so that we send a heartbeat on
+                                                            * the first update */
             queue: Rc::new(RefCell::new(Vec::new())),
+            first_update: true,
         }
     }
 
     pub fn on_msfs_event(&mut self, event: MSFSEvent) {
         match event {
-            MSFSEvent::PostInitialize => {
-                self.handle_initialized();
-            }
             MSFSEvent::PreDraw(data) => {
                 self.handle_update(data);
             }
@@ -96,11 +95,18 @@ impl Dispatcher<'_> {
     }
 
     fn handle_update(&mut self, data: &sGaugeDrawData) {
+        // On the first update, handle initialization code. Additionally, there are edge cases
+        // where the delta time causes a panic so we need to skip the first update after that.
+        if self.first_update {
+            self.handle_initialized();
+            self.first_update = false;
+            return;
+        }
         // Accumulate delta time for heartbeat
         self.delta_time += data.delta_time();
 
         // Send heartbeat every 5 seconds
-        if self.delta_time >= std::time::Duration::from_secs(5) {
+        if self.delta_time >= std::time::Duration::from_secs(1) {
             Dispatcher::send_event(events::EventType::Heartbeat, None);
             self.delta_time = std::time::Duration::from_secs(0);
         }
