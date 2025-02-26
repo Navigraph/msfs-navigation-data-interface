@@ -1,3 +1,3 @@
-@REM docker volume create cargo-cache
+@echo off
 
 docker build -t local .
