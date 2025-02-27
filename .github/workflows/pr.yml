@@ -6,7 +6,7 @@ on:
       - synchronize
       - ready_for_review
 
-name: Label, Build & Lint PR
+name: PR Checks
 
 jobs:
   autolabel:
