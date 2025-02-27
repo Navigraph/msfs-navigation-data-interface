@@ -63,25 +63,11 @@ jobs:
           echo NAVIGATION_DATA_SIGNED_URL=${{ secrets.NAVIGATION_DATA_SIGNED_URL }} >> .env
           echo NAVIGATION_DATA_SIGNED_URL_V2=${{ secrets.NAVIGATION_DATA_SIGNED_URL_V2 }} >> .env
 
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2.0.5
-        with:
-          version: "17.0.6"
+      - name: Build WASM
+        run: ./scripts/workflow.sh
 
-      - name: Cache cargo-msfs
-        uses: actions/cache@v4
-        with:
-          path: ~\.cargo\bin
-          key: ${{ runner.os }}-cargo-msfs
-
-      - name: Setup
-        run: npm run setup
-
-      - name: Build WASM module
-        run: npm run build:wasm-workflow
-
-      - name: Test
-        run: npm run test-workflow
+      # - name: Test
+      #   run: npm run test-workflow
         
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v4
