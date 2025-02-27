@@ -1,3 +1,5 @@
+use std::env;
+
 mod consts;
 mod dispatcher;
 mod download;
@@ -10,7 +12,16 @@ mod util;
 async fn navigation_data_interface(
     mut gauge: msfs::Gauge,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let hash = env!("GIT_HASH").split_at(7).0;
+    let mut hash = env!("GIT_HASH").split_at(7).0.to_string();
+
+    if env::var("GITHUB_REPOSITORY").is_err() {
+        let time = chrono::Utc::now();
+        hash = format!(
+            "{}-{}",
+            hash,
+            time.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+        );
+    }
 
     // Log the current version of the module
     println!(

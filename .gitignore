@@ -7,6 +7,8 @@ tsconfig.tsbuildinfo
 examples/aircraft/PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/NavigationDataInterfaceSample
 examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel/msfs_navigation_data_interface.wasm
 out
+out20
+out24
 
 # Rust
 # will have compiled files and executables

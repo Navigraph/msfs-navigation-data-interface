@@ -10,53 +10,41 @@ run-name: Create pre-release for `${{ github.ref_name }}`
 
 jobs:
   release-wasm:
-    runs-on: windows-2022
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2.0.5
-        with:
-          version: "17.0.6"
-
-      - name: Cache cargo-msfs
-        uses: actions/cache@v4
-        with:
-          path: ~\.cargo\bin
-          key: ${{ runner.os }}-cargo-msfs
-
-      - name: Setup
-        run: npm run setup
-
-      - name: Build WASM module
-        run: npm run build:wasm-workflow
-
-      - name: Pre-Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./out/msfs_navigation_data_interface.wasm
-          prerelease: true
-          generate_release_notes: true
-
-  # Enable in future to automate publishing of NPM package
-  release-js:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Build WASM
+        run: ./scripts/workflow.sh
+
+      - name: Pre-Release
+        uses: softprops/action-gh-release@v1
         with:
-          node-version: "18"
-          registry-url: 'https://registry.npmjs.org'
-          cache: "npm"
+          files: |
+            ./2020.zip
+            ./2024.zip
+          prerelease: true
+          generate_release_notes: true
 
-      - name: Install node modules
-        run: npm ci
+  # Enable in future to automate publishing of NPM package
+  # release-js:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Build JS Interface
-        run: cd src/js && npm run build
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "18"
+  #         registry-url: 'https://registry.npmjs.org'
+  #         cache: "npm"
 
-      - name: Publish to NPM
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: cd src/js && npm publish --tag next
+  #     - name: Install node modules
+  #       run: npm ci
+
+  #     - name: Build JS Interface
+  #       run: cd src/js && npm run build
+
+  #     - name: Publish to NPM
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #       run: cd src/js && npm publish --tag next

@@ -1,6 +1,6 @@
 [package]
 name = "msfs-navigation-data-interface"
-version = "1.1.1"
+version = "1.1.2"
 edition = "2021"
 
 [lib]
@@ -12,3 +12,4 @@ serde = { version = "1.0.190", features = ["derive"] }
 serde_json = "1.0.108"
 zip = { version = "0.6.4", default-features = false, features = ["deflate"] }
 navigation_database = { path = "../database" }
+chrono = "0.4.39"
