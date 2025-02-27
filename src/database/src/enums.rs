@@ -366,6 +366,8 @@ pub enum RunwaySurface {
     Water,
     #[serde(rename = "BITU")]
     Bitumen,
+    #[serde(rename = "PAVD")]
+    Paved,
     #[serde(rename = "UNPV")]
     Unpaved,
 }
