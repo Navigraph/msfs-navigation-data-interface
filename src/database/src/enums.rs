@@ -62,6 +62,8 @@ pub enum TurnDirection {
     Left,
     #[serde(rename = "R")]
     Right,
+    #[serde(rename = "E")]
+    Either,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
