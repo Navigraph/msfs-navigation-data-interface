@@ -62,6 +62,8 @@ pub enum TurnDirection {
     Left,
     #[serde(rename = "R")]
     Right,
+    #[serde(rename = "E")]
+    Either,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
@@ -366,6 +368,8 @@ pub enum RunwaySurface {
     Water,
     #[serde(rename = "BITU")]
     Bitumen,
+    #[serde(rename = "PAVD")]
+    Paved,
     #[serde(rename = "UNPV")]
     Unpaved,
 }

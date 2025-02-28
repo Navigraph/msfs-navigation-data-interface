@@ -24,6 +24,8 @@ pub enum PathType {
     RhumbLine,
     #[serde(rename = "A")]
     Arc,
+    #[serde(rename = "U")]
+    Unknown,
 }
 
 #[serde_with::skip_serializing_none]
@@ -48,16 +50,16 @@ impl Path {
         match boundary_char {
             'C' => Self {
                 location: Coordinates {
-                    lat: arc_latitude.unwrap(),
-                    long: arc_longitude.unwrap(),
+                    lat: arc_latitude.unwrap_or_default(),
+                    long: arc_longitude.unwrap_or_default(),
                 },
                 arc: None,
                 path_type: PathType::Circle,
             },
             'G' | 'H' => Self {
                 location: Coordinates {
-                    lat: latitude.unwrap(),
-                    long: longitude.unwrap(),
+                    lat: latitude.unwrap_or_default(),
+                    long: longitude.unwrap_or_default(),
                 },
                 arc: None,
                 path_type: match boundary_char {
@@ -67,16 +69,16 @@ impl Path {
             },
             'L' | 'R' => Self {
                 location: Coordinates {
-                    lat: latitude.unwrap(),
-                    long: longitude.unwrap(),
+                    lat: latitude.unwrap_or_default(),
+                    long: longitude.unwrap_or_default(),
                 },
                 arc: Some(Arc {
                     origin: Coordinates {
-                        lat: arc_latitude.unwrap(),
-                        long: arc_longitude.unwrap(),
+                        lat: arc_latitude.unwrap_or_default(),
+                        long: arc_longitude.unwrap_or_default(),
                     },
-                    distance: arc_distance.unwrap(),
-                    bearing: arc_bearing.unwrap(),
+                    distance: arc_distance.unwrap_or_default(),
+                    bearing: arc_bearing.unwrap_or_default(),
                     direction: match boundary_char {
                         'R' => TurnDirection::Right,
                         _ => TurnDirection::Left,
@@ -84,7 +86,14 @@ impl Path {
                 }),
                 path_type: PathType::Arc,
             },
-            _ => panic!("Invalid path type"),
+            _ => Self {
+                location: Coordinates {
+                    lat: 0.0,
+                    long: 0.0,
+                },
+                arc: None,
+                path_type: PathType::Unknown,
+            },
         }
     }
 }
