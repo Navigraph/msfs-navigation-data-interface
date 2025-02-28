@@ -1,4 +1,6 @@
-use std::{fs, io, path::Path};
+use std::{fs, path::Path};
+
+use anyhow::Result;
 
 use navigation_database::util::{get_path_type, PathType};
 
@@ -6,7 +8,7 @@ pub fn path_exists(path: &Path) -> bool {
     get_path_type(path) != PathType::DoesNotExist
 }
 
-pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::Result<()> {
+pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> Result<()> {
     // Make sure we are deleting a directory (and in turn that it exists)
     if get_path_type(path) != PathType::Directory {
         return Ok(());
@@ -57,7 +59,7 @@ pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> io::
     Ok(())
 }
 
-pub fn copy_files_to_folder(from: &Path, to: &Path) -> io::Result<()> {
+pub fn copy_files_to_folder(from: &Path, to: &Path) -> Result<()> {
     // Make sure we are copying a directory (and in turn that it exists)
     if get_path_type(from) != PathType::Directory {
         return Ok(());

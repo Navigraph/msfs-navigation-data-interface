@@ -1,7 +1,9 @@
 use std::{cell::RefCell, path::Path, rc::Rc};
 
+use anyhow::{anyhow, Result};
 use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEvent};
 use navigation_database::database::Database;
+use sentry::integrations::anyhow::capture_anyhow;
 
 use crate::{
     consts,
@@ -33,11 +35,11 @@ pub struct Task {
 }
 
 impl Task {
-    pub fn parse_data_as<T>(&self) -> Result<T, Box<dyn std::error::Error>>
+    pub fn parse_data_as<T>(&self) -> Result<T>
     where
         T: serde::de::DeserializeOwned,
     {
-        let data = self.data.clone().ok_or("No data provided")?;
+        let data = self.data.clone().ok_or(anyhow!("No data provided"))?;
         let params = serde_json::from_value::<T>(data)?;
         Ok(params)
     }
@@ -89,7 +91,10 @@ impl Dispatcher<'_> {
                 // TODO: maybe send error back to sim?
                 match Dispatcher::add_to_queue(Rc::clone(&captured_queue), args) {
                     Ok(_) => (),
-                    Err(e) => println!("[NAVIGRAPH] Failed to add to queue: {}", e),
+                    Err(e) => {
+                        capture_anyhow(&e);
+                        println!("[NAVIGRAPH] Failed to add to queue: {}", e);
+                    }
                 }
             })
             .expect("Failed to register NAVIGRAPH_CallFunction");
@@ -169,10 +174,12 @@ impl Dispatcher<'_> {
                     // Set the internal state to bundled
                     let res = meta::set_internal_state(InternalState { is_bundled: true });
                     if let Err(e) = res {
+                        capture_anyhow(&e);
                         println!("[NAVIGRAPH] Failed to set internal state: {}", e);
                     }
                 }
                 Err(e) => {
+                    capture_anyhow(&e);
                     println!(
                         "[NAVIGRAPH] Failed to copy database from default location to work location: {}",
                         e
@@ -192,6 +199,7 @@ impl Dispatcher<'_> {
                     println!("[NAVIGRAPH] Loaded database");
                 }
                 Err(e) => {
+                    capture_anyhow(&e);
                     println!("[NAVIGRAPH] Failed to load database: {}", e);
                 }
             }
@@ -207,6 +215,7 @@ impl Dispatcher<'_> {
             match self.database.set_active_database(path) {
                 Ok(_) => {}
                 Err(e) => {
+                    capture_anyhow(&e);
                     println!("[NAVIGRAPH] Failed to set active database: {}", e);
                 }
             };
@@ -614,21 +623,19 @@ impl Dispatcher<'_> {
     /// Executes a task and handles the result (sets the status of the task)
     fn execute_task<F>(task: Rc<RefCell<Task>>, task_operation: F)
     where
-        F: FnOnce(Rc<RefCell<Task>>) -> Result<(), Box<dyn std::error::Error>>,
+        F: FnOnce(Rc<RefCell<Task>>) -> Result<()>,
     {
         match task_operation(task.clone()) {
             Ok(_) => (),
             Err(e) => {
+                capture_anyhow(&e);
                 println!("[NAVIGRAPH] Task failed: {}", e);
                 task.borrow_mut().status = TaskStatus::Failure(e.to_string());
             }
         }
     }
 
-    fn add_to_queue(
-        queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>,
-        args: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    fn add_to_queue(queue: Rc<RefCell<Vec<Rc<RefCell<Task>>>>>, args: &str) -> Result<()> {
         let args = util::trim_null_terminator(args);
         let json_result: CallFunction = serde_json::from_str(args)?;
 

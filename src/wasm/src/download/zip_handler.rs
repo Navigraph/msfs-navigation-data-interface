@@ -1,5 +1,7 @@
 use std::{fs, io, path::PathBuf};
 
+use anyhow::{anyhow, Result};
+
 use crate::util;
 
 #[derive(PartialEq, Eq)]
@@ -41,12 +43,9 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
         }
     }
 
-    pub fn unzip_batch(
-        &mut self,
-        batch_size: usize,
-    ) -> Result<BatchReturn, Box<dyn std::error::Error>> {
+    pub fn unzip_batch(&mut self, batch_size: usize) -> Result<BatchReturn> {
         if self.zip_archive.is_none() {
-            return Err("No zip archive to extract".to_string().into());
+            return Err(anyhow!("No zip archive to extract"));
         }
 
         // If we haven't cleaned the destination folder yet, do so now
@@ -67,7 +66,7 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
         let zip_archive = self
             .zip_archive
             .as_mut()
-            .ok_or_else(|| "Failed to access zip archive".to_string())?;
+            .ok_or(anyhow!("Failed to access zip archive"))?;
 
         for _ in 0..batch_size {
             if self.current_file_index >= self.zip_file_count {
@@ -85,13 +84,13 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
             let mut file = zip_archive.by_index(self.current_file_index)?;
             let outpath = self.path_buf.join(
                 file.enclosed_name()
-                    .ok_or_else(|| "Failed to get enclosed file name".to_string())?,
+                    .ok_or(anyhow!("Failed to get enclosed file name"))?,
             );
 
             // Check how many times "." appears in the file name
             let dot_count = outpath
                 .to_str()
-                .ok_or_else(|| "Failed to convert path to string".to_string())?
+                .ok_or(anyhow!("Failed to convert path to string"))?
                 .matches('.')
                 .count();
 
@@ -103,18 +102,15 @@ impl<R: io::Read + io::Seek> ZipFileHandler<R> {
             }
 
             if (*file.name()).ends_with('/') {
-                fs::create_dir_all(outpath)
-                    .map_err(|_| "Failed to create directory".to_string())?;
+                fs::create_dir_all(outpath)?;
             } else {
                 if let Some(p) = outpath.parent() {
                     if !util::path_exists(p) {
-                        fs::create_dir_all(p)
-                            .map_err(|_| "Failed to create directory".to_string())?;
+                        fs::create_dir_all(p)?;
                     }
                 }
-                let mut outfile =
-                    fs::File::create(outpath).map_err(|_| "Failed to create file".to_string())?;
-                io::copy(&mut file, &mut outfile).map_err(|_| "Failed to copy file".to_string())?;
+                let mut outfile = fs::File::create(outpath)?;
+                io::copy(&mut file, &mut outfile)?;
             }
             self.current_file_index += 1;
         }

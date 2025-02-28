@@ -1,9 +1,10 @@
 use std::{
     cell::RefCell,
-    error::Error,
     path::{Path, PathBuf},
     rc::Rc,
 };
+
+use anyhow::{anyhow, Result};
 
 use msfs::network::NetworkRequestState;
 
@@ -63,10 +64,10 @@ pub struct InstalledNavigationDataCycleInfo {
     pub validity_period: String,
 }
 
-pub fn get_internal_state() -> Result<InternalState, Box<dyn Error>> {
+pub fn get_internal_state() -> Result<InternalState> {
     let config_path = Path::new(consts::NAVIGATION_DATA_INTERNAL_CONFIG_LOCATION);
     if !path_exists(config_path) {
-        Err("Internal config file does not exist")?;
+        Err(anyhow!("Internal config file does not exist"))?;
     }
 
     let config_file = std::fs::File::open(config_path)?;
@@ -75,7 +76,7 @@ pub fn get_internal_state() -> Result<InternalState, Box<dyn Error>> {
     Ok(internal_state)
 }
 
-pub fn set_internal_state(internal_state: InternalState) -> Result<(), Box<dyn Error>> {
+pub fn set_internal_state(internal_state: InternalState) -> Result<()> {
     let config_path = Path::new(consts::NAVIGATION_DATA_INTERNAL_CONFIG_LOCATION);
     let config_file = std::fs::File::create(config_path)?;
     serde_json::to_writer(config_file, &internal_state)?;
@@ -100,9 +101,7 @@ pub fn start_network_request(task: Rc<RefCell<Task>>) {
     task.borrow_mut().associated_network_request = Some(request);
 }
 
-pub fn get_installed_cycle_from_json(
-    path: &Path,
-) -> Result<InstalledNavigationDataCycleInfo, Box<dyn Error>> {
+pub fn get_installed_cycle_from_json(path: &Path) -> Result<InstalledNavigationDataCycleInfo> {
     let json_file = std::fs::File::open(path)?;
     let installed_cycle_info: InstalledNavigationDataCycleInfo =
         serde_json::from_reader(json_file)?;

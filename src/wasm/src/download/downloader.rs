@@ -1,5 +1,7 @@
 use std::{cell::RefCell, io::Cursor, path::PathBuf, rc::Rc};
 
+use anyhow::{anyhow, Result};
+
 use msfs::network::*;
 
 use crate::{
@@ -100,10 +102,7 @@ impl NavigationDataDownloader {
         }
     }
 
-    pub fn set_download_options(
-        self: &Rc<Self>,
-        task: Rc<RefCell<Task>>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn set_download_options(self: &Rc<Self>, task: Rc<RefCell<Task>>) -> Result<()> {
         {
             let params = task
                 .borrow()
@@ -236,15 +235,12 @@ impl NavigationDataDownloader {
         *zip_handler = Some(handler);
     }
 
-    pub fn unzip_batch(
-        &self,
-        batch_size: usize,
-    ) -> Result<BatchReturn, Box<dyn std::error::Error>> {
+    pub fn unzip_batch(&self, batch_size: usize) -> Result<BatchReturn> {
         let mut zip_handler = self.zip_handler.borrow_mut();
 
         let handler = zip_handler
             .as_mut()
-            .ok_or_else(|| "Zip handler not found".to_string())?;
+            .ok_or(anyhow!("Zip handler not found"))?;
         let res = handler.unzip_batch(batch_size)?;
 
         Ok(res)

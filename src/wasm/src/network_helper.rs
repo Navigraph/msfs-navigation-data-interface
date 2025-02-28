@@ -1,4 +1,4 @@
-use std::error::Error;
+use anyhow::{anyhow, Result};
 
 use msfs::network::{NetworkRequest, NetworkRequestBuilder, NetworkRequestState};
 
@@ -16,14 +16,16 @@ impl NetworkHelper {
         method: Method,
         headers: Option<Vec<&str>>,
         data: Option<&mut [u8]>,
-    ) -> Result<Self, Box<dyn Error>> {
-        let mut builder =
-            NetworkRequestBuilder::new(url).ok_or("Failed to create NetworkRequestBuilder")?;
+    ) -> Result<Self> {
+        let mut builder = NetworkRequestBuilder::new(url)
+            .ok_or(anyhow!("Failed to create NetworkRequestBuilder"))?;
 
         // Add headers
         if let Some(headers) = headers {
             for header in headers {
-                let new_builder = builder.with_header(header).ok_or("Failed to add header")?;
+                let new_builder = builder
+                    .with_header(header)
+                    .ok_or(anyhow!("Failed to add header"))?;
                 builder = new_builder;
             }
         }
@@ -36,7 +38,7 @@ impl NetworkHelper {
 
         // Send request
         let request = match method {
-            Method::Get => builder.get().ok_or("Failed to send GET request")?,
+            Method::Get => builder.get().ok_or(anyhow!("Failed to send GET request"))?,
         };
 
         Ok(Self { request })
@@ -46,12 +48,12 @@ impl NetworkHelper {
         self.request.state()
     }
 
-    pub fn get_response(&self) -> Result<Vec<u8>, Box<dyn Error>> {
+    pub fn get_response(&self) -> Result<Vec<u8>> {
         if self.request.state() != NetworkRequestState::DataReady {
-            return Err("Request not finished yet".into());
+            return Err(anyhow!("Request not finished yet"));
         }
 
-        let data = self.request.data().ok_or("Failed to get data")?;
+        let data = self.request.data().ok_or(anyhow!("Failed to get data"))?;
 
         Ok(data)
     }

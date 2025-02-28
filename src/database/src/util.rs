@@ -1,4 +1,6 @@
-use std::{error::Error, fs, io::Read, path::Path};
+use std::{fs, io::Read, path::Path};
+
+use anyhow::{anyhow, Result};
 
 use crate::math::{Coordinates, NauticalMiles};
 
@@ -35,9 +37,9 @@ pub fn get_path_type(path: &Path) -> PathType {
     PathType::DoesNotExist
 }
 
-pub fn find_sqlite_file(path: &str) -> Result<String, Box<dyn Error>> {
+pub fn find_sqlite_file(path: &str) -> Result<String> {
     if get_path_type(Path::new(path)) != PathType::Directory {
-        return Err("Path is not a directory".into());
+        return Err(anyhow!("Path is not a directory"));
     }
 
     // We are going to search this directory for a database
@@ -45,7 +47,7 @@ pub fn find_sqlite_file(path: &str) -> Result<String, Box<dyn Error>> {
         let entry = entry?;
         let path = entry.path();
         if get_path_type(&path) == PathType::File {
-            let path = path.to_str().ok_or("Invalid path")?;
+            let path = path.to_str().ok_or(anyhow!("Invalid path"))?;
 
             let extension = path.split('.').last();
 
@@ -54,10 +56,12 @@ pub fn find_sqlite_file(path: &str) -> Result<String, Box<dyn Error>> {
             }
         }
     }
-    Err("No SQL database found. Make sure the database specified is a SQL database".into())
+    Err(anyhow!(
+        "No SQL database found. Make sure the database specified is a SQL database"
+    ))
 }
 
-pub fn is_sqlite_file(path: &str) -> Result<bool, Box<dyn Error>> {
+pub fn is_sqlite_file(path: &str) -> Result<bool> {
     if get_path_type(Path::new(path)) != PathType::File {
         return Ok(false);
     }
@@ -68,29 +72,26 @@ pub fn is_sqlite_file(path: &str) -> Result<bool, Box<dyn Error>> {
     Ok(buf == SQLITE_HEADER)
 }
 
-pub fn fetch_row<T>(
-    stmt: &mut rusqlite::Statement,
-    params: impl rusqlite::Params,
-) -> Result<T, Box<dyn Error>>
+pub fn fetch_row<T>(stmt: &mut rusqlite::Statement, params: impl rusqlite::Params) -> Result<T>
 where
     T: for<'r> serde::Deserialize<'r>,
 {
     let mut rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
-    let row = rows.next().ok_or("No row found")??;
+    let row = rows.next().ok_or(anyhow!("No row found"))??;
     Ok(row)
 }
 
 pub fn fetch_rows<T>(
     stmt: &mut rusqlite::Statement,
     params: impl rusqlite::Params,
-) -> Result<Vec<T>, Box<dyn Error>>
+) -> Result<Vec<T>>
 where
     T: for<'r> serde::Deserialize<'r>,
 {
     let rows = stmt.query_and_then(params, |r| serde_rusqlite::from_row::<T>(r))?;
     let mut data = Vec::new();
     for row in rows {
-        data.push(row.map_err(|e| e.to_string())?);
+        data.push(row?);
     }
     Ok(data)
 }
