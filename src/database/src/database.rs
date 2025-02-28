@@ -109,7 +109,7 @@ impl Database {
                     ValueRef::Integer(int) => Some(Value::Number(Number::from(int))),
                     ValueRef::Real(real) => Some(Value::Number(Number::from_f64(real).unwrap())),
                     ValueRef::Null => None,
-                    ValueRef::Blob(_) => panic!("Unexpected value type Blob"),
+                    ValueRef::Blob(_) => None,
                 };
 
                 if let Some(value) = value {

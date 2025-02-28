@@ -126,10 +126,10 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
             ar: leg.authorization_required,
             fix: if leg.waypoint_identifier.is_some() {
                 Some(Fix::from_row_data(
-                    leg.waypoint_latitude.unwrap(),
-                    leg.waypoint_longitude.unwrap(),
-                    leg.waypoint_identifier.unwrap(),
-                    leg.waypoint_icao_code.unwrap(),
+                    leg.waypoint_latitude.unwrap_or_default(),
+                    leg.waypoint_longitude.unwrap_or_default(),
+                    leg.waypoint_identifier.unwrap_or("ERROR".to_string()),
+                    leg.waypoint_icao_code.unwrap_or("UNKN".to_string()),
                     Some(leg.airport_identifier.clone()),
                     leg.waypoint_ref_table,
                     leg.waypoint_description_code.clone(),
@@ -139,10 +139,11 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
             },
             recommended_navaid: if leg.recommended_navaid.is_some() {
                 Some(Fix::from_row_data(
-                    leg.recommended_navaid_latitude.unwrap(),
-                    leg.recommended_navaid_longitude.unwrap(),
-                    leg.recommended_navaid.unwrap(),
-                    leg.recommended_navaid_icao_code.unwrap(),
+                    leg.recommended_navaid_latitude.unwrap_or_default(),
+                    leg.recommended_navaid_longitude.unwrap_or_default(),
+                    leg.recommended_navaid.unwrap_or("ERROR".to_string()),
+                    leg.recommended_navaid_icao_code
+                        .unwrap_or("UNKN".to_string()),
                     Some(leg.airport_identifier.clone()),
                     leg.recommended_navaid_ref_table,
                     leg.waypoint_description_code.clone(),
@@ -166,10 +167,10 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
             turn_direction: leg.turn_direction,
             arc_center_fix: if leg.center_waypoint.is_some() {
                 Some(Fix::from_row_data(
-                    leg.center_waypoint_latitude.unwrap(),
-                    leg.center_waypoint_longitude.unwrap(),
-                    leg.center_waypoint.unwrap(),
-                    leg.center_waypoint_icao_code.unwrap(),
+                    leg.center_waypoint_latitude.unwrap_or_default(),
+                    leg.center_waypoint_longitude.unwrap_or_default(),
+                    leg.center_waypoint.unwrap_or("ERROR".to_string()),
+                    leg.center_waypoint_icao_code.unwrap_or("UNKN".to_string()),
                     Some(leg.airport_identifier),
                     leg.center_waypoint_ref_table,
                     leg.waypoint_description_code,

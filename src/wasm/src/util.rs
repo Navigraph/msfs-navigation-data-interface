@@ -28,7 +28,7 @@ pub fn delete_folder_recursively(path: &Path, batch_size: Option<usize>) -> Resu
         let path = entry.path();
         let path_type = get_path_type(&path);
 
-        if path.file_name().unwrap() == "" {
+        if path.file_name().is_none_or(|val| val.is_empty()) {
             eprintln!("[NAVIGRAPH]: Bugged entry");
             continue;
         }
@@ -81,7 +81,7 @@ pub fn copy_files_to_folder(from: &Path, to: &Path) -> Result<()> {
         let path = entry.path();
         let path_type = get_path_type(&path);
 
-        if path.file_name().unwrap() == "" {
+        if path.file_name().is_none_or(|val| val.is_empty()) {
             eprintln!("[NAVIGRAPH]: Bugged entry");
             continue;
         }

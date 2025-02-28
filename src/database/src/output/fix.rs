@@ -70,7 +70,7 @@ impl Fix {
             "PI" => FixType::IlsNavaid,
             "D " => FixType::VhfNavaid,
             "EA" | "PC" => FixType::Waypoint,
-            x => panic!("Unexpected table: '{x}'"),
+            _ => FixType::None,
         });
 
         Self {
