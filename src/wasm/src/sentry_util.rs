@@ -32,19 +32,13 @@ impl Transport for CustomSentryTransport {
             .with_callback(move |_e, _s| {
                 let mut writer = cloned.write().unwrap();
                 *writer = true;
-                println!("[NAVIGRAPH]: callback!");
+                println!("[NAVIGRAPH]: Posted to Sentry");
             })
             .post(&String::from_utf8(body).unwrap())
         {
             let ec = res.error_code();
 
             println!("[NAVIGRAPH]: Res Code: {}", ec);
-
-            if ec == 0 {
-                println!("{:?}", res.data())
-            } else {
-                println!("[NAVIGRAPH]: Posted to Sentry");
-            }
         } else {
             println!("[NAVIGRAPH]: Sentry failed to get res");
         };
