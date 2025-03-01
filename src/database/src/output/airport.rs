@@ -74,7 +74,7 @@ impl From<sql_structs::Airports> for Airport {
             country_3letter: airport.country_3letter,
             elevation: airport.elevation,
             icao_code: airport.icao_code,
-            ifr_capability: airport.ifr_capability.unwrap_or(IfrCapability::No),
+            ifr_capability: airport.ifr_capability.unwrap_or(IfrCapability::Unknown),
             longest_runway_surface_code: Some(airport.longest_runway_surface_code),
             magnetic_variation: airport.magnetic_variation,
             transition_altitude: airport.transition_altitude,

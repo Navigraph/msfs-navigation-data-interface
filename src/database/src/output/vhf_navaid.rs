@@ -1,3 +1,4 @@
+use sentry::capture_message;
 use serde::Serialize;
 
 use crate::{
@@ -38,21 +39,32 @@ pub struct VhfNavaid {
 
 impl From<sql_structs::VhfNavaids> for VhfNavaid {
     fn from(navaid: sql_structs::VhfNavaids) -> Self {
-        Self {
-            area_code: navaid.area_code,
+        let mut error_in_row = false;
+
+        let new_navaid = Self {
+            area_code: navaid.area_code.clone(),
             airport_ident: navaid.airport_identifier,
             // Not entirely sure if this is behaviour we intend
-            icao_code: navaid.icao_code.unwrap_or_default(),
+            icao_code: navaid.icao_code.unwrap_or_else(|| {
+                error_in_row = true;
+                "UNKN".to_string()
+            }),
             ident: navaid.navaid_identifier,
-            name: navaid.navaid_name,
+            name: navaid.navaid_name.clone(),
             frequency: navaid.navaid_frequency,
             location: Coordinates {
-                lat: navaid
-                    .navaid_latitude
-                    .unwrap_or(navaid.dme_latitude.unwrap_or_default()),
-                long: navaid
-                    .navaid_longitude
-                    .unwrap_or(navaid.dme_longitude.unwrap_or_default()),
+                lat: navaid.navaid_latitude.unwrap_or_else(|| {
+                    navaid.dme_latitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    })
+                }),
+                long: navaid.navaid_longitude.unwrap_or_else(|| {
+                    navaid.dme_longitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    })
+                }),
             },
             station_declination: navaid.station_declination,
             continent: navaid.continent,
@@ -60,6 +72,20 @@ impl From<sql_structs::VhfNavaids> for VhfNavaid {
             magnetic_variation: navaid.magnetic_variation,
             range: navaid.range,
             datum_code: navaid.datum_code,
+        };
+
+        if error_in_row {
+            let error_text = format!(
+                "Error found in VhfNavaid: {}",
+                serde_json::to_string(&new_navaid).unwrap_or(format!(
+                    "Error serializing output, {} navaid {}",
+                    navaid.area_code, navaid.navaid_name
+                ))
+            );
+
+            capture_message(&error_text, sentry::Level::Warning);
         }
+
+        new_navaid
     }
 }

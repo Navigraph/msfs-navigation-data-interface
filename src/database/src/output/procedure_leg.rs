@@ -1,6 +1,7 @@
+use sentry::capture_message;
 use serde::Serialize;
 
-use super::fix::Fix;
+use super::fix::{Fix, FixType};
 use crate::{
     enums::{
         AltitudeDescriptor, AuthorizationRequired, LegType, ProcedureTypeApproved, SpeedDescriptor,
@@ -103,7 +104,9 @@ pub struct ProcedureLeg {
 
 impl From<sql_structs::Procedures> for ProcedureLeg {
     fn from(leg: sql_structs::Procedures) -> Self {
-        ProcedureLeg {
+        let mut error_in_row = false;
+
+        let procedure_leg = ProcedureLeg {
             overfly: leg
                 .waypoint_description_code
                 .clone()
@@ -113,41 +116,74 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
                 altitude2: leg.altitude2,
                 descriptor: leg
                     .altitude_description
-                    .unwrap_or(AltitudeDescriptor::AtAlt1),
+                    .unwrap_or(AltitudeDescriptor::Unknown),
             }),
             speed: leg.speed_limit.map(|speed| SpeedConstraint {
                 value: speed,
                 descriptor: leg
                     .speed_limit_description
-                    .unwrap_or(SpeedDescriptor::Mandatory),
+                    .unwrap_or(SpeedDescriptor::Unknown),
             }),
             vertical_angle: leg.vertical_angle,
             rnp: leg.rnp,
             ar: leg.authorization_required,
             fix: if leg.waypoint_identifier.is_some() {
                 Some(Fix::from_row_data(
-                    leg.waypoint_latitude.unwrap_or_default(),
-                    leg.waypoint_longitude.unwrap_or_default(),
+                    leg.waypoint_latitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
+                    leg.waypoint_longitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
                     leg.waypoint_identifier.unwrap_or("ERROR".to_string()),
-                    leg.waypoint_icao_code.unwrap_or("UNKN".to_string()),
+                    leg.waypoint_icao_code.unwrap_or_else(|| {
+                        error_in_row = true;
+                        "UNKN".to_string()
+                    }),
                     Some(leg.airport_identifier.clone()),
                     leg.waypoint_ref_table,
                     leg.waypoint_description_code.clone(),
                 ))
+                .map(|mut val| {
+                    if val.fix_type.is_some_and(|fix| fix == FixType::Unknown) {
+                        error_in_row = true;
+                        val.fix_type = None;
+                    }
+
+                    val
+                })
             } else {
                 None
             },
             recommended_navaid: if leg.recommended_navaid.is_some() {
                 Some(Fix::from_row_data(
-                    leg.recommended_navaid_latitude.unwrap_or_default(),
-                    leg.recommended_navaid_longitude.unwrap_or_default(),
+                    leg.recommended_navaid_latitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
+                    leg.recommended_navaid_longitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
                     leg.recommended_navaid.unwrap_or("ERROR".to_string()),
-                    leg.recommended_navaid_icao_code
-                        .unwrap_or("UNKN".to_string()),
+                    leg.recommended_navaid_icao_code.unwrap_or_else(|| {
+                        error_in_row = true;
+                        "UNKN".to_string()
+                    }),
                     Some(leg.airport_identifier.clone()),
                     leg.recommended_navaid_ref_table,
                     leg.waypoint_description_code.clone(),
                 ))
+                .map(|mut val| {
+                    if val.fix_type.is_some_and(|fix| fix == FixType::Unknown) {
+                        error_in_row = true;
+                        val.fix_type = None;
+                    }
+
+                    val
+                })
             } else {
                 None
             },
@@ -167,14 +203,31 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
             turn_direction: leg.turn_direction,
             arc_center_fix: if leg.center_waypoint.is_some() {
                 Some(Fix::from_row_data(
-                    leg.center_waypoint_latitude.unwrap_or_default(),
-                    leg.center_waypoint_longitude.unwrap_or_default(),
+                    leg.center_waypoint_latitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
+                    leg.center_waypoint_longitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
                     leg.center_waypoint.unwrap_or("ERROR".to_string()),
-                    leg.center_waypoint_icao_code.unwrap_or("UNKN".to_string()),
-                    Some(leg.airport_identifier),
+                    leg.center_waypoint_icao_code.unwrap_or_else(|| {
+                        error_in_row = true;
+                        "UNKN".to_string()
+                    }),
+                    Some(leg.airport_identifier.clone()),
                     leg.center_waypoint_ref_table,
                     leg.waypoint_description_code,
                 ))
+                .map(|mut val| {
+                    if val.fix_type.is_some_and(|fix| fix == FixType::Unknown) {
+                        error_in_row = true;
+                        val.fix_type = None;
+                    }
+
+                    val
+                })
             } else {
                 None
             },
@@ -201,6 +254,20 @@ impl From<sql_structs::Procedures> for ProcedureLeg {
             } else {
                 None
             },
+        };
+
+        if error_in_row {
+            let error_text = format!(
+                "Error found in Procedure: {}",
+                serde_json::to_string(&procedure_leg).unwrap_or(format!(
+                    "Error serializing output, {} procedure {}",
+                    leg.airport_identifier, leg.procedure_identifier
+                ))
+            );
+
+            capture_message(&error_text, sentry::Level::Warning);
         }
+
+        procedure_leg
     }
 }

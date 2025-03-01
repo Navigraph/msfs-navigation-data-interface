@@ -1,3 +1,4 @@
+use sentry::capture_message;
 use serde::Serialize;
 
 use crate::{
@@ -38,22 +39,53 @@ pub struct RunwayThreshold {
 
 impl From<sql_structs::Runways> for RunwayThreshold {
     fn from(runway: sql_structs::Runways) -> Self {
-        Self {
-            ident: runway.runway_identifier,
-            icao_code: runway.icao_code.unwrap_or("UNK".to_string()),
+        let mut error_in_row = false;
+
+        let runway_new = Self {
+            ident: runway.runway_identifier.clone(),
+            icao_code: runway.icao_code.unwrap_or_else(|| {
+                error_in_row = true;
+                "UNKN".to_string()
+            }),
             length: runway.runway_length,
             width: runway.runway_width,
-            true_bearing: runway.runway_true_bearing.unwrap_or_default(),
-            magnetic_bearing: runway.runway_magnetic_bearing.unwrap_or_default(),
+            true_bearing: runway.runway_true_bearing.unwrap_or_else(|| {
+                error_in_row = true;
+                0.
+            }),
+            magnetic_bearing: runway.runway_magnetic_bearing.unwrap_or_else(|| {
+                error_in_row = true;
+                0.
+            }),
             gradient: runway.runway_gradient.unwrap_or_default(),
             location: Coordinates {
-                lat: runway.runway_latitude.unwrap_or_default(),
-                long: runway.runway_longitude.unwrap_or_default(),
+                lat: runway.runway_latitude.unwrap_or_else(|| {
+                    error_in_row = true;
+                    0.
+                }),
+                long: runway.runway_longitude.unwrap_or_else(|| {
+                    error_in_row = true;
+                    0.
+                }),
             },
             elevation: runway.landing_threshold_elevation,
             surface: runway.surface_code,
             traffic_pattern: runway.traffic_pattern,
             lights: runway.runway_lights,
+        };
+
+        if error_in_row {
+            let error_text = format!(
+                "Error found in Runway: {}",
+                serde_json::to_string(&runway_new).unwrap_or(format!(
+                    "Error serializing output, {} runway {}",
+                    runway.airport_identifier, runway.runway_identifier,
+                ))
+            );
+
+            capture_message(&error_text, sentry::Level::Warning);
         }
+
+        runway_new
     }
 }

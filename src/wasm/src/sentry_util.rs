@@ -21,24 +21,24 @@ impl Transport for CustomSentryTransport {
         let auth = dsn.to_auth(Some(&user_agent)).to_string();
         let url = dsn.envelope_api_url().to_string();
 
-        let callback_received = Rc::new(RwLock::new(false));
+        // let callback_received = Rc::new(RwLock::new(false));
 
-        let cloned = Rc::clone(&callback_received);
-        if let Some(res) = NetworkRequestBuilder::new(&url)
+        // let cloned = Rc::clone(&callback_received);
+        if let Some(_res) = NetworkRequestBuilder::new(&url)
             .unwrap()
             .with_header(&format!("X-Sentry-Auth: {}", auth))
             .unwrap()
             .with_data(&mut body.clone())
-            .with_callback(move |_e, _s| {
-                let mut writer = cloned.write().unwrap();
-                *writer = true;
-                println!("[NAVIGRAPH]: Posted to Sentry");
-            })
+            // .with_callback(move |_e, _s| {
+            //     let mut writer = cloned.write().unwrap();
+            //     *writer = true;
+            // })
             .post(&String::from_utf8(body).unwrap())
         {
-            let ec = res.error_code();
+            // let ec = res.error_code();
 
-            println!("[NAVIGRAPH]: Res Code: {}", ec);
+            // println!("[NAVIGRAPH]: Res Code: {}", ec);
+            println!("[NAVIGRAPH]: Posted to Sentry");
         } else {
             println!("[NAVIGRAPH]: Sentry failed to get res");
         };

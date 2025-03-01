@@ -32,11 +32,16 @@ pub struct Waypoint {
 
 impl From<sql_structs::Waypoints> for Waypoint {
     fn from(waypoint: sql_structs::Waypoints) -> Self {
+        let mut error_in_row = false;
+
         Self {
             area_code: waypoint.area_code,
             airport_ident: waypoint.region_code,
             // Not entirely sure if this is behaviour we intend
-            icao_code: waypoint.icao_code.unwrap_or("UNK".to_string()),
+            icao_code: waypoint.icao_code.unwrap_or_else(|| {
+                error_in_row = true;
+                "UNKN".to_string()
+            }),
             ident: waypoint.waypoint_identifier,
             name: waypoint.waypoint_name,
             location: Coordinates {

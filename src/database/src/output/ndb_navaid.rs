@@ -1,3 +1,4 @@
+use sentry::capture_message;
 use serde::Serialize;
 
 use crate::{
@@ -34,21 +35,49 @@ pub struct NdbNavaid {
 
 impl From<sql_structs::NdbNavaids> for NdbNavaid {
     fn from(navaid: sql_structs::NdbNavaids) -> Self {
-        Self {
-            area_code: navaid.area_code,
+        let mut error_in_row = false;
+
+        let navaid_new = Self {
+            area_code: navaid.area_code.clone(),
             airport_ident: navaid.airport_identifier,
-            icao_code: navaid.icao_code.unwrap_or(String::from("N/A")),
-            ident: navaid.navaid_identifier.unwrap_or(String::from("N/A")),
-            name: navaid.navaid_name,
+            icao_code: navaid.icao_code.unwrap_or_else(|| {
+                error_in_row = true;
+                "UNKN".to_string()
+            }),
+            ident: navaid.navaid_identifier.unwrap_or_else(|| {
+                error_in_row = true;
+                "UNKN".to_string()
+            }),
+            name: navaid.navaid_name.clone(),
             frequency: navaid.navaid_frequency,
             location: Coordinates {
-                lat: navaid.navaid_latitude.unwrap_or_default(),
-                long: navaid.navaid_longitude.unwrap_or_default(),
+                lat: navaid.navaid_latitude.unwrap_or_else(|| {
+                    error_in_row = true;
+                    0.
+                }),
+                long: navaid.navaid_longitude.unwrap_or_else(|| {
+                    error_in_row = true;
+                    0.
+                }),
             },
             continent: navaid.continent,
             country: navaid.country,
             datum_code: navaid.datum_code,
             range: navaid.range,
+        };
+
+        if error_in_row {
+            let error_text = format!(
+                "Error found in NdbNavaid: {}",
+                serde_json::to_string(&navaid_new).unwrap_or(format!(
+                    "Error serializing output, {} navaid {}",
+                    navaid.area_code, navaid.navaid_name
+                ))
+            );
+
+            capture_message(&error_text, sentry::Level::Warning);
         }
+
+        navaid_new
     }
 }

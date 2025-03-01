@@ -13,3 +13,6 @@ serde_json = "1.0.108"
 serde_with = "3.4.0"
 regex = "1.10.2"
 anyhow = "1.0"
+sentry = { git = "https://github.com/pepperoni505/sentry-rust", default-features = false, features = [
+    "anyhow",
+] }

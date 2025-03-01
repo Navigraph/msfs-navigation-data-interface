@@ -5,9 +5,11 @@ pub enum IfrCapability {
     #[serde(rename = "Y")]
     Yes,
     // Never used, for linting
-    #[default]
     #[serde(rename = "N")]
     No,
+    #[default]
+    #[serde(rename = "U")]
+    Unknown,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -36,6 +38,8 @@ pub enum AirwayRouteType {
     RnavAirways,
     #[serde(rename = "S")]
     UndesignatedAtsRoute,
+    #[serde(rename = "U")]
+    Unknown,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -46,6 +50,8 @@ pub enum AirwayLevel {
     High,
     #[serde(rename = "L")]
     Low,
+    #[serde(rename = "U")]
+    Unknown,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -92,6 +98,8 @@ pub enum AltitudeDescriptor {
     AtAlt1AngleAlt2,
     #[serde(rename = "Y")]
     AtOrBelowAlt1AngleAlt2,
+    #[serde(rename = "U")]
+    Unknown,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
@@ -102,6 +110,8 @@ pub enum SpeedDescriptor {
     Minimum,
     #[serde(rename = "-")]
     Maximum,
+    #[serde(rename = "U")]
+    Unknown,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
@@ -201,10 +211,16 @@ pub enum ControlledAirspaceType {
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 pub enum RestrictiveAirspaceType {
+    #[serde(rename = "S")]
+    AdvisoryArea,
     #[serde(rename = "A")]
     Alert,
+    #[serde(rename = "B")]
+    BufferZone,
     #[serde(rename = "C")]
     Caution,
+    #[serde(rename = "F")]
+    CrossBorderArea,
     #[serde(rename = "D")]
     Danger,
     #[serde(rename = "M")]
@@ -213,8 +229,12 @@ pub enum RestrictiveAirspaceType {
     Prohibited,
     #[serde(rename = "R")]
     Restricted,
+    #[serde(rename = "G")]
+    TemporaryReserveArea,
     #[serde(rename = "T")]
     Training,
+    #[serde(rename = "K")]
+    TemporarySegregatedArea,
     #[serde(rename = "W")]
     Warning,
     #[serde(rename = "U")]

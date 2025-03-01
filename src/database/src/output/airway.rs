@@ -1,3 +1,4 @@
+use sentry::capture_message;
 use serde::Serialize;
 
 use super::fix::Fix;
@@ -42,16 +43,21 @@ pub struct Airway {
 /// to way to identify distinct airways other than iterating through them to find an end of airway flag
 pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway> {
     let mut airway_complete = false;
-    data.into_iter()
+
+    let mut error_in_row = false;
+
+    let new_data = data
+        .into_iter()
         .fold(Vec::new(), |mut airways, airway_row| {
             if airways.is_empty() || airway_complete {
                 airways.push(Airway {
-                    ident: airway_row.route_identifier.unwrap_or("ERROR".to_string()),
+                    ident: airway_row.route_identifier.unwrap_or_else(|| {
+                        error_in_row = true;
+                        "ERROR".to_string()
+                    }),
                     fixes: Vec::new(),
-                    route_type: airway_row
-                        .route_type
-                        .unwrap_or(AirwayRouteType::UndesignatedAtsRoute),
-                    level: airway_row.flightlevel.unwrap_or(AirwayLevel::Both),
+                    route_type: airway_row.route_type.unwrap_or(AirwayRouteType::Unknown),
+                    level: airway_row.flightlevel.unwrap_or(AirwayLevel::Unknown),
                     direction: airway_row.direction_restriction,
                 });
 
@@ -61,10 +67,22 @@ pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway>
             let target_airway = airways.last_mut().unwrap();
 
             target_airway.fixes.push(Fix::from_row_data(
-                airway_row.waypoint_latitude.unwrap_or(0.),
-                airway_row.waypoint_longitude.unwrap_or(0.),
-                airway_row.waypoint_identifier.unwrap_or("NULL".to_string()),
-                airway_row.icao_code.unwrap_or("NULL".to_string()),
+                airway_row.waypoint_latitude.unwrap_or_else(|| {
+                    error_in_row = true;
+                    0.
+                }),
+                airway_row.waypoint_longitude.unwrap_or_else(|| {
+                    error_in_row = true;
+                    0.
+                }),
+                airway_row.waypoint_identifier.unwrap_or_else(|| {
+                    error_in_row = true;
+                    "UNKN".to_string()
+                }),
+                airway_row.icao_code.unwrap_or_else(|| {
+                    error_in_row = true;
+                    "UNKN".to_string()
+                }),
                 None,
                 airway_row.waypoint_ref_table,
                 airway_row.waypoint_description_code.clone(),
@@ -81,5 +99,25 @@ pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway>
             }
 
             airways
-        })
+        });
+
+    if error_in_row {
+        let error_text = format!(
+            "Error found in ControlledAirspace: {}",
+            serde_json::to_string(&new_data).unwrap_or_else(|_| {
+                let row = &new_data.first();
+
+                match row {
+                    Some(row) => {
+                        format!("Error serializing output, airway {}", row.ident)
+                    }
+                    None => "ControlledAirspace is unknown".to_string(),
+                }
+            })
+        );
+
+        capture_message(&error_text, sentry::Level::Warning);
+    }
+
+    new_data
 }

@@ -2,7 +2,7 @@ use serde::Serialize;
 
 use crate::math::Coordinates;
 
-#[derive(Serialize, Copy, Clone)]
+#[derive(Serialize, Copy, Clone, PartialEq)]
 pub enum FixType {
     #[serde(rename = "A")]
     Airport,
@@ -19,7 +19,7 @@ pub enum FixType {
     #[serde(rename = "W")]
     Waypoint,
     #[serde(rename = "U")]
-    None,
+    Unknown,
 }
 
 #[serde_with::skip_serializing_none]
@@ -70,7 +70,7 @@ impl Fix {
             "PI" => FixType::IlsNavaid,
             "D " => FixType::VhfNavaid,
             "EA" | "PC" => FixType::Waypoint,
-            _ => FixType::None,
+            _ => FixType::Unknown,
         });
 
         Self {

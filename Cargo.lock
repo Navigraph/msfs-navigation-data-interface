@@ -842,6 +842,7 @@ dependencies = [
  "anyhow",
  "regex",
  "rusqlite",
+ "sentry",
  "serde",
  "serde_json",
  "serde_rusqlite",

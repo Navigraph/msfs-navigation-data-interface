@@ -1,3 +1,4 @@
+use sentry::capture_message;
 use serde::Serialize;
 
 use crate::{
@@ -45,21 +46,36 @@ impl Path {
         arc_distance: Option<f64>,
         arc_bearing: Option<f64>,
         boundary_via: String,
-    ) -> Self {
+    ) -> (Self, bool) {
         let boundary_char = boundary_via.chars().nth(0).unwrap();
-        match boundary_char {
+
+        let mut error_in_row = false;
+
+        let path = match boundary_char {
             'C' => Self {
                 location: Coordinates {
-                    lat: arc_latitude.unwrap_or_default(),
-                    long: arc_longitude.unwrap_or_default(),
+                    lat: arc_latitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
+                    long: arc_longitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
                 },
                 arc: None,
                 path_type: PathType::Circle,
             },
             'G' | 'H' => Self {
                 location: Coordinates {
-                    lat: latitude.unwrap_or_default(),
-                    long: longitude.unwrap_or_default(),
+                    lat: latitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
+                    long: longitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
                 },
                 arc: None,
                 path_type: match boundary_char {
@@ -69,16 +85,34 @@ impl Path {
             },
             'L' | 'R' => Self {
                 location: Coordinates {
-                    lat: latitude.unwrap_or_default(),
-                    long: longitude.unwrap_or_default(),
+                    lat: latitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
+                    long: longitude.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
                 },
                 arc: Some(Arc {
                     origin: Coordinates {
-                        lat: arc_latitude.unwrap_or_default(),
-                        long: arc_longitude.unwrap_or_default(),
+                        lat: arc_latitude.unwrap_or_else(|| {
+                            error_in_row = true;
+                            0.
+                        }),
+                        long: arc_longitude.unwrap_or_else(|| {
+                            error_in_row = true;
+                            0.
+                        }),
                     },
-                    distance: arc_distance.unwrap_or_default(),
-                    bearing: arc_bearing.unwrap_or_default(),
+                    distance: arc_distance.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
+                    bearing: arc_bearing.unwrap_or_else(|| {
+                        error_in_row = true;
+                        0.
+                    }),
                     direction: match boundary_char {
                         'R' => TurnDirection::Right,
                         _ => TurnDirection::Left,
@@ -86,15 +120,20 @@ impl Path {
                 }),
                 path_type: PathType::Arc,
             },
-            _ => Self {
-                location: Coordinates {
-                    lat: 0.0,
-                    long: 0.0,
-                },
-                arc: None,
-                path_type: PathType::Unknown,
-            },
-        }
+            _ => {
+                error_in_row = true;
+                Self {
+                    location: Coordinates {
+                        lat: 0.0,
+                        long: 0.0,
+                    },
+                    arc: None,
+                    path_type: PathType::Unknown,
+                }
+            }
+        };
+
+        (path, error_in_row)
     }
 }
 
@@ -123,16 +162,23 @@ pub(crate) fn map_controlled_airspaces(
 ) -> Vec<ControlledAirspace> {
     let mut airspace_complete = false;
 
-    data.into_iter().fold(Vec::new(), |mut airspaces, row| {
+    let mut error_in_row = false;
+
+    let new_data = data.into_iter().fold(Vec::new(), |mut airspaces, row| {
         if airspaces.is_empty() || airspace_complete {
+            let name = row.controlled_airspace_name.clone();
+
+            // Skip areas that go 'outside' of range
+            if name.is_none() {
+                airspace_complete = false;
+                return airspaces;
+            }
+
             airspaces.push(ControlledAirspace {
                 area_code: row.area_code.clone(),
                 icao_code: row.icao_code.clone(),
                 airspace_center: row.airspace_center.clone(),
-                name: row
-                    .controlled_airspace_name
-                    .clone()
-                    .expect("First row of an airspace data must have a name"),
+                name: name.unwrap(),
                 airspace_type: row.airspace_type,
                 boundary_paths: Vec::new(),
             });
@@ -146,7 +192,7 @@ pub(crate) fn map_controlled_airspaces(
 
         let target_airspace = airspaces.last_mut().unwrap();
 
-        target_airspace.boundary_paths.push(Path::from_data(
+        let (path, error) = Path::from_data(
             row.latitude,
             row.longitude,
             row.arc_origin_latitude,
@@ -154,10 +200,37 @@ pub(crate) fn map_controlled_airspaces(
             row.arc_distance,
             row.arc_bearing,
             row.boundary_via,
-        ));
+        );
+
+        error_in_row = error;
+
+        target_airspace.boundary_paths.push(path);
 
         airspaces
-    })
+    });
+
+    if error_in_row {
+        let error_text = format!(
+            "Error found in ControlledAirspace: {}",
+            serde_json::to_string(&new_data).unwrap_or_else(|_| {
+                let row = &new_data.first();
+
+                match row {
+                    Some(row) => {
+                        format!(
+                            "Error serializing output, {} proedure {}",
+                            row.icao_code, row.name
+                        )
+                    }
+                    None => "ControlledAirspace is unknown".to_string(),
+                }
+            })
+        );
+
+        capture_message(&error_text, sentry::Level::Warning);
+    }
+
+    new_data
 }
 
 pub(crate) fn map_restrictive_airspaces(
@@ -165,16 +238,23 @@ pub(crate) fn map_restrictive_airspaces(
 ) -> Vec<RestrictiveAirspace> {
     let mut airspace_complete = false;
 
-    data.into_iter().fold(Vec::new(), |mut airspaces, row| {
+    let mut error_in_row = false;
+
+    let new_data = data.into_iter().fold(Vec::new(), |mut airspaces, row| {
         if airspaces.is_empty() || airspace_complete {
+            let name = row.restrictive_airspace_name.clone();
+
+            // Skip areas that go 'outside' of range
+            if name.is_none() {
+                airspace_complete = false;
+                return airspaces;
+            }
+
             airspaces.push(RestrictiveAirspace {
                 area_code: row.area_code.clone(),
                 icao_code: row.icao_code.clone(),
                 designation: row.restrictive_airspace_designation.clone(),
-                name: row
-                    .restrictive_airspace_name
-                    .clone()
-                    .expect("First row of an airspace data must have a name"),
+                name: name.unwrap(),
                 airspace_type: row.restrictive_type,
                 boundary_paths: Vec::new(),
             });
@@ -188,7 +268,7 @@ pub(crate) fn map_restrictive_airspaces(
 
         let target_airspace = airspaces.last_mut().unwrap();
 
-        target_airspace.boundary_paths.push(Path::from_data(
+        let (path, error) = Path::from_data(
             row.latitude,
             row.longitude,
             row.arc_origin_latitude,
@@ -196,8 +276,35 @@ pub(crate) fn map_restrictive_airspaces(
             row.arc_distance,
             row.arc_bearing,
             row.boundary_via,
-        ));
+        );
+
+        error_in_row = error;
+
+        target_airspace.boundary_paths.push(path);
 
         airspaces
-    })
+    });
+
+    if error_in_row {
+        let error_text = format!(
+            "Error found in ControlledAirspace: {}",
+            serde_json::to_string(&new_data).unwrap_or_else(|_| {
+                let row = &new_data.first();
+
+                match row {
+                    Some(row) => {
+                        format!(
+                            "Error serializing output, {} proedure {}",
+                            row.icao_code, row.name
+                        )
+                    }
+                    None => "ControlledAirspace is unknown".to_string(),
+                }
+            })
+        );
+
+        capture_message(&error_text, sentry::Level::Warning);
+    }
+
+    new_data
 }
