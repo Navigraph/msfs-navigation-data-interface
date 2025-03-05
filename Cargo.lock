@@ -796,7 +796,7 @@ dependencies = [
 [[package]]
 name = "msfs"
 version = "0.1.0"
-source = "git+https://github.com/ZigTag/msfs-rs.git?rev=f3a06c4#f3a06c4fa1693bf7fdd0baa290136e932edd3582"
+source = "git+https://github.com/ZigTag/msfs-rs.git?rev=f187073#f187073df700c6819cce9cc50efae52502c5265b"
 dependencies = [
  "bindgen",
  "cc",
@@ -824,7 +824,7 @@ dependencies = [
 [[package]]
 name = "msfs_derive"
 version = "0.2.0"
-source = "git+https://github.com/ZigTag/msfs-rs.git?rev=f3a06c4#f3a06c4fa1693bf7fdd0baa290136e932edd3582"
+source = "git+https://github.com/ZigTag/msfs-rs.git?rev=f187073#f187073df700c6819cce9cc50efae52502c5265b"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -833,7 +833,7 @@ dependencies = [
 [[package]]
 name = "msfs_sdk"
 version = "0.1.0"
-source = "git+https://github.com/ZigTag/msfs-rs.git?rev=f3a06c4#f3a06c4fa1693bf7fdd0baa290136e932edd3582"
+source = "git+https://github.com/ZigTag/msfs-rs.git?rev=f187073#f187073df700c6819cce9cc50efae52502c5265b"
 
 [[package]]
 name = "navigation_database"

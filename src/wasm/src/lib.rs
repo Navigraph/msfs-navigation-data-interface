@@ -20,13 +20,15 @@ async fn navigation_data_interface(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut hash = env!("GIT_HASH").split_at(7).0.to_string();
 
-    if env::var("GITHUB_REPOSITORY").is_err() {
-        let time = chrono::Utc::now();
-        hash = format!(
-            "{}-{}",
-            hash,
-            time.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
-        );
+    let version = match env!("MSFS_SDK").contains("msfs2020") {
+        true => "2020",
+        false => "2024",
+    };
+
+    hash = format!("{}-{}", version, hash);
+
+    if option_env!("GITHUB_REPOSITORY").is_none() {
+        hash = format!("{}-{}", hash, env!("CURRENT_TIME_ZULU"));
     }
 
     let release_name = format!("{}-{}", env!("CARGO_PKG_VERSION"), hash);
