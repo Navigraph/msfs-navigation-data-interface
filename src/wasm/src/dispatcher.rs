@@ -2,7 +2,7 @@ use std::{cell::RefCell, path::Path, rc::Rc};
 
 use anyhow::{anyhow, Result};
 use msfs::{commbus::*, network::NetworkRequestState, sys::sGaugeDrawData, MSFSEvent};
-use navigation_database::database::Database;
+use navigation_database::database::{Database, NoDatabaseOpen};
 use sentry::integrations::anyhow::capture_anyhow;
 
 use crate::{
@@ -634,7 +634,14 @@ impl Dispatcher<'_> {
         match task_operation(task.clone()) {
             Ok(_) => (),
             Err(e) => {
-                capture_anyhow(&e);
+                match e.downcast_ref() {
+                    // Add types here to ignore them from sentry
+                    Some(NoDatabaseOpen) => {}
+                    None => {
+                        capture_anyhow(&e);
+                    }
+                }
+
                 println!("[NAVIGRAPH] Task failed: {}", e);
                 task.borrow_mut().status = TaskStatus::Failure(e.to_string());
             }

@@ -41,7 +41,7 @@ pub struct Database {
 }
 
 #[derive(Debug)]
-struct NoDatabaseOpen;
+pub struct NoDatabaseOpen;
 
 impl Display for NoDatabaseOpen {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

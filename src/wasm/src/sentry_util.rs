@@ -1,7 +1,4 @@
-use std::{
-    rc::Rc,
-    sync::{Arc, RwLock},
-};
+use std::sync::Arc;
 
 use msfs::network::NetworkRequestBuilder;
 use sentry::{ClientOptions, Transport, TransportFactory};
@@ -38,9 +35,9 @@ impl Transport for CustomSentryTransport {
             // let ec = res.error_code();
 
             // println!("[NAVIGRAPH]: Res Code: {}", ec);
-            println!("[NAVIGRAPH]: Posted to Sentry");
+            println!("[NAVIGRAPH] Posted to Sentry");
         } else {
-            println!("[NAVIGRAPH]: Sentry failed to get res");
+            println!("[NAVIGRAPH] Sentry failed to get res");
         };
 
         // while !(*callback_received.read().unwrap()) {}

@@ -122,6 +122,10 @@ pub fn get_navigation_data_install_status(task: Rc<RefCell<Task>>) {
                     }
                 }
             } else {
+                task.borrow_mut().status = TaskStatus::Failure(format!(
+                    "Network request state changed: {:?}",
+                    request.response_state()
+                ));
                 return;
             }
         }
