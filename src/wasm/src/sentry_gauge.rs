@@ -255,6 +255,14 @@ where
             continue;
         };
 
+        // Update sentry pool
+        if let Ok(mut pool) = SENTRY_POOL.try_lock() {
+            pool.update()?;
+        } else {
+            return Err(anyhow!("Unable to lock SENTRY_POOL"));
+        };
+
+        // Update the gauge
         match instance.update() {
             Ok(_) => {}
             Err(e) => {
