@@ -1,7 +1,6 @@
 use serde::Serialize;
 
-use super::procedure_leg::ProcedureLeg;
-use crate::sql_structs::Runways;
+use super::{procedure_leg::ProcedureLeg, sql::Runways};
 
 pub mod approach;
 pub mod arrival;

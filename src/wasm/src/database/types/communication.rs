@@ -1,9 +1,10 @@
 use serde::Serialize;
 
-use crate::{
+use crate::database::utils::Coordinates;
+
+use super::{
     enums::{CommunicationType, FrequencyUnits},
-    math::Coordinates,
-    sql_structs,
+    sql,
 };
 
 #[serde_with::skip_serializing_none]
@@ -38,8 +39,8 @@ pub struct Communication {
     pub sectorization: Option<String>, // new
 }
 
-impl From<sql_structs::AirportCommunication> for Communication {
-    fn from(row: sql_structs::AirportCommunication) -> Self {
+impl From<sql::AirportCommunication> for Communication {
+    fn from(row: sql::AirportCommunication) -> Self {
         Self {
             area_code: row.area_code,
             communication_type: row.communication_type,
@@ -62,8 +63,8 @@ impl From<sql_structs::AirportCommunication> for Communication {
     }
 }
 
-impl From<sql_structs::EnrouteCommunication> for Communication {
-    fn from(row: sql_structs::EnrouteCommunication) -> Self {
+impl From<sql::EnrouteCommunication> for Communication {
+    fn from(row: sql::EnrouteCommunication) -> Self {
         Self {
             area_code: row.area_code,
             communication_type: row.communication_type,

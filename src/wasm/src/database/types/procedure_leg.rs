@@ -1,14 +1,15 @@
 use sentry::capture_message;
 use serde::Serialize;
 
-use super::fix::{Fix, FixType};
-use crate::{
+use crate::database::utils::{Degrees, Feet, Knots, Minutes, NauticalMiles};
+
+use super::{
     enums::{
         AltitudeDescriptor, AuthorizationRequired, LegType, ProcedureTypeApproved, SpeedDescriptor,
         TurnDirection,
     },
-    math::{Degrees, Feet, Knots, Minutes, NauticalMiles},
-    sql_structs,
+    fix::{Fix, FixType},
+    sql,
 };
 
 #[serde_with::skip_serializing_none]
@@ -102,8 +103,8 @@ pub struct ProcedureLeg {
     lnav_vnav_authorized: Option<ProcedureType>,
 }
 
-impl From<sql_structs::Procedures> for ProcedureLeg {
-    fn from(leg: sql_structs::Procedures) -> Self {
+impl From<sql::Procedures> for ProcedureLeg {
+    fn from(leg: sql::Procedures) -> Self {
         let mut error_in_row = false;
 
         let procedure_leg = ProcedureLeg {

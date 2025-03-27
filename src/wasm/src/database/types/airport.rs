@@ -1,9 +1,10 @@
 use serde::Serialize;
 
-use crate::{
+use crate::database::utils::{Coordinates, Degrees, Feet};
+
+use super::{
     enums::{IfrCapability, RunwaySurfaceCode},
-    math::{Coordinates, Degrees, Feet},
-    sql_structs,
+    sql,
 };
 
 #[serde_with::skip_serializing_none]
@@ -56,8 +57,8 @@ pub struct Airport {
     pub iata_ident: Option<String>,
 }
 
-impl From<sql_structs::Airports> for Airport {
-    fn from(airport: sql_structs::Airports) -> Self {
+impl From<sql::Airports> for Airport {
+    fn from(airport: sql::Airports) -> Self {
         Self {
             ident: airport.airport_identifier,
             name: airport.airport_name,

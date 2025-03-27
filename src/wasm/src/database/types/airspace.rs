@@ -1,10 +1,11 @@
 use sentry::capture_message;
 use serde::Serialize;
 
-use crate::{
+use crate::database::utils::{Coordinates, Degrees, NauticalMiles};
+
+use super::{
     enums::{ControlledAirspaceType, RestrictiveAirspaceType, TurnDirection},
-    math::{Coordinates, Degrees, NauticalMiles},
-    sql_structs,
+    sql,
 };
 
 #[derive(Serialize, Debug)]
@@ -157,9 +158,7 @@ pub struct RestrictiveAirspace {
     pub boundary_paths: Vec<Path>,
 }
 
-pub(crate) fn map_controlled_airspaces(
-    data: Vec<sql_structs::ControlledAirspace>,
-) -> Vec<ControlledAirspace> {
+pub fn map_controlled_airspaces(data: Vec<sql::ControlledAirspace>) -> Vec<ControlledAirspace> {
     let mut airspace_complete = false;
 
     let mut error_in_row = false;
@@ -233,9 +232,7 @@ pub(crate) fn map_controlled_airspaces(
     new_data
 }
 
-pub(crate) fn map_restrictive_airspaces(
-    data: Vec<sql_structs::RestrictiveAirspace>,
-) -> Vec<RestrictiveAirspace> {
+pub fn map_restrictive_airspaces(data: Vec<sql::RestrictiveAirspace>) -> Vec<RestrictiveAirspace> {
     let mut airspace_complete = false;
 
     let mut error_in_row = false;

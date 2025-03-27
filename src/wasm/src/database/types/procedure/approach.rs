@@ -3,8 +3,9 @@ use std::collections::{hash_map::Entry, HashMap};
 use regex::Regex;
 use serde::Serialize;
 
+use crate::database::types::{enums::ApproachType, procedure_leg::ProcedureLeg, sql};
+
 use super::{apply_enroute_transition_leg, Transition};
-use crate::{enums::ApproachType, output::procedure_leg::ProcedureLeg, sql_structs};
 
 #[derive(Serialize)]
 /// Represents an approach procedure for an airport.
@@ -79,7 +80,7 @@ pub fn split_approach_ident(ident: String) -> Option<(String, String, Option<Str
 /// ```sql
 /// SELECT * FROM tbl_iaps WHERE airport_identifier = (?1)
 /// ```
-pub(crate) fn map_approaches(data: Vec<sql_structs::Procedures>) -> Vec<Approach> {
+pub fn map_approaches(data: Vec<sql::Procedures>) -> Vec<Approach> {
     let mut missed_started = false;
 
     data.into_iter()

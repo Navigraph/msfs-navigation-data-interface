@@ -1,10 +1,11 @@
 use sentry::capture_message;
 use serde::Serialize;
 
-use crate::{
+use crate::database::utils::{Coordinates, Degrees, Feet};
+
+use super::{
     enums::{RunwayLights, RunwaySurface, TrafficPattern},
-    math::{Coordinates, Degrees, Feet},
-    sql_structs,
+    sql,
 };
 
 #[derive(Serialize, Clone)]
@@ -37,8 +38,8 @@ pub struct RunwayThreshold {
     pub traffic_pattern: Option<TrafficPattern>,
 }
 
-impl From<sql_structs::Runways> for RunwayThreshold {
-    fn from(runway: sql_structs::Runways) -> Self {
+impl From<sql::Runways> for RunwayThreshold {
+    fn from(runway: sql::Runways) -> Self {
         let mut error_in_row = false;
 
         let runway_new = Self {

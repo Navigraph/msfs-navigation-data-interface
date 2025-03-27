@@ -1,9 +1,8 @@
 use serde::Serialize;
 
-use crate::{
-    math::{Coordinates, Degrees},
-    sql_structs,
-};
+use crate::database::utils::{Coordinates, Degrees};
+
+use super::sql;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize)]
@@ -30,8 +29,8 @@ pub struct Waypoint {
     pub magnetic_variation: Option<Degrees>,
 }
 
-impl From<sql_structs::Waypoints> for Waypoint {
-    fn from(waypoint: sql_structs::Waypoints) -> Self {
+impl From<sql::Waypoints> for Waypoint {
+    fn from(waypoint: sql::Waypoints) -> Self {
         let mut error_in_row = false;
 
         Self {

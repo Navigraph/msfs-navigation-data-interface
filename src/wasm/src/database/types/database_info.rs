@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use serde::Serialize;
 
-use crate::sql_structs;
+use super::sql;
 
 #[derive(Serialize)]
 pub struct DatabaseInfo {
@@ -38,8 +38,8 @@ fn parse_from_to(data: String) -> Result<(String, String), <u32 as FromStr>::Err
     ))
 }
 
-impl From<sql_structs::Header> for DatabaseInfo {
-    fn from(header: sql_structs::Header) -> Self {
+impl From<sql::Header> for DatabaseInfo {
+    fn from(header: sql::Header) -> Self {
         Self {
             airac_cycle: header.cycle,
             effective_from_to: parse_from_to(header.effective_fromto).unwrap(),

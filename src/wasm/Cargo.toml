@@ -1,10 +1,25 @@
 [package]
 name = "msfs-navigation-data-interface"
-version = "1.1.2"
+version = "1.2.0"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
+anyhow = "1.0.97"
+dotenv_codegen = "0.15.0"
+futures-lite = "2.6.0"
 msfs = { git = "https://github.com/ZigTag/msfs-rs.git", rev = "f187073" }
+paste = "1.0.15"
+regex = "1.11.1"
+rusqlite = { version = "0.32.0", features = ["bundled"] }
+sentry = { git = "https://github.com/pepperoni505/sentry-rust", branch = "release-health-feature-flag", default-features = false, features = [
+    "anyhow",
+    "panic",
+    "backtrace",
+] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+serde_rusqlite = "0.36.0"
+serde_with = "3.12.0"

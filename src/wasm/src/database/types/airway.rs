@@ -1,10 +1,10 @@
 use sentry::capture_message;
 use serde::Serialize;
 
-use super::fix::Fix;
-use crate::{
+use super::{
     enums::{AirwayDirection, AirwayLevel, AirwayRouteType},
-    sql_structs,
+    fix::Fix,
+    sql,
 };
 
 #[serde_with::skip_serializing_none]
@@ -41,7 +41,7 @@ pub struct Airway {
 /// When querying airways by location always be sure to query all airways with route_identifiers which appear within the
 /// query area. This is icao_code can change along one airway so it should not be used to group airways. There is no way
 /// to way to identify distinct airways other than iterating through them to find an end of airway flag
-pub(crate) fn map_airways(data: Vec<sql_structs::EnrouteAirways>) -> Vec<Airway> {
+pub fn map_airways(data: Vec<sql::EnrouteAirways>) -> Vec<Airway> {
     let mut airway_complete = false;
 
     let mut error_in_row = false;

@@ -2,10 +2,11 @@ use std::collections::{hash_map::Entry, HashMap};
 
 use serde::Serialize;
 
+use crate::database::types::{procedure_leg::ProcedureLeg, sql};
+
 use super::{
     apply_common_leg, apply_enroute_transition_leg, apply_runway_transition_leg, Transition,
 };
-use crate::{output::procedure_leg::ProcedureLeg, sql_structs};
 
 #[derive(Serialize)]
 /// Represents an arrival procedure (STAR) for an airport.
@@ -45,10 +46,7 @@ pub struct Arrival {
 /// ```sql
 /// SELECT * FROM tbl_stars WHERE airport_identifier = (?1)
 /// ```
-pub(crate) fn map_arrivals(
-    data: Vec<sql_structs::Procedures>,
-    runways: Vec<sql_structs::Runways>,
-) -> Vec<Arrival> {
+pub fn map_arrivals(data: Vec<sql::Procedures>, runways: Vec<sql::Runways>) -> Vec<Arrival> {
     data.into_iter()
         .fold(HashMap::new(), |mut arrivals, row| {
             let arrival = match arrivals.entry(row.procedure_identifier.clone()) {

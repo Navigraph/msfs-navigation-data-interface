@@ -1,9 +1,8 @@
 use serde::Serialize;
 
-use crate::{
-    math::{Coordinates, Degrees, Feet},
-    sql_structs,
-};
+use crate::database::utils::{Coordinates, Degrees, Feet};
+
+use super::sql;
 
 #[derive(Serialize)]
 pub struct GlsNavaid {
@@ -34,8 +33,8 @@ pub struct GlsNavaid {
     pub elevation: Feet,
 }
 
-impl From<sql_structs::Gls> for GlsNavaid {
-    fn from(gls: sql_structs::Gls) -> Self {
+impl From<sql::Gls> for GlsNavaid {
+    fn from(gls: sql::Gls) -> Self {
         Self {
             area_code: gls.area_code,
             airport_ident: gls.airport_identifier,

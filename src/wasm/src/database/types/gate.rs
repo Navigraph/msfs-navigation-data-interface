@@ -1,6 +1,8 @@
 use serde::Serialize;
 
-use crate::{math::Coordinates, sql_structs};
+use crate::database::utils::Coordinates;
+
+use super::sql;
 
 #[derive(Serialize)]
 /// Represents a gate at an airport
@@ -17,8 +19,8 @@ pub struct Gate {
     pub name: String,
 }
 
-impl From<sql_structs::Gate> for Gate {
-    fn from(row: sql_structs::Gate) -> Self {
+impl From<sql::Gate> for Gate {
+    fn from(row: sql::Gate) -> Self {
         Self {
             area_code: row.area_code,
             icao_code: row.icao_code,

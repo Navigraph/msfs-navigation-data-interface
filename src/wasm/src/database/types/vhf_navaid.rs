@@ -1,10 +1,9 @@
 use sentry::capture_message;
 use serde::Serialize;
 
-use crate::{
-    math::{Coordinates, Degrees, MegaHertz, NauticalMiles},
-    sql_structs,
-};
+use crate::database::utils::{Coordinates, Degrees, MegaHertz, NauticalMiles};
+
+use super::sql;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize)]
@@ -37,8 +36,8 @@ pub struct VhfNavaid {
     pub range: Option<NauticalMiles>,
 }
 
-impl From<sql_structs::VhfNavaids> for VhfNavaid {
-    fn from(navaid: sql_structs::VhfNavaids) -> Self {
+impl From<sql::VhfNavaids> for VhfNavaid {
+    fn from(navaid: sql::VhfNavaids) -> Self {
         let mut error_in_row = false;
 
         let new_navaid = Self {

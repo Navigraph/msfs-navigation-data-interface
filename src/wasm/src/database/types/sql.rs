@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use serde::Deserialize;
 
-use crate::enums::{
+use super::enums::{
     AirwayDirection, AirwayLevel, AirwayRouteType, AltitudeDescriptor, ApproachTypeIdentifier,
     AuthorizationRequired, CommunicationType, ControlledAirspaceType, FrequencyUnits,
     IfrCapability, LegType, ProcedureTypeApproved, RestrictiveAirspaceType, RunwayLights,

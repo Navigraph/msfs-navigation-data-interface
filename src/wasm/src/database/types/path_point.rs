@@ -1,10 +1,8 @@
 use serde::Serialize;
 
-use crate::{
-    enums::ApproachTypeIdentifier,
-    math::{feet_to_meters, Coordinates, Degrees, Meters},
-    sql_structs,
-};
+use crate::database::utils::{feet_to_meters, Coordinates, Degrees, Meters};
+
+use super::{enums::ApproachTypeIdentifier, sql};
 
 #[derive(Serialize)]
 pub struct PathPoint {
@@ -29,8 +27,8 @@ pub struct PathPoint {
     pub approach_type: ApproachTypeIdentifier,
 }
 
-impl From<sql_structs::Pathpoints> for PathPoint {
-    fn from(row: sql_structs::Pathpoints) -> Self {
+impl From<sql::Pathpoints> for PathPoint {
+    fn from(row: sql::Pathpoints) -> Self {
         Self {
             area_code: row.area_code,
             airport_ident: row.airport_identifier,
