@@ -12,9 +12,10 @@ mod funcs;
 mod futures;
 mod sentry_gauge;
 
+/// Amount of MS between dispatches of the heartbeat commbus event
 const HEARTBEAT_INTERVAL_MS: u128 = 1000;
 
-/// The types of events that can be emitted
+/// The types of events that can be emitted from the interface
 #[derive(Serialize)]
 enum NavigraphEventType {
     Heartbeat,
@@ -22,12 +23,12 @@ enum NavigraphEventType {
 
 /// The structure of an event message
 #[derive(Serialize)]
-struct NavigraphEvent {
+struct InterfaceEvent {
     event: NavigraphEventType,
     data: Option<serde_json::Value>,
 }
 
-impl NavigraphEvent {
+impl InterfaceEvent {
     /// Send a heartbeat event across the commbus
     pub fn send_heartbeat() -> Result<()> {
         let event = Self {
@@ -73,14 +74,19 @@ impl SentryGauge for NavigationDataInterface<'_> {
                 };
 
                 // Parse the message as a function. We need to trim off the null terminator at the end
-                let Ok(params) =
-                    serde_json::from_str::<InterfaceFunction>(args.trim_end_matches(char::from(0)))
-                else {
-                    sentry::capture_message(
-                        &format!("Unable to parse InterfaceFunction from {}", args),
-                        sentry::Level::Warning,
-                    );
-                    return;
+                let params = match serde_json::from_str::<InterfaceFunction>(
+                    args.trim_end_matches(char::from(0)),
+                ) {
+                    Ok(p) => p,
+                    Err(e) => {
+                        sentry::capture_message(
+                            &format!(
+                                "Unable to parse InterfaceFunction from {args} due to error {e}",
+                            ),
+                            sentry::Level::Warning,
+                        );
+                        return;
+                    }
                 };
 
                 // Finally, push the function into our queue
@@ -90,7 +96,7 @@ impl SentryGauge for NavigationDataInterface<'_> {
 
         // Send first heartbeat
         let last_heartbeat = Instant::now();
-        NavigraphEvent::send_heartbeat()?;
+        InterfaceEvent::send_heartbeat()?;
 
         Ok(Self {
             _commbus: commbus,
@@ -102,24 +108,26 @@ impl SentryGauge for NavigationDataInterface<'_> {
     fn update(&mut self) -> Result<()> {
         let mut queue = self.processing_queue.try_borrow_mut()?;
 
-        // Process one function at a time. If the function returns in progress, don't continue on to the next item in order to preserve call order
+        // Process one function at a time. If the function returns InProgress, don't continue on to the next item in order to preserve call order
         while let Some(function) = queue.front_mut() {
-            println!("[NAVIGRAPH]: Processing function ID {}", function.id());
-
             match function.run() {
-                RunStatus::InProgress => break,
-                RunStatus::Finished(res) => {
-                    if let Err(e) = res {
-                        capture_anyhow(&e);
-                    }
-                    queue.pop_front()
+                Ok(RunStatus::InProgress) => break,
+                Ok(RunStatus::Finished) => {
+                    queue.pop_front();
+                }
+                Err(e) => {
+                    // Report error
+                    capture_anyhow(&e);
+                    println!("[NAVIGRAPH]: Error occurred in function execution: {e}");
+                    // Remove item
+                    queue.pop_front();
                 }
             };
         }
 
         // Send heartbeat if we have passed the interval
         if self.last_heartbeat.elapsed().as_millis() >= HEARTBEAT_INTERVAL_MS {
-            NavigraphEvent::send_heartbeat()?;
+            InterfaceEvent::send_heartbeat()?;
             self.last_heartbeat = Instant::now();
         }
 

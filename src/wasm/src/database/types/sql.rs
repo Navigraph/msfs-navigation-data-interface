@@ -16,24 +16,24 @@ pub struct AirportCommunication {
     pub communication_frequency: f64,
     pub communication_type: CommunicationType,
     pub frequency_units: FrequencyUnits,
-    pub guard_transmit: Option<String>, // new
+    pub guard_transmit: Option<String>,
     pub icao_code: String,
     pub latitude: f64,
     pub longitude: f64,
-    pub narritive: Option<String>,                 // new
-    pub remote_facility_icao_code: Option<String>, // new
-    pub remote_facility: Option<String>,           // new
-    pub sector_facility_icao_code: Option<String>, // new
-    pub sector_facility: Option<String>,           // new
-    pub sectorization: Option<String>,             // new
+    pub narritive: Option<String>,
+    pub remote_facility_icao_code: Option<String>,
+    pub remote_facility: Option<String>,
+    pub sector_facility_icao_code: Option<String>,
+    pub sector_facility: Option<String>,
+    pub sectorization: Option<String>,
     pub service_indicator: Option<String>,
-    pub time_of_operation_1: Option<String>, // new
-    pub time_of_operation_2: Option<String>, // new
-    pub time_of_operation_3: Option<String>, // new
-    pub time_of_operation_4: Option<String>, // new
-    pub time_of_operation_5: Option<String>, // new
-    pub time_of_operation_6: Option<String>, // new
-    pub time_of_operation_7: Option<String>, // new
+    pub time_of_operation_1: Option<String>,
+    pub time_of_operation_2: Option<String>,
+    pub time_of_operation_3: Option<String>,
+    pub time_of_operation_4: Option<String>,
+    pub time_of_operation_5: Option<String>,
+    pub time_of_operation_6: Option<String>,
+    pub time_of_operation_7: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -201,8 +201,8 @@ pub struct EnrouteCommunication {
     pub frequency_units: FrequencyUnits,
     pub latitude: f64,
     pub longitude: f64,
-    pub remote_facility_icao_code: Option<String>, // new
-    pub remote_facility: Option<String>,           // new
+    pub remote_facility_icao_code: Option<String>,
+    pub remote_facility: Option<String>,
     pub remote_name: Option<String>,
     pub service_indicator: Option<String>,
 }
@@ -337,26 +337,26 @@ pub struct Procedures {
     pub altitude2: Option<f64>,
     pub arc_radius: Option<f64>,
     pub area_code: String,
-    pub authorization_required: Option<AuthorizationRequired>, // new
-    pub center_waypoint_icao_code: Option<String>,             // new
+    pub authorization_required: Option<AuthorizationRequired>,
+    pub center_waypoint_icao_code: Option<String>,
     pub center_waypoint_latitude: Option<f64>,
     pub center_waypoint_longitude: Option<f64>,
-    pub center_waypoint_ref_table: Option<String>, // new
+    pub center_waypoint_ref_table: Option<String>,
     pub center_waypoint: Option<String>,
-    pub course_flag: Option<String>, // new
-    pub course: Option<f64>,         // new
+    pub course_flag: Option<String>,
+    pub course: Option<f64>,
     pub distance_time: Option<f64>,
-    pub gnss_fms_indication: Option<String>, // New
-    pub lnav_authorized_sbas: Option<ProcedureTypeApproved>, // New
-    pub lnav_level_service_name: Option<String>, // New
-    pub lnav_vnav_authorized_sbas: Option<ProcedureTypeApproved>, // New
-    pub lnav_vnav_level_service_name: Option<String>, // New
+    pub gnss_fms_indication: Option<String>,
+    pub lnav_authorized_sbas: Option<ProcedureTypeApproved>,
+    pub lnav_level_service_name: Option<String>,
+    pub lnav_vnav_authorized_sbas: Option<ProcedureTypeApproved>,
+    pub lnav_vnav_level_service_name: Option<String>,
     pub path_termination: LegType,
     pub procedure_identifier: String,
-    pub recommended_navaid_icao_code: Option<String>, // new
+    pub recommended_navaid_icao_code: Option<String>,
     pub recommended_navaid_latitude: Option<f64>,
     pub recommended_navaid_longitude: Option<f64>,
-    pub recommended_navaid_ref_table: Option<String>, // new
+    pub recommended_navaid_ref_table: Option<String>,
     pub recommended_navaid: Option<String>,
     pub rho: Option<f64>,
     pub rnp: Option<f64>,
@@ -375,7 +375,7 @@ pub struct Procedures {
     pub waypoint_identifier: Option<String>,
     pub waypoint_latitude: Option<f64>,
     pub waypoint_longitude: Option<f64>,
-    pub waypoint_ref_table: Option<String>, // new
+    pub waypoint_ref_table: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -415,7 +415,7 @@ pub struct LocalizersGlideslopes {
 pub struct Pathpoints {
     pub airport_icao_code: String,
     pub airport_identifier: String,
-    pub approach_performance_designator: Option<String>, // new
+    pub approach_performance_designator: Option<String>,
     pub approach_procedure_ident: String,
     pub approach_type_identifier: ApproachTypeIdentifier,
     pub area_code: String,
@@ -429,9 +429,9 @@ pub struct Pathpoints {
     pub landing_threshold_point_longitude: f64,
     pub length_offset: Option<f64>,
     pub ltp_ellipsoid_height: f64,
-    pub operations_type: Option<f64>, // new
+    pub operations_type: Option<f64>,
     pub path_point_tch: f64,
-    pub reference_path_data_selector: Option<f64>, // new
+    pub reference_path_data_selector: Option<f64>,
     pub reference_path_identifier: String,
     pub route_indicator: Option<String>,
     pub runway_identifier: String,
@@ -477,14 +477,14 @@ pub struct Runways {
     pub runway_identifier: String,
     pub runway_latitude: Option<f64>,
     pub runway_length: f64,
-    pub runway_lights: Option<RunwayLights>, // new
+    pub runway_lights: Option<RunwayLights>,
     pub runway_longitude: Option<f64>,
     pub runway_magnetic_bearing: Option<f64>,
     pub runway_true_bearing: Option<f64>,
     pub runway_width: f64,
     pub surface_code: Option<RunwaySurface>,
     pub threshold_crossing_height: Option<f64>,
-    pub traffic_pattern: Option<TrafficPattern>, // new
+    pub traffic_pattern: Option<TrafficPattern>,
 }
 
 #[derive(Deserialize, Debug)]

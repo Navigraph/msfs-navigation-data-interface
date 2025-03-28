@@ -1,5 +1,4 @@
 use std::{
-    cell::LazyCell,
     fs::OpenOptions,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
@@ -11,6 +10,7 @@ use msfs::{
     network::{NetworkRequest, NetworkRequestBuilder, NetworkRequestState},
     MSFSEvent,
 };
+use once_cell::sync::Lazy;
 use sentry::integrations::anyhow::capture_anyhow;
 use serde::{Deserialize, Serialize};
 
@@ -21,8 +21,8 @@ const SENTRY_POOL_FILE: &str = "\\work/ng_sentry_pool.json";
 const SENTRY_FLUSH_INTERVAL_SECONDS: u64 = 60;
 
 // The global Sentry pool instance
-const SENTRY_POOL: LazyCell<Mutex<SentryReportPool>> =
-    LazyCell::new(|| Mutex::new(SentryReportPool::load().unwrap()));
+static SENTRY_POOL: Lazy<Mutex<SentryReportPool>> =
+    Lazy::new(|| Mutex::new(SentryReportPool::load().unwrap()));
 
 // A pending sentry report
 #[derive(Deserialize, Serialize)]
@@ -75,12 +75,11 @@ struct SentryReportPool {
 impl SentryReportPool {
     /// Load the pool
     pub fn load() -> Result<Self> {
-        // Read from the local file. If that fails, it is likely that the file doesn't exist, so we can just create an empty pool
-        let status = if let Ok(contents) = std::fs::read_to_string(SENTRY_POOL_FILE) {
-            serde_json::from_str(&contents)?
-        } else {
-            Self::default()
-        };
+        // Read from the local file. If that fails, it is likely that the file doesn't exist, so we can just create an empty pool (from default)
+        let status = std::fs::read_to_string(SENTRY_POOL_FILE)
+            .ok()
+            .and_then(|contents| serde_json::from_str(&contents).ok())
+            .unwrap_or_default();
 
         Ok(status)
     }

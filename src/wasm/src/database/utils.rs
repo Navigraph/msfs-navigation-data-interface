@@ -1,5 +1,4 @@
 use anyhow::Result;
-use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
@@ -112,7 +111,7 @@ where
     Ok(data)
 }
 
-pub fn range_query_where(center: Coordinates, range: NauticalMiles, prefix: &str) -> String {
+pub fn range_query_where(center: &Coordinates, range: NauticalMiles, prefix: &str) -> String {
     let (bottom_left, top_right) = center.distance_bounds(range);
 
     let prefix = if prefix.is_empty() {

@@ -1,17 +1,16 @@
 mod types;
 mod utils;
 
-use anyhow::Result;
-use std::{
-    error::Error,
-    fmt::{Display, Formatter},
-};
+use anyhow::{anyhow, Result};
+use sentry::integrations::anyhow::capture_anyhow;
+use serde::Deserialize;
+use std::fs::File;
 
 use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags};
 use serde_json::{Number, Value};
-use utils::{Coordinates, NauticalMiles};
+pub use utils::{Coordinates, NauticalMiles};
 
-use types::{
+pub use types::{
     airport::Airport,
     airspace::{
         map_controlled_airspaces, map_restrictive_airspaces, ControlledAirspace,
@@ -35,49 +34,82 @@ use types::{
     waypoint::Waypoint,
 };
 
+pub const CYCLE_JSON_PATH: &str = "\\work/ng_cycle.json";
+pub const DB_PATH: &str = "\\work/ng_navigation_data_db.s3db";
+
+#[derive(Deserialize)]
+struct CycleInfo {
+    cycle: String,
+    revision: String,
+    name: String,
+    format: String,
+    validityPeriod: String,
+}
+
+impl CycleInfo {
+    pub fn from_path(path: &str) -> Result<Self> {
+        let mut file = File::open(path)?;
+
+        serde_json::from_reader(&mut file)
+            .map_err(|e| anyhow!("error occurred reading cycle.json: {e}"))
+    }
+}
+
 #[derive(Default)]
-pub struct Database {
+pub struct DatabaseState {
     database: Option<Connection>,
-    pub path: Option<String>,
+    cycle_info: Option<CycleInfo>,
 }
 
-#[derive(Debug)]
-pub struct NoDatabaseOpen;
-
-impl Display for NoDatabaseOpen {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "No database open")
-    }
-}
-
-impl Error for NoDatabaseOpen {}
-
-impl Database {
+impl DatabaseState {
     pub fn new() -> Self {
-        Default::default()
+        let mut instance = Self::default();
+        // TODO: handle bundled
+
+        // Try to open a connection. First check to make sure that the file is openable
+        if File::open(DB_PATH).is_ok() {
+            // The only way this can fail (since we know now that the path is valid) is if the file is corrupt, in which case we should report to sentry
+            match instance.open_connection() {
+                Ok(_) => {}
+                Err(e) => {
+                    capture_anyhow(&e);
+                }
+            }
+        }
+
+        instance
     }
 
-    fn get_database(&self) -> Result<&Connection, NoDatabaseOpen> {
-        self.database.as_ref().ok_or(NoDatabaseOpen)
+    fn get_database(&self) -> Result<&Connection> {
+        self.database.as_ref().ok_or(anyhow!("No database open"))
     }
 
-    pub fn set_active_database(&mut self, path: String) -> Result<()> {
-        unimplemented!() // TODO
+    pub fn close_connection(&mut self) -> Result<()> {
+        if let Some(connection) = self.database.take() {
+            connection
+                .close()
+                .map_err(|_| anyhow!("Unable to close database"))?;
+        };
+        self.cycle_info.take();
+
+        Ok(())
     }
 
-    pub fn open_connection(&mut self, path: String) -> Result<()> {
+    pub fn open_connection(&mut self) -> Result<()> {
         // We have to open with flags because the SQLITE_OPEN_CREATE flag with the default open causes the file to
         // be overwritten
         let flags = OpenFlags::SQLITE_OPEN_READ_ONLY
             | OpenFlags::SQLITE_OPEN_URI
             | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-        let conn = Connection::open_with_flags(path, flags)?;
+        let conn = Connection::open_with_flags(DB_PATH, flags)?;
         self.database = Some(conn);
+
+        self.cycle_info = Some(CycleInfo::from_path(CYCLE_JSON_PATH)?);
 
         Ok(())
     }
 
-    pub fn execute_sql_query(&self, sql: String, params: Vec<String>) -> Result<Value> {
+    pub fn execute_sql_query(&self, sql: &str, params: &Vec<String>) -> Result<Value> {
         // Execute query
         let conn = self.get_database()?;
         let mut stmt = conn.prepare(&sql)?;
@@ -128,7 +160,7 @@ impl Database {
         Ok(DatabaseInfo::from(header_data))
     }
 
-    pub fn get_airport(&self, ident: String) -> Result<Airport> {
+    pub fn get_airport(&self, ident: &str) -> Result<Airport> {
         let conn = self.get_database()?;
 
         let mut stmt =
@@ -139,7 +171,7 @@ impl Database {
         Ok(Airport::from(airport_data))
     }
 
-    pub fn get_waypoints(&self, ident: String) -> Result<Vec<Waypoint>> {
+    pub fn get_waypoints(&self, ident: &str) -> Result<Vec<Waypoint>> {
         let conn = self.get_database()?;
 
         let mut enroute_stmt = conn
@@ -158,7 +190,7 @@ impl Database {
             .collect())
     }
 
-    pub fn get_vhf_navaids(&self, ident: String) -> Result<Vec<VhfNavaid>> {
+    pub fn get_vhf_navaids(&self, ident: &str) -> Result<Vec<VhfNavaid>> {
         let conn = self.get_database()?;
 
         let mut stmt =
@@ -169,7 +201,7 @@ impl Database {
         Ok(navaids_data.into_iter().map(VhfNavaid::from).collect())
     }
 
-    pub fn get_ndb_navaids(&self, ident: String) -> Result<Vec<NdbNavaid>> {
+    pub fn get_ndb_navaids(&self, ident: &str) -> Result<Vec<NdbNavaid>> {
         let conn = self.get_database()?;
 
         let mut enroute_stmt =
@@ -188,7 +220,7 @@ impl Database {
             .collect())
     }
 
-    pub fn get_airways(&self, ident: String) -> Result<Vec<Airway>> {
+    pub fn get_airways(&self, ident: &str) -> Result<Vec<Airway>> {
         let conn = self.get_database()?;
 
         let mut stmt =
@@ -199,11 +231,7 @@ impl Database {
         Ok(map_airways(airways_data))
     }
 
-    pub fn get_airways_at_fix(
-        &self,
-        fix_ident: String,
-        fix_icao_code: String,
-    ) -> Result<Vec<Airway>> {
+    pub fn get_airways_at_fix(&self, fix_ident: &str, fix_icao_code: &str) -> Result<Vec<Airway>> {
         let conn = self.get_database()?;
 
         let mut stmt: rusqlite::Statement<'_> = conn.prepare(
@@ -226,12 +254,12 @@ impl Database {
 
     pub fn get_airports_in_range(
         &self,
-        center: Coordinates,
-        range: NauticalMiles,
+        center: &Coordinates,
+        range: &NauticalMiles,
     ) -> Result<Vec<Airport>> {
         let conn = self.get_database()?;
 
-        let where_string = utils::range_query_where(center, range, "airport_ref");
+        let where_string = utils::range_query_where(&center, *range, "airport_ref");
 
         let mut stmt =
             conn.prepare(format!("SELECT * FROM tbl_pa_airports WHERE {where_string}").as_str())?;
@@ -242,18 +270,18 @@ impl Database {
         Ok(airports_data
             .into_iter()
             .map(Airport::from)
-            .filter(|airport| airport.location.distance_to(&center) <= range)
+            .filter(|airport| airport.location.distance_to(&center) <= *range)
             .collect())
     }
 
     pub fn get_waypoints_in_range(
         &self,
-        center: Coordinates,
-        range: NauticalMiles,
+        center: &Coordinates,
+        range: &NauticalMiles,
     ) -> Result<Vec<Waypoint>> {
         let conn = self.get_database()?;
 
-        let where_string = utils::range_query_where(center, range, "waypoint");
+        let where_string = utils::range_query_where(center, *range, "waypoint");
 
         let mut enroute_stmt = conn.prepare(
             format!("SELECT * FROM tbl_ea_enroute_waypoints WHERE {where_string}").as_str(),
@@ -270,18 +298,18 @@ impl Database {
             .into_iter()
             .chain(terminal_data)
             .map(Waypoint::from)
-            .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
+            .filter(|waypoint| waypoint.location.distance_to(&center) <= *range)
             .collect())
     }
 
     pub fn get_ndb_navaids_in_range(
         &self,
-        center: Coordinates,
-        range: NauticalMiles,
+        center: &Coordinates,
+        range: &NauticalMiles,
     ) -> Result<Vec<NdbNavaid>> {
         let conn = self.get_database()?;
 
-        let where_string = utils::range_query_where(center, range, "navaid");
+        let where_string = utils::range_query_where(center, *range, "navaid");
 
         let mut enroute_stmt = conn.prepare(
             format!("SELECT * FROM tbl_db_enroute_ndbnavaids WHERE {where_string}").as_str(),
@@ -298,18 +326,18 @@ impl Database {
             .into_iter()
             .chain(terminal_data)
             .map(NdbNavaid::from)
-            .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
+            .filter(|waypoint| waypoint.location.distance_to(&center) <= *range)
             .collect())
     }
 
     pub fn get_vhf_navaids_in_range(
         &self,
-        center: Coordinates,
-        range: NauticalMiles,
+        center: &Coordinates,
+        range: &NauticalMiles,
     ) -> Result<Vec<VhfNavaid>> {
         let conn = self.get_database()?;
 
-        let where_string = utils::range_query_where(center, range, "navaid");
+        let where_string = utils::range_query_where(center, *range, "navaid");
 
         let mut stmt =
             conn.prepare(format!("SELECT * FROM tbl_d_vhfnavaids WHERE {where_string}").as_str())?;
@@ -320,18 +348,18 @@ impl Database {
         Ok(navaids_data
             .into_iter()
             .map(VhfNavaid::from)
-            .filter(|navaid| navaid.location.distance_to(&center) <= range)
+            .filter(|navaid| navaid.location.distance_to(&center) <= *range)
             .collect())
     }
 
     pub fn get_airways_in_range(
         &self,
-        center: Coordinates,
-        range: NauticalMiles,
+        center: &Coordinates,
+        range: &NauticalMiles,
     ) -> Result<Vec<Airway>> {
         let conn = self.get_database()?;
 
-        let where_string = utils::range_query_where(center, range, "waypoint");
+        let where_string = utils::range_query_where(center, *range, "waypoint");
 
         let mut stmt = conn.prepare(
             format!(
@@ -349,20 +377,20 @@ impl Database {
                 airway
                     .fixes
                     .iter()
-                    .any(|fix| fix.location.distance_to(&center) <= range)
+                    .any(|fix| fix.location.distance_to(&center) <= *range)
             })
             .collect())
     }
 
     pub fn get_controlled_airspaces_in_range(
         &self,
-        center: Coordinates,
-        range: NauticalMiles,
+        center: &Coordinates,
+        range: &NauticalMiles,
     ) -> Result<Vec<ControlledAirspace>> {
         let conn = self.get_database()?;
 
-        let where_string = utils::range_query_where(center, range, "");
-        let arc_where_string = utils::range_query_where(center, range, "arc_origin");
+        let where_string = utils::range_query_where(center, *range, "");
+        let arc_where_string = utils::range_query_where(center, *range, "arc_origin");
 
         let range_query = format!(
             "SELECT airspace_center, multiple_code FROM tbl_uc_controlled_airspace WHERE {where_string} OR \
@@ -384,15 +412,15 @@ impl Database {
 
     pub fn get_restrictive_airspaces_in_range(
         &self,
-        center: Coordinates,
-        range: NauticalMiles,
+        center: &Coordinates,
+        range: &NauticalMiles,
     ) -> Result<Vec<RestrictiveAirspace>> {
         let conn = self.get_database()?;
 
-        let where_string = utils::range_query_where(center, range, "");
-        let arc_where_string = utils::range_query_where(center, range, "arc_origin");
+        let where_string = utils::range_query_where(center, *range, "");
+        let arc_where_string = utils::range_query_where(center, *range, "arc_origin");
 
-        let range_query: String = format!(
+        let range_query = format!(
             "SELECT restrictive_airspace_designation, icao_code FROM tbl_ur_restrictive_airspace WHERE {where_string} \
              OR {arc_where_string}"
         );
@@ -413,12 +441,12 @@ impl Database {
 
     pub fn get_communications_in_range(
         &self,
-        center: Coordinates,
-        range: NauticalMiles,
+        center: &Coordinates,
+        range: &NauticalMiles,
     ) -> Result<Vec<Communication>> {
         let conn = self.get_database()?;
 
-        let where_string = utils::range_query_where(center, range, "");
+        let where_string = utils::range_query_where(center, *range, "");
 
         let mut enroute_stmt = conn.prepare(
             format!("SELECT * FROM tbl_ev_enroute_communication WHERE {where_string}").as_str(),
@@ -435,11 +463,11 @@ impl Database {
             .into_iter()
             .map(Communication::from)
             .chain(terminal_data.into_iter().map(Communication::from))
-            .filter(|waypoint| waypoint.location.distance_to(&center) <= range)
+            .filter(|waypoint| waypoint.location.distance_to(&center) <= *range)
             .collect())
     }
 
-    pub fn get_runways_at_airport(&self, airport_ident: String) -> Result<Vec<RunwayThreshold>> {
+    pub fn get_runways_at_airport(&self, airport_ident: &str) -> Result<Vec<RunwayThreshold>> {
         let conn = self.get_database()?;
 
         let mut stmt =
@@ -450,7 +478,7 @@ impl Database {
         Ok(runways_data.into_iter().map(Into::into).collect())
     }
 
-    pub fn get_departures_at_airport(&self, airport_ident: String) -> Result<Vec<Departure>> {
+    pub fn get_departures_at_airport(&self, airport_ident: &str) -> Result<Vec<Departure>> {
         let conn = self.get_database()?;
 
         let mut departures_stmt =
@@ -467,7 +495,7 @@ impl Database {
         Ok(map_departures(departures_data, runways_data))
     }
 
-    pub fn get_arrivals_at_airport(&self, airport_ident: String) -> Result<Vec<Arrival>> {
+    pub fn get_arrivals_at_airport(&self, airport_ident: &str) -> Result<Vec<Arrival>> {
         let conn = self.get_database()?;
 
         let mut arrivals_stmt =
@@ -484,7 +512,7 @@ impl Database {
         Ok(map_arrivals(arrivals_data, runways_data))
     }
 
-    pub fn get_approaches_at_airport(&self, airport_ident: String) -> Result<Vec<Approach>> {
+    pub fn get_approaches_at_airport(&self, airport_ident: &str) -> Result<Vec<Approach>> {
         let conn = self.get_database()?;
 
         let mut approachs_stmt =
@@ -496,7 +524,7 @@ impl Database {
         Ok(map_approaches(approaches_data))
     }
 
-    pub fn get_waypoints_at_airport(&self, airport_ident: String) -> Result<Vec<Waypoint>> {
+    pub fn get_waypoints_at_airport(&self, airport_ident: &str) -> Result<Vec<Waypoint>> {
         let conn = self.get_database()?;
 
         let mut stmt =
@@ -508,7 +536,7 @@ impl Database {
         Ok(waypoints_data.into_iter().map(Waypoint::from).collect())
     }
 
-    pub fn get_ndb_navaids_at_airport(&self, airport_ident: String) -> Result<Vec<NdbNavaid>> {
+    pub fn get_ndb_navaids_at_airport(&self, airport_ident: &str) -> Result<Vec<NdbNavaid>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn
@@ -520,7 +548,7 @@ impl Database {
         Ok(waypoints_data.into_iter().map(NdbNavaid::from).collect())
     }
 
-    pub fn get_gates_at_airport(&self, airport_ident: String) -> Result<Vec<Gate>> {
+    pub fn get_gates_at_airport(&self, airport_ident: &str) -> Result<Vec<Gate>> {
         let conn = self.get_database()?;
 
         let mut stmt =
@@ -532,10 +560,7 @@ impl Database {
         Ok(gates_data.into_iter().map(Gate::from).collect())
     }
 
-    pub fn get_communications_at_airport(
-        &self,
-        airport_ident: String,
-    ) -> Result<Vec<Communication>> {
+    pub fn get_communications_at_airport(&self, airport_ident: &str) -> Result<Vec<Communication>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare(
@@ -548,7 +573,7 @@ impl Database {
         Ok(gates_data.into_iter().map(Communication::from).collect())
     }
 
-    pub fn get_gls_navaids_at_airport(&self, airport_ident: String) -> Result<Vec<GlsNavaid>> {
+    pub fn get_gls_navaids_at_airport(&self, airport_ident: &str) -> Result<Vec<GlsNavaid>> {
         let conn = self.get_database()?;
 
         let mut stmt = conn.prepare("SELECT * FROM tbl_pt_gls WHERE airport_identifier = (?1)")?;
@@ -558,7 +583,7 @@ impl Database {
         Ok(gates_data.into_iter().map(GlsNavaid::from).collect())
     }
 
-    pub fn get_path_points_at_airport(&self, airport_ident: String) -> Result<Vec<PathPoint>> {
+    pub fn get_path_points_at_airport(&self, airport_ident: &str) -> Result<Vec<PathPoint>> {
         let conn = self.get_database()?;
 
         let mut stmt =
@@ -567,9 +592,5 @@ impl Database {
         let gates_data = utils::fetch_rows::<sql::Pathpoints>(&mut stmt, params![airport_ident])?;
 
         Ok(gates_data.into_iter().map(PathPoint::from).collect())
-    }
-
-    pub fn close_connection(&mut self) {
-        self.database = None;
     }
 }
