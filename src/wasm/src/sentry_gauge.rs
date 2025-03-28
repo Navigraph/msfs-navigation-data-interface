@@ -89,6 +89,7 @@ impl SentryReportPool {
         let file = OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(SENTRY_POOL_FILE)?;
 
         serde_json::to_writer(file, &self)?;
@@ -171,7 +172,6 @@ impl sentry::Transport for MsfsSentryTransport {
                 Ok(_) => {}
                 Err(e) => {
                     println!("[NAVIGRAPH]: Unable to cache Sentry report: {e}");
-                    return;
                 }
             };
         }
@@ -224,16 +224,28 @@ where
         },
     ));
 
-    // Drain any pending reports
-    if let Ok(mut pool) = SENTRY_POOL.try_lock() {
-        while pool.num_pending_reports() > 0 {
-            // Await next gauge event
-            gauge.next_event().await;
-            pool.update()?;
+    // Drain any pending reports. We need to structure it like this as opposed to just a top level `let Ok(pool) = ...`` due to the fact we should not be holding a MutexGuard across an await point
+    loop {
+        let has_pending = {
+            if let Ok(pool) = SENTRY_POOL.try_lock() {
+                pool.num_pending_reports() > 0
+            } else {
+                return Err(anyhow!("Unable to lock SENTRY_POOL"));
+            }
+        };
+
+        if !has_pending {
+            break;
         }
-    } else {
-        return Err(anyhow!("Unable to lock SENTRY_POOL"));
-    };
+
+        gauge.next_event().await;
+
+        if let Ok(mut pool) = SENTRY_POOL.try_lock() {
+            pool.update()?;
+        } else {
+            return Err(anyhow!("Unable to lock SENTRY_POOL"));
+        }
+    }
 
     // Create the gauge instance
     let mut instance = match T::initialize() {

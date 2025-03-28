@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fs::OpenOptions, io::Cursor, sync::Mutex};
+use std::{fs::OpenOptions, io::Cursor, sync::Mutex};
 
 use anyhow::{anyhow, Context, Result};
 use msfs::network::NetworkRequestBuilder;
@@ -17,7 +17,7 @@ use crate::{
 };
 
 // To keep lifetimes simple, we need to host state as a global. This "initializes" the database state on first access - so in cases where there is bundled navdata, it won't get copied over until we actually need it
-pub static STATE: Lazy<Mutex<DatabaseState>> = Lazy::new(|| Mutex::new(DatabaseState::new()));
+static STATE: Lazy<Mutex<DatabaseState>> = Lazy::new(|| Mutex::new(DatabaseState::new()));
 
 /// The trait definition for a function that can be called through the navigation data interface
 trait Function: DeserializeOwned {
@@ -79,6 +79,7 @@ impl Function for DownloadNavigationData {
         let mut cycle_file = OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(CYCLE_JSON_PATH)?;
 
         std::io::copy(&mut zip.by_name("cycle.json")?, &mut cycle_file)?;
@@ -93,7 +94,11 @@ impl Function for DownloadNavigationData {
             ))?
             .to_owned();
 
-        let mut db_file = OpenOptions::new().write(true).create(true).open(DB_PATH)?;
+        let mut db_file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(DB_PATH)?;
 
         std::io::copy(&mut zip.by_name(&db_name)?, &mut db_file)?;
 

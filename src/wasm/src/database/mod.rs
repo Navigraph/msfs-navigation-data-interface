@@ -43,7 +43,8 @@ struct CycleInfo {
     revision: String,
     name: String,
     format: String,
-    validityPeriod: String,
+    #[serde(rename = "validityPeriod")]
+    validity_period: String,
 }
 
 impl CycleInfo {
@@ -112,7 +113,7 @@ impl DatabaseState {
     pub fn execute_sql_query(&self, sql: &str, params: &Vec<String>) -> Result<Value> {
         // Execute query
         let conn = self.get_database()?;
-        let mut stmt = conn.prepare(&sql)?;
+        let mut stmt = conn.prepare(sql)?;
         let names = stmt
             .column_names()
             .into_iter()
@@ -259,7 +260,7 @@ impl DatabaseState {
     ) -> Result<Vec<Airport>> {
         let conn = self.get_database()?;
 
-        let where_string = utils::range_query_where(&center, *range, "airport_ref");
+        let where_string = utils::range_query_where(center, *range, "airport_ref");
 
         let mut stmt =
             conn.prepare(format!("SELECT * FROM tbl_pa_airports WHERE {where_string}").as_str())?;
@@ -270,7 +271,7 @@ impl DatabaseState {
         Ok(airports_data
             .into_iter()
             .map(Airport::from)
-            .filter(|airport| airport.location.distance_to(&center) <= *range)
+            .filter(|airport| airport.location.distance_to(center) <= *range)
             .collect())
     }
 
@@ -298,7 +299,7 @@ impl DatabaseState {
             .into_iter()
             .chain(terminal_data)
             .map(Waypoint::from)
-            .filter(|waypoint| waypoint.location.distance_to(&center) <= *range)
+            .filter(|waypoint| waypoint.location.distance_to(center) <= *range)
             .collect())
     }
 
@@ -326,7 +327,7 @@ impl DatabaseState {
             .into_iter()
             .chain(terminal_data)
             .map(NdbNavaid::from)
-            .filter(|waypoint| waypoint.location.distance_to(&center) <= *range)
+            .filter(|waypoint| waypoint.location.distance_to(center) <= *range)
             .collect())
     }
 
@@ -348,7 +349,7 @@ impl DatabaseState {
         Ok(navaids_data
             .into_iter()
             .map(VhfNavaid::from)
-            .filter(|navaid| navaid.location.distance_to(&center) <= *range)
+            .filter(|navaid| navaid.location.distance_to(center) <= *range)
             .collect())
     }
 
@@ -377,7 +378,7 @@ impl DatabaseState {
                 airway
                     .fixes
                     .iter()
-                    .any(|fix| fix.location.distance_to(&center) <= *range)
+                    .any(|fix| fix.location.distance_to(center) <= *range)
             })
             .collect())
     }
@@ -463,7 +464,7 @@ impl DatabaseState {
             .into_iter()
             .map(Communication::from)
             .chain(terminal_data.into_iter().map(Communication::from))
-            .filter(|waypoint| waypoint.location.distance_to(&center) <= *range)
+            .filter(|waypoint| waypoint.location.distance_to(center) <= *range)
             .collect())
     }
 
