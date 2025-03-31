@@ -22,6 +22,7 @@ impl Future for NetworkRequestExecutor {
 
     fn poll(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Self::Output> {
         let status = self.request.state();
+        let error_code = self.request.error_code();
 
         match status {
             NetworkRequestState::New => Poll::Pending,
@@ -31,8 +32,12 @@ impl Future for NetworkRequestExecutor {
 
                 Poll::Ready(res)
             }
-            NetworkRequestState::Invalid => Poll::Ready(Err(anyhow!("Network request invalid"))),
-            NetworkRequestState::Failed => Poll::Ready(Err(anyhow!("Network request failed"))),
+            NetworkRequestState::Invalid => Poll::Ready(Err(anyhow!(
+                "Network request invalid with error code {error_code}",
+            ))),
+            NetworkRequestState::Failed => Poll::Ready(Err(anyhow!(
+                "Network request failed with error code {error_code}"
+            ))),
         }
     }
 }
