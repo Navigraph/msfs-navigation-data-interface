@@ -15,10 +15,28 @@ mod sentry_gauge;
 /// Amount of MS between dispatches of the heartbeat commbus event
 const HEARTBEAT_INTERVAL_MS: u128 = 1000;
 
+/// The current phase of downloading
+#[derive(Serialize)]
+pub enum DownloadProgressPhase {
+    Downloading,
+    Cleaning,
+    Extracting,
+}
+
+/// The data associated with the `DownloadProgress` event
+#[derive(Serialize)]
+pub struct DownloadProgressEvent {
+    pub phase: DownloadProgressPhase,
+    pub deleted: Option<usize>,
+    pub total_to_unzip: Option<usize>,
+    pub unzipped: Option<usize>,
+}
+
 /// The types of events that can be emitted from the interface
 #[derive(Serialize)]
 enum NavigraphEventType {
     Heartbeat,
+    DownloadProgress, // TODO: remove in a future version. here for backwards compatibility
 }
 
 /// The structure of an event message
@@ -34,6 +52,22 @@ impl InterfaceEvent {
         let event = Self {
             event: NavigraphEventType::Heartbeat,
             data: None,
+        };
+
+        let serialized = serde_json::to_string(&event)?;
+
+        CommBus::call("NAVIGRAPH_Event", &serialized, CommBusBroadcastFlags::All);
+
+        Ok(())
+    }
+
+    /// Send a download progress event across the commbus
+    ///
+    /// * `event` - The download progress event data
+    pub fn send_download_progress_event(event: DownloadProgressEvent) -> Result<()> {
+        let event = Self {
+            event: NavigraphEventType::DownloadProgress,
+            data: Some(serde_json::to_value(event)?),
         };
 
         let serialized = serde_json::to_string(&event)?;

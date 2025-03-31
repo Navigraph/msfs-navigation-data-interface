@@ -13,6 +13,7 @@ use crate::{
         RunwayThreshold, VhfNavaid, Waypoint, DATABASE_STATE, WORK_CYCLE_JSON_PATH, WORK_DB_PATH,
     },
     futures::AsyncNetworkRequest,
+    DownloadProgressEvent, DownloadProgressPhase, InterfaceEvent,
 };
 
 const LATEST_CYCLE_ENDPOINT: &str = "https://navdata.api.navigraph.com/info";
@@ -56,6 +57,14 @@ impl Function for DownloadNavigationData {
     type ReturnType = ();
 
     async fn run(&mut self) -> Result<Self::ReturnType> {
+        // Send an initial progress event
+        InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
+            phase: DownloadProgressPhase::Downloading,
+            deleted: None,
+            total_to_unzip: None,
+            unzipped: None,
+        })?;
+
         // Download the data
         let data = NetworkRequestBuilder::new(&self.url)
             .context("can't create new NetworkRequestBuilder")?
@@ -69,6 +78,14 @@ impl Function for DownloadNavigationData {
             .try_lock()
             .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
             .close_connection()?;
+
+        // Send the extraction event
+        InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
+            phase: DownloadProgressPhase::Extracting,
+            deleted: Some(2),
+            total_to_unzip: Some(2),
+            unzipped: None,
+        })?;
 
         // Load the zip archive
         let mut zip = ZipArchive::new(Cursor::new(data))?;
