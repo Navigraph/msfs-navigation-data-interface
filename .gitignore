@@ -9,7 +9,6 @@ examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_
 out
 out20
 out24
-msfs-rs
 
 # Rust
 # will have compiled files and executables
