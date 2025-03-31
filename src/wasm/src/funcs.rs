@@ -1,8 +1,7 @@
-use std::{fs::OpenOptions, io::Cursor, sync::Mutex};
+use std::{fs::OpenOptions, io::Cursor};
 
 use anyhow::{anyhow, Context, Result};
 use msfs::network::NetworkRequestBuilder;
-use once_cell::sync::Lazy;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 use zip::ZipArchive;
@@ -10,14 +9,11 @@ use zip::ZipArchive;
 use crate::{
     database::{
         Airport, Airway, Approach, Arrival, Communication, ControlledAirspace, Coordinates,
-        DatabaseInfo, DatabaseState, Departure, Gate, GlsNavaid, NdbNavaid, PathPoint,
-        RestrictiveAirspace, RunwayThreshold, VhfNavaid, Waypoint, CYCLE_JSON_PATH, DB_PATH,
+        DatabaseInfo, Departure, Gate, GlsNavaid, NdbNavaid, PathPoint, RestrictiveAirspace,
+        RunwayThreshold, VhfNavaid, Waypoint, DATABASE_STATE, WORK_CYCLE_JSON_PATH, WORK_DB_PATH,
     },
     futures::AsyncNetworkRequest,
 };
-
-// To keep lifetimes simple, we need to host state as a global. This "initializes" the database state on first access - so in cases where there is bundled navdata, it won't get copied over until we actually need it
-static STATE: Lazy<Mutex<DatabaseState>> = Lazy::new(|| Mutex::new(DatabaseState::new()));
 
 /// The trait definition for a function that can be called through the navigation data interface
 trait Function: DeserializeOwned {
@@ -67,9 +63,9 @@ impl Function for DownloadNavigationData {
             .await?;
 
         // Drop the current database. We don't do this before the download as there is a chance it will fail, and then we end up with no database open.
-        STATE
+        DATABASE_STATE
             .try_lock()
-            .map_err(|_| anyhow!("can't lock STATE"))?
+            .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
             .close_connection()?;
 
         // Load the zip archive
@@ -80,7 +76,7 @@ impl Function for DownloadNavigationData {
             .write(true)
             .create(true)
             .truncate(true)
-            .open(CYCLE_JSON_PATH)?;
+            .open(WORK_CYCLE_JSON_PATH)?;
 
         std::io::copy(&mut zip.by_name("cycle.json")?, &mut cycle_file)?;
 
@@ -98,14 +94,14 @@ impl Function for DownloadNavigationData {
             .write(true)
             .create(true)
             .truncate(true)
-            .open(DB_PATH)?;
+            .open(WORK_DB_PATH)?;
 
         std::io::copy(&mut zip.by_name(&db_name)?, &mut db_file)?;
 
         // Open the connection
-        STATE
+        DATABASE_STATE
             .try_lock()
-            .map_err(|_| anyhow!("can't lock STATE"))?
+            .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
             .open_connection()?;
 
         Ok(())
@@ -170,9 +166,9 @@ macro_rules! make_function {
             type ReturnType = $return_ty;
 
             async fn run(&mut self) -> Result<Self::ReturnType> {
-                let data = STATE
+                let data = DATABASE_STATE
                 .try_lock()
-                .map_err(|_| anyhow!("can't lock STATE"))?.$method($( &self.$arg ),*)?;
+                .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?.$method($( &self.$arg ),*)?;
                 Ok(data)
             }
         }

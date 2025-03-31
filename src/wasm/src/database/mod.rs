@@ -2,9 +2,15 @@ mod types;
 mod utils;
 
 use anyhow::{anyhow, Result};
+use once_cell::sync::Lazy;
 use sentry::integrations::anyhow::capture_anyhow;
 use serde::Deserialize;
-use std::fs::File;
+use std::{
+    cmp::Ordering,
+    fs::{self, File},
+    path::{Path, PathBuf},
+    sync::Mutex,
+};
 
 use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags};
 use serde_json::{Number, Value};
@@ -34,21 +40,93 @@ pub use types::{
     waypoint::Waypoint,
 };
 
-pub const CYCLE_JSON_PATH: &str = "\\work/ng_cycle.json";
-pub const DB_PATH: &str = "\\work/ng_navigation_data_db.s3db";
+/// The path to the cycle info JSON that exists in the work folder (which we treat as the "master")
+pub const WORK_CYCLE_JSON_PATH: &str = "\\work/ng_cycle.json";
+/// The path to the SQLite DB that exists in the work folder (which we treat as the "master")
+pub const WORK_DB_PATH: &str = "\\work/ng_navigation_data_db.s3db";
+/// The path to the layout.json in the addon folder
+pub const LAYOUT_JSON: &str = ".\\layout.json";
+/// The folder name for bundled navigation data
+pub const BUNDLED_FOLDER_NAME: &str = "NavigationData";
 
+/// The global exported database state
+pub static DATABASE_STATE: Lazy<Mutex<DatabaseState>> =
+    Lazy::new(|| Mutex::new(DatabaseState::new().unwrap())); // SAFETY: the only way this function can return an error is if layout.json is corrupt (which is impossible since the package wouldn't even mount), or if copying to the work folder is failing (in which case we have more fundamental problems). So overall, unwrapping here is safe
+
+/// An entry in the layout.json file
+#[derive(Deserialize)]
+struct LayoutEntry {
+    path: String,
+}
+
+/// The representation of the layout.json file
+#[derive(Deserialize)]
+struct LayoutJson {
+    content: Vec<LayoutEntry>,
+}
+
+/// Find the bundled navigation data distribution
+fn get_bundled_db() -> Result<Option<DatabaseDistributionInfo>> {
+    // Since we don't know the exact filenames of the bundled navigation data, we need to find them through the layout.json file. In a perfect world, we would just enumerate the bundled directory. However,
+    // fd_readdir is unreliable in the sim.
+    let mut layout = fs::read_to_string(LAYOUT_JSON)?;
+    let parsed = serde_json::from_str::<LayoutJson>(&mut layout)?;
+
+    // Filter out the files in the layout that are not in the bundled folder
+    let bundled_files = parsed
+        .content
+        .iter()
+        .filter_map(|e| {
+            let path = Path::new(&e.path);
+
+            // Get parent
+            let (Some(parent), Some(filename)) = (path.parent(), path.file_name()) else {
+                return None;
+            };
+
+            // Ensure the folder parent is NavigationData and that it is the only parent (root level will still have Some as parent, but it will be an empty string)
+            if parent.file_name() != Some(BUNDLED_FOLDER_NAME.as_ref())
+                || parent.parent() != Some("".as_ref())
+            {
+                return None;
+            };
+
+            // Finally, return just the basename
+            filename.to_str()
+        })
+        .collect::<Vec<_>>();
+
+    // Try extracting the cycle info and DB files
+    let cycle_info = if let Some(file) = bundled_files.iter().find(|f| f.ends_with(".json")) {
+        file
+    } else {
+        return Ok(None);
+    };
+
+    let db_file = if let Some(file) = bundled_files.iter().find(|f| f.ends_with(".s3db")) {
+        file
+    } else {
+        return Ok(None);
+    };
+
+    Ok(Some(DatabaseDistributionInfo::new(
+        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{cycle_info}")), // We need to reconstruct the bundled path to include the proper syntax to reference non-work folder files
+        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{db_file}")),
+    )?))
+}
+
+/// The struct representation of the cycle info JSON
 #[derive(Deserialize)]
 struct CycleInfo {
     cycle: String,
     revision: String,
-    name: String,
-    format: String,
-    #[serde(rename = "validityPeriod")]
-    validity_period: String,
 }
 
 impl CycleInfo {
-    pub fn from_path(path: &str) -> Result<Self> {
+    /// Attempt to parse from a path
+    ///
+    /// * `path` - The path to load from
+    pub fn from_path(path: &Path) -> Result<Self> {
         let mut file = File::open(path)?;
 
         serde_json::from_reader(&mut file)
@@ -56,29 +134,101 @@ impl CycleInfo {
     }
 }
 
+/// A pair of a cycle info JSON and the corresponding SQLite database.
+struct DatabaseDistributionInfo {
+    cycle_info: CycleInfo,
+    db_path: PathBuf,
+    cycle_info_path: PathBuf,
+}
+
+impl DatabaseDistributionInfo {
+    /// Create a new
+    pub fn new(cycle_info_path: &Path, db_path: &Path) -> Result<Self> {
+        // Ensure paths exist (fs::exists is unreliable, so try getting a handle)
+        if File::open(cycle_info_path).is_err() || File::open(db_path).is_err() {
+            return Err(anyhow!("invalid distribution path"));
+        }
+
+        Ok(Self {
+            cycle_info: CycleInfo::from_path(cycle_info_path)?,
+            db_path: db_path.to_owned(),
+            cycle_info_path: cycle_info_path.to_owned(),
+        })
+    }
+}
+
+/// The overall database state holder
 #[derive(Default)]
 pub struct DatabaseState {
     database: Option<Connection>,
-    cycle_info: Option<CycleInfo>,
 }
 
 impl DatabaseState {
-    pub fn new() -> Self {
+    /// Create a database state, intended to only be instantiated once (held in the DATABASE_STATE static)
+    ///
+    /// This searches for the best DB to use by comparing the cycle and revision of both the downloaded (in work folder) and bundled navigation data.
+    fn new() -> Result<Self> {
+        // Start out with a fresh instance
         let mut instance = Self::default();
-        // TODO: handle bundled
+        // Get distribution info of both bundled and downloaded DBs, if they exist
+        let bundled_distribution = get_bundled_db()?;
+        let downloaded_distribution =
+            DatabaseDistributionInfo::new(Path::new(WORK_CYCLE_JSON_PATH), Path::new(WORK_DB_PATH))
+                .ok();
 
-        // Try to open a connection. First check to make sure that the file is openable
-        if File::open(DB_PATH).is_ok() {
-            // The only way this can fail (since we know now that the path is valid) is if the file is corrupt, in which case we should report to sentry
-            match instance.open_connection() {
-                Ok(_) => {}
-                Err(e) => {
-                    capture_anyhow(&e);
+        // Find the most recent distribution
+        let latest = [bundled_distribution, downloaded_distribution]
+            .into_iter()
+            .filter_map(|d| d)
+            .reduce(|a, b| {
+                // First, compare by cycle number
+                match a
+                    .cycle_info
+                    .cycle
+                    .parse::<u32>()
+                    .unwrap_or(0)
+                    .cmp(&b.cycle_info.cycle.parse::<u32>().unwrap_or(0))
+                {
+                    Ordering::Greater => a,
+                    Ordering::Less => b,
+                    Ordering::Equal => {
+                        // If they are somehow equal, compare revisions
+                        match a
+                            .cycle_info
+                            .revision
+                            .parse::<u32>()
+                            .unwrap_or(0)
+                            .cmp(&b.cycle_info.revision.parse::<u32>().unwrap_or(0))
+                        {
+                            Ordering::Greater | Ordering::Equal => a,
+                            Ordering::Less => b,
+                        }
+                    }
                 }
+            });
+
+        // If we somehow don't have a cycle in bundled or downloaded, return an empty instance
+        let Some(latest) = latest else {
+            return Ok(instance);
+        };
+
+        // Ensure files get copied over
+        if latest.cycle_info_path != PathBuf::from(WORK_CYCLE_JSON_PATH) {
+            fs::copy(&latest.cycle_info_path, WORK_CYCLE_JSON_PATH)?;
+        }
+        if latest.db_path != PathBuf::from(WORK_DB_PATH) {
+            fs::copy(&latest.db_path, WORK_DB_PATH)?;
+        }
+
+        // The only way this can fail (since we know now that the path is valid) is if the file is corrupt, in which case we should report to sentry
+        match instance.open_connection() {
+            Ok(_) => {}
+            Err(e) => {
+                capture_anyhow(&e);
             }
         }
 
-        instance
+        Ok(instance)
     }
 
     fn get_database(&self) -> Result<&Connection> {
@@ -91,7 +241,6 @@ impl DatabaseState {
                 .close()
                 .map_err(|_| anyhow!("Unable to close database"))?;
         };
-        self.cycle_info.take();
 
         Ok(())
     }
@@ -102,10 +251,10 @@ impl DatabaseState {
         let flags = OpenFlags::SQLITE_OPEN_READ_ONLY
             | OpenFlags::SQLITE_OPEN_URI
             | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-        let conn = Connection::open_with_flags(DB_PATH, flags)?;
-        self.database = Some(conn);
 
-        self.cycle_info = Some(CycleInfo::from_path(CYCLE_JSON_PATH)?);
+        // The WORK_DB_PATH is the "master" SQLite path. We have logic copying over bundled navigation data if needed in the DatabaseState::new function.
+        let conn = Connection::open_with_flags(WORK_DB_PATH, flags)?;
+        self.database = Some(conn);
 
         Ok(())
     }
