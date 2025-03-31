@@ -102,7 +102,7 @@ impl Function for DownloadNavigationData {
         // Write the db file
         let db_name = zip
             .file_names()
-            .find(|f| f.ends_with(".s3db"))
+            .find(|f| f.to_lowercase().ends_with(".s3db"))
             .ok_or(anyhow!(
                 "unable to find sqlite db in zip from url {}",
                 self.url

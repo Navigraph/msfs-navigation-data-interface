@@ -97,13 +97,19 @@ fn get_bundled_db() -> Result<Option<DatabaseDistributionInfo>> {
         .collect::<Vec<_>>();
 
     // Try extracting the cycle info and DB files
-    let cycle_info = if let Some(file) = bundled_files.iter().find(|f| f.ends_with(".json")) {
+    let cycle_info = if let Some(file) = bundled_files
+        .iter()
+        .find(|f| f.to_lowercase().ends_with(".json"))
+    {
         file
     } else {
         return Ok(None);
     };
 
-    let db_file = if let Some(file) = bundled_files.iter().find(|f| f.ends_with(".s3db")) {
+    let db_file = if let Some(file) = bundled_files
+        .iter()
+        .find(|f| f.to_lowercase().ends_with(".s3db"))
+    {
         file
     } else {
         return Ok(None);
