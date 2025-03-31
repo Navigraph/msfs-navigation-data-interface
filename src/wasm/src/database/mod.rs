@@ -117,9 +117,12 @@ fn get_bundled_db() -> Result<Option<DatabaseDistributionInfo>> {
 
 /// The struct representation of the cycle info JSON
 #[derive(Deserialize)]
-struct CycleInfo {
-    cycle: String,
-    revision: String,
+pub struct CycleInfo {
+    pub cycle: String,
+    pub revision: String,
+    pub format: String,
+    #[serde(rename = "validityPeriod")]
+    pub validity_period: String,
 }
 
 impl CycleInfo {
@@ -257,6 +260,11 @@ impl DatabaseState {
         self.database = Some(conn);
 
         Ok(())
+    }
+
+    pub fn get_cycle_info(&self) -> Result<CycleInfo> {
+        // The WORK_CYCLE_JSON_PATH is the "master" cycle JSON path.
+        return CycleInfo::from_path(Path::new(WORK_CYCLE_JSON_PATH));
     }
 
     pub fn execute_sql_query(&self, sql: &str, params: &Vec<String>) -> Result<Value> {

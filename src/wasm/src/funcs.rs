@@ -15,6 +15,8 @@ use crate::{
     futures::AsyncNetworkRequest,
 };
 
+const LATEST_CYCLE_ENDPOINT: &str = "https://navdata.api.navigraph.com/info";
+
 /// The trait definition for a function that can be called through the navigation data interface
 trait Function: DeserializeOwned {
     type ReturnType: Serialize;
@@ -108,14 +110,65 @@ impl Function for DownloadNavigationData {
     }
 }
 
+/// The return type from the latest cycle endpoint
+#[derive(Deserialize)]
+struct CycleResponseInfo {
+    cycle: String,
+}
+
+/// The return type for the `GetNavigationDataInstallStatus` function
+#[derive(Serialize)]
+struct NavigationDataInstallStatus {
+    status: String, // TODO: Remove this field
+    #[serde(rename = "installedFormat")]
+    installed_format: Option<String>,
+    #[serde(rename = "installedRevision")]
+    installed_revision: Option<String>,
+    #[serde(rename = "installedCycle")]
+    installed_cycle: Option<String>,
+    #[serde(rename = "installedPath")]
+    installed_path: Option<String>,
+    #[serde(rename = "validityPeriod")]
+    validity_period: Option<String>,
+    #[serde(rename = "latestCycle")]
+    latest_cycle: Option<String>,
+}
+
 #[derive(Deserialize)]
 pub struct GetNavigationDataInstallStatus {}
 
 impl Function for GetNavigationDataInstallStatus {
-    type ReturnType = ();
+    type ReturnType = NavigationDataInstallStatus;
     async fn run(&mut self) -> Result<Self::ReturnType> {
-        // TODO
-        Ok(())
+        // Try to get the latest available cycle from our API. Support cases in which the user may be offline by returning a None instead
+        let latest_cycle = if let Ok(res) = NetworkRequestBuilder::new(LATEST_CYCLE_ENDPOINT)
+            .context("can't create new NetworkRequestBuilder")?
+            .get()
+            .context(".get() returned None")?
+            .wait_for_data()
+            .await
+        {
+            let response_info = serde_json::from_slice::<CycleResponseInfo>(&res)?;
+
+            Some(response_info.cycle)
+        } else {
+            None
+        };
+
+        let installed_info = DATABASE_STATE
+            .try_lock()
+            .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
+            .get_cycle_info()?;
+
+        Ok(NavigationDataInstallStatus {
+            status: "Manual".to_string(), // To simplify our code, we are just going to report "Manual" always. This should have no adverse affect as no third-party should be relying on the value of this enum (leftovers from pre-rewrite)
+            installed_format: Some(installed_info.format),
+            installed_revision: Some(installed_info.revision),
+            installed_cycle: Some(installed_info.cycle),
+            installed_path: Some(WORK_DB_PATH.to_owned()),
+            validity_period: Some(installed_info.validity_period),
+            latest_cycle,
+        })
     }
 }
 
