@@ -10,7 +10,6 @@ FROM base AS builder
 
 WORKDIR /external
 
-COPY rust-toolchain.toml ./
-RUN rustup show
+
 
 COPY . .
