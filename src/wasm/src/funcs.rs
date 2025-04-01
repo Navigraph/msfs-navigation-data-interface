@@ -79,7 +79,6 @@ impl Function for DownloadNavigationData {
             .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
             .close_connection()?;
 
-        // Send the extraction event
         // Send the deleting and extraction events
         InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
             phase: DownloadProgressPhase::Cleaning,
@@ -181,19 +180,32 @@ impl Function for GetNavigationDataInstallStatus {
         };
 
         let installed_info = DATABASE_STATE
+        match DATABASE_STATE
             .try_lock()
             .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
-            .get_cycle_info()?;
-
-        Ok(NavigationDataInstallStatus {
-            status: "Manual".to_string(), // To simplify our code, we are just going to report "Manual" always. This should have no adverse affect as no third-party should be relying on the value of this enum (leftovers from pre-rewrite)
-            installed_format: Some(installed_info.format),
-            installed_revision: Some(installed_info.revision),
-            installed_cycle: Some(installed_info.cycle),
-            installed_path: Some(WORK_DB_PATH.to_owned()),
-            validity_period: Some(installed_info.validity_period),
-            latest_cycle,
-        })
+            .get_cycle_info()
+        {
+            Ok(cycle_info) => {
+                Ok(NavigationDataInstallStatus {
+                    status: "Manual".to_string(), // To simplify our code, we are just going to report "Manual" always. This should have no adverse affect as no third-party should be relying on the difference between this and "Bundled" (leftovers from pre-rewrite)
+                    installed_format: Some(cycle_info.format),
+                    installed_revision: Some(cycle_info.revision),
+                    installed_cycle: Some(cycle_info.cycle),
+                    installed_path: Some(WORK_DB_PATH.to_owned()),
+                    validity_period: Some(cycle_info.validity_period),
+                    latest_cycle,
+                })
+            }
+            Err(_) => Ok(NavigationDataInstallStatus {
+                status: "None".to_string(),
+                installed_format: None,
+                installed_revision: None,
+                installed_cycle: None,
+                installed_path: None,
+                validity_period: None,
+                latest_cycle,
+            }),
+        }
     }
 }
 
