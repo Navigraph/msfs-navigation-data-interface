@@ -480,9 +480,11 @@ make_function!(
 /// - `RunStatus::InProgress` if the future isn’t complete yet.
 /// - `RunStatus::Finished` if the future resolved.
 ///
-/// This is useful in our environment as we need to yield back to the sim in order not to block the thread, and we may have some functions that aren't able to resolve in a single frame.
+/// This is useful in our environment as we need to yield back to the sim in order not to block the thread, 
+/// and we may have some functions that aren't able to resolve in a single frame.
 ///
-/// Once the future resolves, the result is automatically serialized into a `FunctionResult` structure and sent across the commbus using the `NAVIGRAPH_FunctionResult` event.
+/// Once the future resolves, the result is automatically serialized into a `FunctionResult` structure and 
+/// sent across the commbus using the `NAVIGRAPH_FunctionResult` event.
 ///
 /// # Note
 ///
@@ -535,8 +537,9 @@ macro_rules! define_interface_functions {
                     }
 
                     fn run(&mut self) -> anyhow::Result<RunStatus> {
-                        // We allow the function run to be async in order to wait for certain conditions. However, MSFS WASM modules are not multithreaded so we need to yield back to the main thread.
-                        // We get around this by polling once per update, and the continuing to poll (if needed) in later updates.
+                        // We allow the function run to be async in order to wait for certain conditions. 
+                        // However, MSFS WASM modules are not multithreaded so we need to yield back to the main thread.
+                        // We get around this by polling once per update, and then continuing to poll (if needed) in later updates.
                         match futures_lite::future::block_on(futures_lite::future::poll_once(&mut self.future)) {
                             Some(result) => {
                                 match result {
@@ -580,7 +583,7 @@ macro_rules! define_interface_functions {
             pub enum InterfaceFunction {
                 $( $fn_name([<$fn_name Wrapper>]), )*
             }
-
+            
             impl<'de> serde::Deserialize<'de> for InterfaceFunction {
                 fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
                 where

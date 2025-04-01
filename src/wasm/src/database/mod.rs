@@ -66,8 +66,9 @@ struct LayoutJson {
 
 /// Find the bundled navigation data distribution
 fn get_bundled_db() -> Result<Option<DatabaseDistributionInfo>> {
-    // Since we don't know the exact filenames of the bundled navigation data, we need to find them through the layout.json file. In a perfect world, we would just enumerate the bundled directory. However,
-    // fd_readdir is unreliable in the sim.
+    // Since we don't know the exact filenames of the bundled navigation data, 
+    // we need to find them through the layout.json file. In a perfect world, 
+    // we would just enumerate the bundled directory. However, fd_readdir is unreliable in the sim.
     let mut layout = fs::read_to_string(LAYOUT_JSON)?;
     let parsed = serde_json::from_str::<LayoutJson>(&mut layout)?;
 
