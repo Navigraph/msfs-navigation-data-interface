@@ -1,10 +1,10 @@
 use std::{
-    fs::OpenOptions,
+    fs::{File, OpenOptions},
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use dotenv_codegen::dotenv;
 use msfs::{
     network::{NetworkRequest, NetworkRequestBuilder, NetworkRequestState},
@@ -13,16 +13,20 @@ use msfs::{
 use once_cell::sync::Lazy;
 use sentry::integrations::anyhow::capture_anyhow;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
-/// The path to the cache file
-const SENTRY_POOL_FILE: &str = "\\work/ng_sentry_pool.json";
+/// The path to the manifest.json in the addon folder
+const MANIFEST_FILE_PATH: &str = ".\\manifest.json";
+
+/// The path to the sentry persistent state file
+const SENTRY_FILE: &str = "\\work/ng_sentry.json";
 
 // The amount of seconds between forced Sentry flushes
 const SENTRY_FLUSH_INTERVAL_SECONDS: u64 = 60;
 
-// The global Sentry pool instance
-static SENTRY_POOL: Lazy<Mutex<SentryReportPool>> =
-    Lazy::new(|| Mutex::new(SentryReportPool::load().unwrap()));
+// The global Sentry state instance
+static SENTRY_STATE: Lazy<Mutex<SentryPersistentState>> =
+    Lazy::new(|| Mutex::new(SentryPersistentState::load()));
 
 // A pending sentry report
 #[derive(Deserialize, Serialize)]
@@ -52,11 +56,11 @@ impl PendingSentryReport {
     /// Send the request to Sentry
     pub fn send(&mut self) -> Result<()> {
         let res = NetworkRequestBuilder::new(&self.url)
-            .unwrap()
+            .context("can't create new NetworkRequestBuilder")?
             .with_header(&format!("X-Sentry-Auth: {}", self.auth))
-            .unwrap()
+            .context(".with_header() returned None")?
             .post(&self.data)
-            .ok_or(anyhow!("Could not send request"))?;
+            .ok_or(anyhow!("Could not send Sentry report"))?;
 
         self.request.replace(res);
 
@@ -64,24 +68,32 @@ impl PendingSentryReport {
     }
 }
 
-/// A "pool" of all outgoing sentry requests.
-///
-/// On panic, network requests aren't able to go out. This solves that issue by storing all pending requests to the file system and retrying them on next load
+/// The persistent state of sentry across "boots" of the interface
 #[derive(Default, Deserialize, Serialize)]
-struct SentryReportPool {
+struct SentryPersistentState {
+    /// The user ID
+    ///
+    /// Note: this exposes nothing about the user - it is a random UUID generated at first boot in order to keep track of the errors from the user across boots
+    user_id: Uuid,
+    /// The outgoing sentry reports
+    ///
+    /// On panic, network requests aren't able to go out. This solves that issue by storing all pending requests to the file system and retrying them on next load
     reports: Vec<PendingSentryReport>,
 }
 
-impl SentryReportPool {
-    /// Load the pool
-    pub fn load() -> Result<Self> {
-        // Read from the local file. If that fails, it is likely that the file doesn't exist, so we can just create an empty pool (from default)
-        let status = std::fs::read_to_string(SENTRY_POOL_FILE)
+impl SentryPersistentState {
+    /// Load the state
+    pub fn load() -> Self {
+        // Read from the local file. If that fails, it is likely that the file doesn't exist, so we can just create an empty state
+        let status = std::fs::read_to_string(SENTRY_FILE)
             .ok()
             .and_then(|contents| serde_json::from_str(&contents).ok())
-            .unwrap_or_default();
+            .unwrap_or(SentryPersistentState {
+                user_id: Uuid::new_v4(),
+                reports: vec![],
+            });
 
-        Ok(status)
+        status
     }
 
     /// Flush all pending requests to the file system
@@ -90,14 +102,14 @@ impl SentryReportPool {
             .write(true)
             .create(true)
             .truncate(true)
-            .open(SENTRY_POOL_FILE)?;
+            .open(SENTRY_FILE)?;
 
         serde_json::to_writer(file, &self)?;
 
         Ok(())
     }
 
-    /// Save a report to the pool
+    /// Save a report
     ///
     /// * `url` - The URL to post to
     /// * `auth` - The auth header value
@@ -115,14 +127,14 @@ impl SentryReportPool {
         self.reports.len()
     }
 
-    /// Main update callback for the pool.
+    /// Main update callback for processing reports
     ///
     /// Note: This MUST be called every frame, otherwise we *will* miss state updates on requests as DataReady is only available for a single frame
     pub fn update(&mut self) -> Result<()> {
         self.reports.retain_mut(|r| {
             // Get the request in the report. If one does not exist, create a request
             let Some(request) = r.request else {
-                // Create the request. If it fails, just drop this report from the pool as it's likely something is wrong
+                // Create the request. If it fails, just drop this report from the state as it's likely something is wrong
                 return r.send().is_ok();
             };
 
@@ -136,11 +148,11 @@ impl SentryReportPool {
     }
 }
 
-impl Drop for SentryReportPool {
+impl Drop for SentryPersistentState {
     fn drop(&mut self) {
         // Ensure we have the latest state reflected in the file system
         if let Err(e) = self.flush() {
-            println!("[NAVIGRAPH]: Error on SentryReportPool drop: {e}");
+            println!("[NAVIGRAPH]: Error on SentryPersistentState drop: {e}");
         }
     }
 }
@@ -150,30 +162,36 @@ struct MsfsSentryTransport {
     options: sentry::ClientOptions,
 }
 
-impl sentry::Transport for MsfsSentryTransport {
-    fn send_envelope(&self, envelope: sentry::Envelope) {
+impl MsfsSentryTransport {
+    fn try_send_envelope(&self, envelope: sentry::Envelope) -> Result<()> {
         // Get the body
         let mut body = Vec::new();
-        envelope.to_writer(&mut body).unwrap();
+        envelope.to_writer(&mut body)?;
 
         // Get the URL and auth header
-        let dsn = self.options.dsn.as_ref().unwrap();
+        let dsn = self.options.dsn.as_ref().context("can't get dsn")?;
         let user_agent = self.options.user_agent.clone();
         let auth = dsn.to_auth(Some(&user_agent)).to_string();
         let url = dsn.envelope_api_url().to_string();
 
-        // Save to the pool
-        if let Ok(mut pool) = SENTRY_POOL.try_lock() {
-            match pool.save_report(
-                url.clone(),
-                auth.clone(),
-                String::from_utf8(body.clone()).unwrap(),
-            ) {
-                Ok(_) => {}
-                Err(e) => {
-                    println!("[NAVIGRAPH]: Unable to cache Sentry report: {e}");
-                }
-            };
+        // Save to the persistent state
+        SENTRY_STATE
+            .try_lock()
+            .map_err(|_| anyhow!("Unable to lock SENTRY_STATE"))?
+            .save_report(url.clone(), auth.clone(), String::from_utf8(body.clone())?)?;
+
+        Ok(())
+    }
+}
+
+impl sentry::Transport for MsfsSentryTransport {
+    fn send_envelope(&self, envelope: sentry::Envelope) {
+        // Try to send the envelope. If this fails, it is likely due to an issue with the sentry SDK itself and we should not try reporting the error to sentry as we would end up in a continuous loop here
+        match self.try_send_envelope(envelope) {
+            Ok(_) => {}
+            Err(e) => {
+                println!("[NAVIGRAPH]: Unable to send sentry report due to error: {e}")
+            }
         }
     }
 }
@@ -224,13 +242,48 @@ where
         },
     ));
 
-    // Drain any pending reports. We need to structure it like this as opposed to just a top level `let Ok(pool) = ...`` due to the fact we should not be holding a MutexGuard across an await point
+    // In order to track what addon the reports are coming from, we need to parse the manifest.json file to extract relevant info
+    let manifest = {
+        #[derive(Deserialize)]
+        struct Manifest {
+            title: String,
+            creator: String,
+            package_version: String,
+        }
+        let manifest_file = File::open(MANIFEST_FILE_PATH)?;
+        serde_json::from_reader::<_, Manifest>(manifest_file)?
+    };
+
+    // Get the user ID from persistent state
+    let user_id = SENTRY_STATE
+        .try_lock()
+        .map_err(|_| anyhow!("Unable to lock SENTRY_STATE"))?
+        .user_id
+        .to_string();
+
+    // Configure the sentry scope to report the user ID and plugin info loaded from manifest.json
+    sentry::configure_scope(|scope| {
+        scope.set_user(Some(sentry::User {
+            id: Some(user_id),
+            ..Default::default()
+        }));
+
+        scope.set_tag(
+            "plugin",
+            format!(
+                "{}/{}@{}",
+                manifest.creator, manifest.title, manifest.package_version
+            ),
+        );
+    });
+
+    // Drain any pending reports. We need to structure it like this as opposed to just a top level `let Ok(state) = ...`` due to the fact we should not be holding a MutexGuard across an await point
     loop {
         let has_pending = {
-            if let Ok(pool) = SENTRY_POOL.try_lock() {
-                pool.num_pending_reports() > 0
+            if let Ok(state) = SENTRY_STATE.try_lock() {
+                state.num_pending_reports() > 0
             } else {
-                return Err(anyhow!("Unable to lock SENTRY_POOL"));
+                return Err(anyhow!("Unable to lock SENTRY_STATE"));
             }
         };
 
@@ -240,10 +293,10 @@ where
 
         gauge.next_event().await;
 
-        if let Ok(mut pool) = SENTRY_POOL.try_lock() {
-            pool.update()?;
+        if let Ok(mut state) = SENTRY_STATE.try_lock() {
+            state.update()?;
         } else {
-            return Err(anyhow!("Unable to lock SENTRY_POOL"));
+            return Err(anyhow!("Unable to lock SENTRY_STATE"));
         }
     }
 
@@ -266,11 +319,11 @@ where
             continue;
         };
 
-        // Update sentry pool
-        if let Ok(mut pool) = SENTRY_POOL.try_lock() {
-            pool.update()?;
+        // Update sentry state
+        if let Ok(mut state) = SENTRY_STATE.try_lock() {
+            state.update()?;
         } else {
-            return Err(anyhow!("Unable to lock SENTRY_POOL"));
+            return Err(anyhow!("Unable to lock SENTRY_STATE"));
         };
 
         // Update the gauge

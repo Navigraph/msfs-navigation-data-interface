@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::VecDeque, rc::Rc, time::Instant};
 use anyhow::{anyhow, Result};
 use funcs::{InterfaceFunction, RunStatus};
 use msfs::commbus::{CommBus, CommBusBroadcastFlags};
-use sentry::integrations::anyhow::capture_anyhow;
+use sentry::{integrations::anyhow::capture_anyhow, protocol::Context};
 use sentry_gauge::{wrap_gauge_with_sentry, SentryGauge};
 use serde::Serialize;
 
@@ -151,7 +151,15 @@ impl SentryGauge for NavigationDataInterface<'_> {
                 }
                 Err(e) => {
                     // Report error
-                    capture_anyhow(&e);
+                    sentry::with_scope(
+                        |scope| {
+                            scope.set_context(
+                                "Interface Function",
+                                Context::Other(function.get_function_details()),
+                            );
+                        },
+                        || capture_anyhow(&e),
+                    );
                     println!("[NAVIGRAPH]: Error occurred in function execution: {e}");
                     // Remove item
                     queue.pop_front();

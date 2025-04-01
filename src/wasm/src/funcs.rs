@@ -179,7 +179,6 @@ impl Function for GetNavigationDataInstallStatus {
             None
         };
 
-        let installed_info = DATABASE_STATE
         match DATABASE_STATE
             .try_lock()
             .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
@@ -519,19 +518,20 @@ macro_rules! define_interface_functions {
                 /// An internal wrapper around a function
                 pub struct [<$fn_name Wrapper>] {
                     id: String,
+                    args: serde_json::Value,
                     future: futures_lite::future::BoxedLocal<anyhow::Result<serde_json::Value>>,
                 }
 
                 impl [<$fn_name Wrapper>] {
                     fn new(id: String, args: serde_json::Value) -> anyhow::Result<Self> {
-                        let mut instance = $fn_name::new(args)?;
+                        let mut instance = $fn_name::new(args.clone())?;
                         // Create the future. Note that this does not start executing until we poll it
                         let future = Box::pin(async move {
                             let result = instance.run().await?;
                             Ok(serde_json::to_value(result)?)
                          });
 
-                        Ok(Self { id, future })
+                        Ok(Self { id, args, future })
                     }
 
                     fn run(&mut self) -> anyhow::Result<RunStatus> {
@@ -613,6 +613,19 @@ macro_rules! define_interface_functions {
                 pub fn run(&mut self) -> anyhow::Result<RunStatus> {
                     match self {
                         $( Self::$fn_name(wrapper) => wrapper.run(), )*
+                    }
+                }
+
+                // Get a `BTreeMap` representation of the current function's call data (looks identical to what was called via the commbus)
+                pub fn get_function_details(&self) -> std::collections::BTreeMap<String, serde_json::Value> {
+                    match self {
+                        $( Self::$fn_name(wrapper) => {
+                            let mut details = std::collections::BTreeMap::new();
+                            details.insert("id".to_string(), serde_json::Value::String(wrapper.id.clone()));
+                            details.insert("function".to_string(), serde_json::Value::String(stringify!($fn_name).to_string()));
+                            details.insert("data".to_string(), wrapper.args.clone());
+                            details
+                        }, )*
                     }
                 }
             }

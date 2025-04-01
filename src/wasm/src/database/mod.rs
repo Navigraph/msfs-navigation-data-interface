@@ -3,7 +3,6 @@ mod utils;
 
 use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
-use sentry::integrations::anyhow::capture_anyhow;
 use serde::Deserialize;
 use std::{
     cmp::Ordering,
@@ -230,12 +229,7 @@ impl DatabaseState {
         }
 
         // The only way this can fail (since we know now that the path is valid) is if the file is corrupt, in which case we should report to sentry
-        match instance.open_connection() {
-            Ok(_) => {}
-            Err(e) => {
-                capture_anyhow(&e);
-            }
-        }
+        instance.open_connection()?;
 
         Ok(instance)
     }
