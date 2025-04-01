@@ -57,7 +57,7 @@ impl Function for DownloadNavigationData {
     type ReturnType = ();
 
     async fn run(&mut self) -> Result<Self::ReturnType> {
-        // Send an initial progress event
+        // Send an initial progress event TODO: remove these in a breaking version, these are only here for backwards compatibility
         InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
             phase: DownloadProgressPhase::Downloading,
             deleted: None,
@@ -80,9 +80,17 @@ impl Function for DownloadNavigationData {
             .close_connection()?;
 
         // Send the extraction event
+        // Send the deleting and extraction events
+        InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
+            phase: DownloadProgressPhase::Cleaning,
+            deleted: Some(2),
+            total_to_unzip: None,
+            unzipped: None,
+        })?;
+
         InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
             phase: DownloadProgressPhase::Extracting,
-            deleted: Some(2),
+            deleted: None,
             total_to_unzip: Some(2),
             unzipped: None,
         })?;
