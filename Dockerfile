@@ -1,5 +1,6 @@
 FROM ghcr.io/navigraph/cargo-msfs-bin:latest AS base
 
+RUN apt-get update
 RUN apt install git -y 
 
 RUN cargo-msfs install msfs2020
