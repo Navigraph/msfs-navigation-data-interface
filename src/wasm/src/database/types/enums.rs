@@ -376,22 +376,58 @@ pub enum RunwayLights {
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 pub enum RunwaySurface {
+    #[serde(rename = "GRVL")]
+    Gravel,
+    #[serde(rename = "UNPV")]
+    Unpaved,
     #[serde(rename = "ASPH")]
     Asphalt,
     #[serde(rename = "TURF")]
     Turf,
-    #[serde(rename = "GRVL")]
-    Gravel,
+    #[serde(rename = "DIRT")]
+    Dirt,
     #[serde(rename = "CONC")]
     Concrete,
     #[serde(rename = "WATE")]
     Water,
-    #[serde(rename = "BITU")]
-    Bitumen,
+    #[serde(rename = "SAND")]
+    Sand,
+    #[serde(rename = "CORL")]
+    Coral,
     #[serde(rename = "PAVD")]
     Paved,
-    #[serde(rename = "UNPV")]
-    Unpaved,
+    #[serde(rename = "GRAS")]
+    Grass,
+    #[serde(rename = "BITU")]
+    Bitumen,
+    #[serde(rename = "PLNG")]
+    Planking,
+    #[serde(rename = "CLAY")]
+    Clay,
+    #[serde(rename = "ICE")]
+    Ice,
+    #[serde(rename = "SILT")]
+    Silt,
+    #[serde(rename = "LATE")]
+    Laterite,
+    #[serde(rename = "TARM")]
+    Tarmac,
+    #[serde(rename = "MACA")]
+    Macadam,
+    #[serde(rename = "SELD")]
+    Sealed,
+    #[serde(rename = "SOIL")]
+    Soil,
+    #[serde(rename = "BRCK")]
+    Brick,
+    #[serde(rename = "UNKN")]
+    Unknown,
+    #[serde(rename = "MATS")]
+    Mats,
+    #[serde(rename = "SNOW")]
+    Snow,
+    #[serde(rename = "TRTD")]
+    Treated,
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone)]
