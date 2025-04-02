@@ -1,6 +1,5 @@
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
-# @Navigraph/app-dev will be requested for
+# @Navigraph/sim-dev will be requested for
 # review when someone opens a pull request.
-*       @pepperoni505
-*       @professoralex13
+*       @Navigraph/sim-dev
