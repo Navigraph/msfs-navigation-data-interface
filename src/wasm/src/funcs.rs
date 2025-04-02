@@ -5,6 +5,7 @@ use std::{
 
 use anyhow::{anyhow, Context, Result};
 use msfs::network::NetworkRequestBuilder;
+use once_cell::sync::Lazy;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 use zip::ZipArchive;
@@ -77,11 +78,14 @@ impl Function for DownloadNavigationData {
             .wait_for_data()
             .await?;
 
-        // Drop the current database. We don't do this before the download as there is a chance it will fail, and then we end up with no database open.
-        DATABASE_STATE
-            .try_lock()
-            .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
-            .close_connection()?;
+        // Only close connection if DATABASE_STATE has already been initialized - otherwise we end up unnecessarily copying the bundled data and instantly replacing it (due to initialization logic in database state)
+        if Lazy::get(&DATABASE_STATE).is_some() {
+            // Drop the current database. We don't do this before the download as there is a chance it will fail, and then we end up with no database open.
+            DATABASE_STATE
+                .try_lock()
+                .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
+                .close_connection()?;
+        }
 
         // Send the deleting and extraction events
         InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
@@ -487,10 +491,10 @@ make_function!(
 /// - `RunStatus::InProgress` if the future isn’t complete yet.
 /// - `RunStatus::Finished` if the future resolved.
 ///
-/// This is useful in our environment as we need to yield back to the sim in order not to block the thread, 
+/// This is useful in our environment as we need to yield back to the sim in order not to block the thread,
 /// and we may have some functions that aren't able to resolve in a single frame.
 ///
-/// Once the future resolves, the result is automatically serialized into a `FunctionResult` structure and 
+/// Once the future resolves, the result is automatically serialized into a `FunctionResult` structure and
 /// sent across the commbus using the `NAVIGRAPH_FunctionResult` event.
 ///
 /// # Note
@@ -544,7 +548,7 @@ macro_rules! define_interface_functions {
                     }
 
                     fn run(&mut self) -> anyhow::Result<RunStatus> {
-                        // We allow the function run to be async in order to wait for certain conditions. 
+                        // We allow the function run to be async in order to wait for certain conditions.
                         // However, MSFS WASM modules are not multithreaded so we need to yield back to the main thread.
                         // We get around this by polling once per update, and then continuing to poll (if needed) in later updates.
                         match futures_lite::future::block_on(futures_lite::future::poll_once(&mut self.future)) {
@@ -590,7 +594,7 @@ macro_rules! define_interface_functions {
             pub enum InterfaceFunction {
                 $( $fn_name([<$fn_name Wrapper>]), )*
             }
-            
+
             impl<'de> serde::Deserialize<'de> for InterfaceFunction {
                 fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
                 where

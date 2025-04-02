@@ -189,7 +189,7 @@ impl DatabaseState {
                 .ok();
 
         // Find the most recent distribution
-        let latest = [bundled_distribution, downloaded_distribution]
+        let latest = [downloaded_distribution, bundled_distribution]
             .into_iter()
             .filter_map(|d| d)
             .reduce(|a, b| {
