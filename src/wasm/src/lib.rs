@@ -1,38 +1,180 @@
-use std::env;
+use std::{cell::RefCell, collections::VecDeque, rc::Rc, time::Instant};
 
-mod consts;
-mod dispatcher;
-mod download;
-mod json_structs;
-mod meta;
-mod network_helper;
-mod util;
+use anyhow::{anyhow, Result};
+use funcs::{InterfaceFunction, RunStatus};
+use msfs::commbus::{CommBus, CommBusBroadcastFlags};
+use sentry::{integrations::anyhow::capture_anyhow, protocol::Context};
+use sentry_gauge::{wrap_gauge_with_sentry, SentryGauge};
+use serde::Serialize;
 
-#[msfs::gauge(name=navigation_data_interface)]
-async fn navigation_data_interface(
-    mut gauge: msfs::Gauge,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut hash = env!("GIT_HASH").split_at(7).0.to_string();
+mod database;
+mod funcs;
+mod futures;
+mod sentry_gauge;
 
-    if env::var("GITHUB_REPOSITORY").is_err() {
-        let time = chrono::Utc::now();
-        hash = format!(
-            "{}-{}",
-            hash,
-            time.to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
-        );
-    }
+/// Amount of MS between dispatches of the heartbeat commbus event
+const HEARTBEAT_INTERVAL_MS: u128 = 1000;
 
-    // Log the current version of the module
-    println!(
-        "[NAVIGRAPH]: Navigation data interface version {}-{} started",
-        env!("CARGO_PKG_VERSION"),
-        hash
-    );
-    let mut dispatcher = dispatcher::Dispatcher::new();
-    while let Some(event) = gauge.next_event().await {
-        dispatcher.on_msfs_event(event);
-    }
-
-    Ok(())
+/// The current phase of downloading
+#[derive(Serialize)]
+pub enum DownloadProgressPhase {
+    Downloading,
+    Cleaning,
+    Extracting,
 }
+
+/// The data associated with the `DownloadProgress` event
+#[derive(Serialize)]
+pub struct DownloadProgressEvent {
+    pub phase: DownloadProgressPhase,
+    pub deleted: Option<usize>,
+    pub total_to_unzip: Option<usize>,
+    pub unzipped: Option<usize>,
+}
+
+/// The types of events that can be emitted from the interface
+#[derive(Serialize)]
+enum NavigraphEventType {
+    Heartbeat,
+    DownloadProgress, // TODO: remove in a future version. here for backwards compatibility
+}
+
+/// The structure of an event message
+#[derive(Serialize)]
+struct InterfaceEvent {
+    event: NavigraphEventType,
+    data: Option<serde_json::Value>,
+}
+
+impl InterfaceEvent {
+    /// Send a heartbeat event across the commbus
+    pub fn send_heartbeat() -> Result<()> {
+        let event = Self {
+            event: NavigraphEventType::Heartbeat,
+            data: None,
+        };
+
+        let serialized = serde_json::to_string(&event)?;
+
+        CommBus::call("NAVIGRAPH_Event", &serialized, CommBusBroadcastFlags::All);
+
+        Ok(())
+    }
+
+    /// Send a download progress event across the commbus
+    ///
+    /// * `event` - The download progress event data
+    pub fn send_download_progress_event(event: DownloadProgressEvent) -> Result<()> {
+        let event = Self {
+            event: NavigraphEventType::DownloadProgress,
+            data: Some(serde_json::to_value(event)?),
+        };
+
+        let serialized = serde_json::to_string(&event)?;
+
+        CommBus::call("NAVIGRAPH_Event", &serialized, CommBusBroadcastFlags::All);
+
+        Ok(())
+    }
+}
+
+/// The main state for the interface
+struct NavigationDataInterface<'a> {
+    _commbus: CommBus<'a>,
+    processing_queue: Rc<RefCell<VecDeque<InterfaceFunction>>>,
+    last_heartbeat: Instant,
+}
+
+impl SentryGauge for NavigationDataInterface<'_> {
+    fn initialize() -> Result<Self>
+    where
+        Self: Sized,
+    {
+        // Initialize commbus
+        let mut commbus = CommBus::default();
+        let processing_queue = Rc::new(RefCell::new(VecDeque::new()));
+
+        // Create the NAVIGRAPH_CallFunction callback
+        let processing_queue_clone = Rc::clone(&processing_queue);
+        commbus
+            .register("NAVIGRAPH_CallFunction", move |args| {
+                // Try to get the queue
+                let Ok(mut processing_queue) = processing_queue_clone.try_borrow_mut() else {
+                    sentry::capture_message(
+                        "Unable to borrow processing queue",
+                        sentry::Level::Warning,
+                    );
+                    return;
+                };
+
+                // Parse the message as a function. We need to trim off the null terminator at the end
+                let params = match serde_json::from_str::<InterfaceFunction>(
+                    args.trim_end_matches(char::from(0)),
+                ) {
+                    Ok(p) => p,
+                    Err(e) => {
+                        sentry::capture_message(
+                            &format!(
+                                "Unable to parse InterfaceFunction from {args} due to error {e}",
+                            ),
+                            sentry::Level::Warning,
+                        );
+                        return;
+                    }
+                };
+
+                // Finally, push the function into our queue
+                processing_queue.push_back(params);
+            })
+            .ok_or(anyhow!("Unable to register NAVIGRAPH_CallFunction"))?;
+
+        // Send first heartbeat
+        let last_heartbeat = Instant::now();
+        InterfaceEvent::send_heartbeat()?;
+
+        Ok(Self {
+            _commbus: commbus,
+            processing_queue,
+            last_heartbeat,
+        })
+    }
+
+    fn update(&mut self) -> Result<()> {
+        let mut queue = self.processing_queue.try_borrow_mut()?;
+
+        // Process one function at a time. If the function returns InProgress, don't continue on to the next item in order to preserve call order
+        while let Some(function) = queue.front_mut() {
+            match function.run() {
+                Ok(RunStatus::InProgress) => break,
+                Ok(RunStatus::Finished) => {
+                    queue.pop_front();
+                }
+                Err(e) => {
+                    // Report error
+                    sentry::with_scope(
+                        |scope| {
+                            scope.set_context(
+                                "Interface Function",
+                                Context::Other(function.get_function_details()),
+                            );
+                        },
+                        || capture_anyhow(&e),
+                    );
+                    println!("[NAVIGRAPH]: Error occurred in function execution: {e}");
+                    // Remove item
+                    queue.pop_front();
+                }
+            };
+        }
+
+        // Send heartbeat if we have passed the interval
+        if self.last_heartbeat.elapsed().as_millis() >= HEARTBEAT_INTERVAL_MS {
+            InterfaceEvent::send_heartbeat()?;
+            self.last_heartbeat = Instant::now();
+        }
+
+        Ok(())
+    }
+}
+
+sentry_gauge!(NavigationDataInterface, navigation_data_interface);

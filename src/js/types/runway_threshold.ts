@@ -7,13 +7,32 @@ export enum RunwayLights {
 }
 
 export enum RunwaySurface {
+  Gravel = "GRVL",
+  Unpaved = "UNPV",
   Asphalt = "ASPH",
   Turf = "TURF",
-  Gravel = "GRVL",
+  Dirt = "DIRT",
   Concrete = "CONC",
   Water = "WATE",
+  Sand = "SAND",
+  Coral = "CORL",
+  Paved = "PAVD",
+  Grass = "GRAS",
   Bitumen = "BITU",
-  Unpaved = "UNPV",
+  Planking = "PLNG",
+  Clay = "CLAY",
+  Ice = "ICE",
+  Silt = "SILT",
+  Laterite = "LATE",
+  Tarmac = "TARM",
+  Macadam = "MACA",
+  Sealed = "SELD",
+  Soil = "SOIL",
+  Brick = "BRCK",
+  Unknown = "UNKN",
+  Mats = "MATS",
+  Snow = "SNOW",
+  Treated = "TRTD",
 }
 
 export enum TrafficPattern {

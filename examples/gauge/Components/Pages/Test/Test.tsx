@@ -209,6 +209,12 @@ export class TestPage extends DisplayComponent<TestPageProps> {
           inputAlt?.replace("[", "").replace("]", "").replace('"', "").split(",") ?? [],
         ),
     },
+    {
+      index: 27,
+      arguments: [],
+      name: "GetDatabaseInfo",
+      functionCallback: () => this.props.interface.get_database_info(),
+    },
   ]
 
   private readonly input1 = Subject.create("")
