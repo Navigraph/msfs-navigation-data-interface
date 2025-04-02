@@ -11,9 +11,13 @@ run-name: Create release for `${{ github.ref_name }}`
 
 jobs:
   release-wasm:
-    runs-on: windows-2022
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Create env file
+        run: |
+          echo SENTRY_URL=${{ secrets.SENTRY_URL }} >> .env
 
       - name: Build WASM
         run: ./scripts/workflow.sh
