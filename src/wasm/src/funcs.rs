@@ -1,4 +1,7 @@
-use std::{fs::OpenOptions, io::Cursor};
+use std::{
+    fs::{self, OpenOptions},
+    io::Cursor,
+};
 
 use anyhow::{anyhow, Context, Result};
 use msfs::network::NetworkRequestBuilder;
@@ -11,6 +14,7 @@ use crate::{
         Airport, Airway, Approach, Arrival, Communication, ControlledAirspace, Coordinates,
         DatabaseInfo, Departure, Gate, GlsNavaid, NdbNavaid, PathPoint, RestrictiveAirspace,
         RunwayThreshold, VhfNavaid, Waypoint, DATABASE_STATE, WORK_CYCLE_JSON_PATH, WORK_DB_PATH,
+        WORK_NAVIGATION_DATA_FOLDER,
     },
     futures::AsyncNetworkRequest,
     DownloadProgressEvent, DownloadProgressPhase, InterfaceEvent,
@@ -96,6 +100,9 @@ impl Function for DownloadNavigationData {
 
         // Load the zip archive
         let mut zip = ZipArchive::new(Cursor::new(data))?;
+
+        // Ensure parent folder exists (ignore the result as it will return an error if it already exists)
+        let _ = fs::create_dir_all(WORK_NAVIGATION_DATA_FOLDER);
 
         // Write the cycle.json file
         let mut cycle_file = OpenOptions::new()

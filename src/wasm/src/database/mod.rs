@@ -39,10 +39,12 @@ pub use types::{
     waypoint::Waypoint,
 };
 
-/// The path to the cycle info JSON that exists in the work folder (which we treat as the "master")
-pub const WORK_CYCLE_JSON_PATH: &str = "\\work/ng_cycle.json";
-/// The path to the SQLite DB that exists in the work folder (which we treat as the "master")
-pub const WORK_DB_PATH: &str = "\\work/ng_navigation_data_db.s3db";
+/// The path to the navigation data files folder in the work directory
+pub const WORK_NAVIGATION_DATA_FOLDER: &str = "\\work/NavigationData";
+/// The path to the "master" cycle info JSON
+pub const WORK_CYCLE_JSON_PATH: &str = "\\work/NavigationData/cycle.json";
+/// The path to the "master" SQLite DB
+pub const WORK_DB_PATH: &str = "\\work/NavigationData/db.s3db";
 /// The path to the layout.json in the addon folder
 pub const LAYOUT_JSON: &str = ".\\layout.json";
 /// The folder name for bundled navigation data
@@ -66,8 +68,8 @@ struct LayoutJson {
 
 /// Find the bundled navigation data distribution
 fn get_bundled_db() -> Result<Option<DatabaseDistributionInfo>> {
-    // Since we don't know the exact filenames of the bundled navigation data, 
-    // we need to find them through the layout.json file. In a perfect world, 
+    // Since we don't know the exact filenames of the bundled navigation data,
+    // we need to find them through the layout.json file. In a perfect world,
     // we would just enumerate the bundled directory. However, fd_readdir is unreliable in the sim.
     let mut layout = fs::read_to_string(LAYOUT_JSON)?;
     let parsed = serde_json::from_str::<LayoutJson>(&mut layout)?;
@@ -84,10 +86,8 @@ fn get_bundled_db() -> Result<Option<DatabaseDistributionInfo>> {
                 return None;
             };
 
-            // Ensure the folder parent is NavigationData and that it is the only parent (root level will still have Some as parent, but it will be an empty string)
-            if parent.file_name() != Some(BUNDLED_FOLDER_NAME.as_ref())
-                || parent.parent() != Some("".as_ref())
-            {
+            // Ensure the file is within our known bundled data path
+            if parent != Path::new(BUNDLED_FOLDER_NAME) {
                 return None;
             };
 
@@ -151,7 +151,10 @@ struct DatabaseDistributionInfo {
 }
 
 impl DatabaseDistributionInfo {
-    /// Create a new
+    /// Create a new distribution info set
+    ///
+    /// * `cycle_info_path` - The path to the cycle info JSON
+    /// * `db_path` - The path to the SQLite DB
     pub fn new(cycle_info_path: &Path, db_path: &Path) -> Result<Self> {
         // Ensure paths exist (fs::exists is unreliable, so try getting a handle)
         if File::open(cycle_info_path).is_err() || File::open(db_path).is_err() {
@@ -220,6 +223,9 @@ impl DatabaseState {
         let Some(latest) = latest else {
             return Ok(instance);
         };
+
+        // Ensure parent folder exists (ignore the result as it will return an error if it already exists)
+        let _ = fs::create_dir_all(WORK_NAVIGATION_DATA_FOLDER);
 
         // Ensure files get copied over
         if latest.cycle_info_path != PathBuf::from(WORK_CYCLE_JSON_PATH) {
