@@ -1,4 +1,4 @@
 [toolchain]
 profile = "default"
-channel = "1.83"
+channel = "1.84"
 targets = ["wasm32-wasip1"]
