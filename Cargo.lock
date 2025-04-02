@@ -868,7 +868,7 @@ dependencies = [
 
 [[package]]
 name = "msfs-navigation-data-interface"
-version = "1.2.0"
+version = "1.2.0-rc1"
 dependencies = [
  "anyhow",
  "dotenv_codegen",
