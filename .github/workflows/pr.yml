@@ -61,13 +61,10 @@ jobs:
       - name: Create env file
         run: |
           echo NAVIGATION_DATA_SIGNED_URL=${{ secrets.NAVIGATION_DATA_SIGNED_URL }} >> .env
-          echo NAVIGATION_DATA_SIGNED_URL_V2=${{ secrets.NAVIGATION_DATA_SIGNED_URL_V2 }} >> .env
 
       - name: Build WASM
         run: ./scripts/workflow.sh
 
-      # - name: Test
-      #   run: npm run test-workflow
         
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v4
