@@ -21,14 +21,14 @@ const MANIFEST_FILE_PATH: &str = ".\\manifest.json";
 /// The path to the sentry persistent state file
 const SENTRY_FILE: &str = "\\work/ng_sentry.json";
 
-// The amount of seconds between forced Sentry flushes
+/// The amount of seconds between forced Sentry flushes
 const SENTRY_FLUSH_INTERVAL_SECONDS: u64 = 60;
 
-// The global Sentry state instance
+/// The global Sentry state instance
 static SENTRY_STATE: Lazy<Mutex<SentryPersistentState>> =
     Lazy::new(|| Mutex::new(SentryPersistentState::load()));
 
-// A pending sentry report
+/// A pending sentry report
 #[derive(Deserialize, Serialize)]
 struct PendingSentryReport {
     url: String,
