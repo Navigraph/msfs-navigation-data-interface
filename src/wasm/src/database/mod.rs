@@ -6,7 +6,7 @@ use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::{
     cmp::Ordering,
-    fs::{self, File},
+    fs::{self, read_dir, File},
     path::{Path, PathBuf},
     sync::Mutex,
 };
@@ -45,79 +45,40 @@ pub const WORK_NAVIGATION_DATA_FOLDER: &str = "\\work/NavigationData";
 pub const WORK_CYCLE_JSON_PATH: &str = "\\work/NavigationData/cycle.json";
 /// The path to the "master" SQLite DB
 pub const WORK_DB_PATH: &str = "\\work/NavigationData/db.s3db";
-/// The path to the layout.json in the addon folder
-pub const LAYOUT_JSON: &str = ".\\layout.json";
 /// The folder name for bundled navigation data
-pub const BUNDLED_FOLDER_NAME: &str = "NavigationData";
+pub const BUNDLED_FOLDER_NAME: &str = ".\\NavigationData";
 
 /// The global exported database state
 pub static DATABASE_STATE: Lazy<Mutex<DatabaseState>> =
-    Lazy::new(|| Mutex::new(DatabaseState::new().unwrap())); // SAFETY: the only way this function can return an error is if layout.json is corrupt (which is impossible since the package wouldn't even mount), or if copying to the work folder is failing (in which case we have more fundamental problems). So overall, unwrapping here is safe
-
-/// An entry in the layout.json file
-#[derive(Deserialize)]
-struct LayoutEntry {
-    path: String,
-}
-
-/// The representation of the layout.json file
-#[derive(Deserialize)]
-struct LayoutJson {
-    content: Vec<LayoutEntry>,
-}
+    Lazy::new(|| Mutex::new(DatabaseState::new().unwrap())); // SAFETY: the only way this function can return an error is if there is an IO error which is impossible unless the user has messed up work folder permissions (which would make interface not work anyways)
 
 /// Find the bundled navigation data distribution
 fn get_bundled_db() -> Result<Option<DatabaseDistributionInfo>> {
-    // Since we don't know the exact filenames of the bundled navigation data,
-    // we need to find them through the layout.json file. In a perfect world,
-    // we would just enumerate the bundled directory. However, fd_readdir is unreliable in the sim.
-    let mut layout = fs::read_to_string(LAYOUT_JSON)?;
-    let parsed = serde_json::from_str::<LayoutJson>(&mut layout)?;
-
-    // Filter out the files in the layout that are not in the bundled folder
-    let bundled_files = parsed
-        .content
-        .iter()
-        .filter_map(|e| {
-            let path = Path::new(&e.path);
-
-            // Get parent
-            let (Some(parent), Some(filename)) = (path.parent(), path.file_name()) else {
-                return None;
-            };
-
-            // Ensure the file is within our known bundled data path
-            if parent != Path::new(BUNDLED_FOLDER_NAME) {
-                return None;
-            };
-
-            // Finally, return just the basename
-            filename.to_str()
-        })
+    let bundled_entries = read_dir(BUNDLED_FOLDER_NAME)?
+        .filter_map(Result::ok)
         .collect::<Vec<_>>();
 
-    // Try extracting the cycle info and DB files
-    let cycle_info = if let Some(file) = bundled_files
+    // Try finding cycle.json
+    let Some(cycle_file_name) = bundled_entries
         .iter()
-        .find(|f| f.to_lowercase().ends_with(".json"))
-    {
-        file
-    } else {
+        .filter_map(|e| e.file_name().to_str().map(|s| s.to_owned()))
+        .find(|e| *e == String::from("cycle.json"))
+    else {
         return Ok(None);
     };
 
-    let db_file = if let Some(file) = bundled_files
+    // Try finding the DB (we don't know the full filename, only extension)
+    let Some(db_file_name) = bundled_entries
         .iter()
-        .find(|f| f.to_lowercase().ends_with(".s3db"))
-    {
-        file
-    } else {
+        .filter_map(|e| e.file_name().to_str().map(|s| s.to_owned()))
+        .find(|e| e.ends_with(".s3db"))
+    else {
         return Ok(None);
     };
 
     Ok(Some(DatabaseDistributionInfo::new(
-        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{cycle_info}")), // We need to reconstruct the bundled path to include the proper syntax to reference non-work folder files
-        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{db_file}")),
+        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{cycle_file_name}")), // We need to reconstruct the bundled path to include the proper syntax to reference non-work folder files
+        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{db_file_name}")),
     )?))
 }
 
