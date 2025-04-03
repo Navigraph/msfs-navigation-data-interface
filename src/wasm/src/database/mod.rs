@@ -3,6 +3,7 @@ mod utils;
 
 use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
+use sentry::integrations::anyhow::capture_anyhow;
 use serde::Deserialize;
 use std::{
     cmp::Ordering,
@@ -50,13 +51,14 @@ pub const BUNDLED_FOLDER_NAME: &str = ".\\NavigationData";
 
 /// The global exported database state
 pub static DATABASE_STATE: Lazy<Mutex<DatabaseState>> =
-    Lazy::new(|| Mutex::new(DatabaseState::new().unwrap())); // SAFETY: the only way this function can return an error is if there is an IO error which is impossible unless the user has messed up work folder permissions (which would make interface not work anyways)
+    Lazy::new(|| Mutex::new(DatabaseState::new()));
 
 /// Find the bundled navigation data distribution
 fn get_bundled_db() -> Result<Option<DatabaseDistributionInfo>> {
-    let bundled_entries = read_dir(BUNDLED_FOLDER_NAME)?
-        .filter_map(Result::ok)
-        .collect::<Vec<_>>();
+    let bundled_entries = match read_dir(BUNDLED_FOLDER_NAME) {
+        Ok(dir) => dir.filter_map(Result::ok).collect::<Vec<_>>(),
+        Err(_) => return Ok(None),
+    };
 
     // Try finding cycle.json
     let Some(cycle_file_name) = bundled_entries
@@ -138,11 +140,24 @@ pub struct DatabaseState {
 
 impl DatabaseState {
     /// Create a database state, intended to only be instantiated once (held in the DATABASE_STATE static)
-    ///
-    /// This searches for the best DB to use by comparing the cycle and revision of both the downloaded (in work folder) and bundled navigation data.
-    fn new() -> Result<Self> {
+    fn new() -> Self {
         // Start out with a fresh instance
         let mut instance = Self::default();
+        match instance.try_load_db() {
+            Ok(()) => {}
+            Err(e) => {
+                capture_anyhow(&e);
+                println!("[NAVIGRAPH]: Error trying to load DB: {e}");
+            }
+        }
+
+        instance
+    }
+
+    /// Try to load a database (either bundled or downloaded)
+    ///
+    /// This searches for the best DB to use by comparing the cycle and revision of both the downloaded (in work folder) and bundled navigation data.
+    fn try_load_db(&mut self) -> Result<()> {
         // Get distribution info of both bundled and downloaded DBs, if they exist
         let bundled_distribution = get_bundled_db()?;
         let downloaded_distribution =
@@ -182,7 +197,7 @@ impl DatabaseState {
 
         // If we somehow don't have a cycle in bundled or downloaded, return an empty instance
         let Some(latest) = latest else {
-            return Ok(instance);
+            return Ok(());
         };
 
         // Ensure parent folder exists (ignore the result as it will return an error if it already exists)
@@ -197,9 +212,9 @@ impl DatabaseState {
         }
 
         // The only way this can fail (since we know now that the path is valid) is if the file is corrupt, in which case we should report to sentry
-        instance.open_connection()?;
+        self.open_connection()?;
 
-        Ok(instance)
+        return Ok(());
     }
 
     fn get_database(&self) -> Result<&Connection> {
