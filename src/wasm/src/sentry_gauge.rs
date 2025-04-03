@@ -1,5 +1,5 @@
 use std::{
-    fs::{File, OpenOptions},
+    fs::OpenOptions,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
@@ -14,6 +14,8 @@ use once_cell::sync::Lazy;
 use sentry::integrations::anyhow::capture_anyhow;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+use crate::config::Config;
 
 /// The path to the sentry persistent state file
 const SENTRY_FILE: &str = "\\work/ng_sentry.json";
@@ -246,12 +248,19 @@ where
         .user_id
         .to_string();
 
-    // Configure the sentry scope to report the user ID
+    // Configure the sentry scope to report the user ID and sentry config (if present)
     sentry::configure_scope(|scope| {
         scope.set_user(Some(sentry::User {
             id: Some(user_id),
             ..Default::default()
         }));
+
+        if let Ok(config) = Config::get_config() {
+            scope.set_tag(
+                "addon",
+                format!("{}/{}", config.addon.developer, config.addon.product),
+            );
+        }
     });
 
     // Drain any pending reports. We need to structure it like this as opposed to just a top level `let Ok(state) = ...`` due to the fact we should not be holding a MutexGuard across an await point

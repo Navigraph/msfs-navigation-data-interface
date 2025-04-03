@@ -27,13 +27,13 @@
 			<AssetDir>PackageSources\Data\</AssetDir>
 			<OutputDir>Data\</OutputDir>
 		</AssetGroup>
-		<AssetGroup Name="NavigationData">
+		<AssetGroup Name="Navigraph">
 			<Type>Copy</Type>
 			<Flags>
 				<FSXCompatibility>false</FSXCompatibility>
 			</Flags>
-			<AssetDir>PackageSources\NavigationData\</AssetDir>
-			<OutputDir>NavigationData\</OutputDir>
+			<AssetDir>PackageSources\Navigraph\</AssetDir>
+			<OutputDir>Navigraph\</OutputDir>
 		</AssetGroup>
 		<AssetGroup Name="SimObject">
 			<Type>SimObject</Type>
@@ -53,4 +53,3 @@
 		</AssetGroup>
 	</AssetGroups>
 </AssetPackage>
-

@@ -47,7 +47,7 @@ pub const WORK_CYCLE_JSON_PATH: &str = "\\work/NavigationData/cycle.json";
 /// The path to the "master" SQLite DB
 pub const WORK_DB_PATH: &str = "\\work/NavigationData/db.s3db";
 /// The folder name for bundled navigation data
-pub const BUNDLED_FOLDER_NAME: &str = ".\\NavigationData";
+pub const BUNDLED_FOLDER_NAME: &str = ".\\Navigraph/BundledData";
 
 /// The global exported database state
 pub static DATABASE_STATE: Lazy<Mutex<DatabaseState>> =
@@ -143,6 +143,8 @@ impl DatabaseState {
     fn new() -> Self {
         // Start out with a fresh instance
         let mut instance = Self::default();
+
+        // Try to load a DB
         match instance.try_load_db() {
             Ok(()) => {}
             Err(e) => {
