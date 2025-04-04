@@ -21,9 +21,11 @@ pub struct Config {
 
 impl Config {
     /// Try to get the config
-    pub fn get_config() -> Result<Self> {
-        let file = File::open(ADDON_CONFIG_FILE)?;
-
-        Ok(serde_json::from_reader(file)?)
+    pub fn get_config() -> Option<Self> {
+        if let Ok(file) = File::open(ADDON_CONFIG_FILE) {
+            serde_json::from_reader(file).ok()
+        } else {
+            None
+        }
     }
 }
