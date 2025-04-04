@@ -1,9 +1,9 @@
-import "@microsoft/msfs-sdk"
+import "@microsoft/msfs-sdk";
 
 declare module "@microsoft/msfs-sdk" {
   namespace FSComponent {
     namespace JSX {
-      type Element = import("@microsoft/msfs-sdk").VNode
+      type Element = import("@microsoft/msfs-sdk").VNode;
     }
   }
 }

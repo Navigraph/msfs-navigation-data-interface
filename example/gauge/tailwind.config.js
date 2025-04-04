@@ -175,4 +175,4 @@ export default {
     textOpacity: false,
   },
   plugins: [],
-}
+};

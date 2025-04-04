@@ -14,7 +14,7 @@ import {
   SubscribableArray,
   SubscribableArrayEventType,
   VNode,
-} from "@microsoft/msfs-sdk"
+} from "@microsoft/msfs-sdk";
 
 /** The properties for the List component. */
 interface ListProps extends ComponentProps {
@@ -22,23 +22,23 @@ interface ListProps extends ComponentProps {
    * The data for this list.
    * @type {any[]}
    */
-  data: SubscribableArray<any>
+  data: SubscribableArray<any>;
 
   /** A function defining how to render each list item. */
-  renderItem: (data: any, index: number) => VNode
+  renderItem: (data: any, index: number) => VNode;
 
   /** CSS class(es) to add to the root of the list component. */
-  class?: string
+  class?: string;
 }
 
 /** The List component. */
 export class List extends DisplayComponent<ListProps> {
-  private readonly _listContainer = FSComponent.createRef<HTMLElement>()
+  private readonly _listContainer = FSComponent.createRef<HTMLElement>();
 
   /** @inheritdoc */
   public onAfterRender(): void {
-    this.renderList()
-    this.props.data.sub(this.onDataChanged.bind(this))
+    this.renderList();
+    this.props.data.sub(this.onDataChanged.bind(this));
   }
 
   /**
@@ -51,30 +51,30 @@ export class List extends DisplayComponent<ListProps> {
     switch (type) {
       case SubscribableArrayEventType.Added:
         {
-          const el = this._listContainer.instance.children.item(index)
+          const el = this._listContainer.instance.children.item(index);
           if (Array.isArray(item)) {
             for (let i = 0; i < item.length; i++) {
-              this.addDomNode(item[i], index + i, el)
+              this.addDomNode(item[i], index + i, el);
             }
           } else {
-            this.addDomNode(item, index, el)
+            this.addDomNode(item, index, el);
           }
         }
-        break
+        break;
       case SubscribableArrayEventType.Removed:
         {
           if (Array.isArray(item)) {
             for (let i = 0; i < item.length; i++) {
-              this.removeDomNode(index)
+              this.removeDomNode(index);
             }
           } else {
-            this.removeDomNode(index)
+            this.removeDomNode(index);
           }
         }
-        break
+        break;
       case SubscribableArrayEventType.Cleared:
-        this._listContainer.instance.innerHTML = ""
-        break
+        this._listContainer.instance.innerHTML = "";
+        break;
     }
   }
 
@@ -83,8 +83,8 @@ export class List extends DisplayComponent<ListProps> {
    * @param index The index to remove.
    */
   private removeDomNode(index: number): void {
-    const child = this._listContainer.instance.childNodes.item(index)
-    this._listContainer.instance.removeChild(child)
+    const child = this._listContainer.instance.childNodes.item(index);
+    this._listContainer.instance.removeChild(child);
   }
 
   /**
@@ -94,12 +94,12 @@ export class List extends DisplayComponent<ListProps> {
    * @param el The element to add to.
    */
   private addDomNode(item: any, index: number, el: Element | null): void {
-    const node = this.renderListItem(item, index)
+    const node = this.renderListItem(item, index);
     if (el !== null) {
-      node && el && FSComponent.renderBefore(node, el as any)
+      node && el && FSComponent.renderBefore(node, el as any);
     } else {
-      el = this._listContainer.instance
-      node && el && FSComponent.render(node, el as any)
+      el = this._listContainer.instance;
+      node && el && FSComponent.render(node, el as any);
     }
   }
 
@@ -111,25 +111,25 @@ export class List extends DisplayComponent<ListProps> {
    * @throws error when the resulting vnode is not a scrollable control
    */
   private renderListItem(dataItem: any, index: number): VNode {
-    return this.props.renderItem(dataItem, index)
+    return this.props.renderItem(dataItem, index);
   }
   /** Renders the list of data items. */
   private renderList(): void {
     // clear all items
-    this._listContainer.instance.textContent = ""
+    this._listContainer.instance.textContent = "";
 
     // render items
-    const dataLen = this.props.data.length
+    const dataLen = this.props.data.length;
     for (let i = 0; i < dataLen; i++) {
-      const vnode = this.renderListItem(this.props.data.get(i), i)
+      const vnode = this.renderListItem(this.props.data.get(i), i);
       if (vnode !== undefined) {
-        FSComponent.render(vnode, this._listContainer.instance)
+        FSComponent.render(vnode, this._listContainer.instance);
       }
     }
   }
 
   /** @inheritdoc */
   render(): VNode {
-    return <div class={this.props.class ?? ""} ref={this._listContainer}></div>
+    return <div class={this.props.class ?? ""} ref={this._listContainer}></div>;
   }
 }

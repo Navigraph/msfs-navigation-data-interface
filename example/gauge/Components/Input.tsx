@@ -6,37 +6,37 @@ import {
   SubscribableUtils,
   UUID,
   VNode,
-} from "@microsoft/msfs-sdk"
-import { InterfaceNavbarItemV2 } from "./Utils"
+} from "@microsoft/msfs-sdk";
+import { InterfaceNavbarItemV2 } from "./Utils";
 
 interface InputProps extends ComponentProps {
-  value: Subscribable<string>
-  setValue: (value: string) => void
-  default?: Subscribable<string> | string
-  class?: string | Subscribable<string>
-  textarea?: boolean
+  value: Subscribable<string>;
+  setValue: (value: string) => void;
+  default?: Subscribable<string> | string;
+  class?: string | Subscribable<string>;
+  textarea?: boolean;
 }
 
 export class Input extends DisplayComponent<InputProps> {
-  private readonly inputId = UUID.GenerateUuid()
-  private readonly inputRef = FSComponent.createRef<HTMLInputElement>()
+  private readonly inputId = UUID.GenerateUuid();
+  private readonly inputRef = FSComponent.createRef<HTMLInputElement>();
 
   onAfterRender(node: VNode): void {
-    super.onAfterRender(node)
+    super.onAfterRender(node);
 
-    this.props.value.map(val => (this.inputRef.instance.value = val))
+    this.props.value.map(val => (this.inputRef.instance.value = val));
     SubscribableUtils.toSubscribable(this.props.default ?? "", true).map(val => {
-      this.inputRef.instance.placeholder = val
-    })
+      this.inputRef.instance.placeholder = val;
+    });
 
-    this.inputRef.instance.addEventListener("input", () => this.props.setValue(this.inputRef.instance.value ?? ""))
+    this.inputRef.instance.addEventListener("input", () => this.props.setValue(this.inputRef.instance.value ?? ""));
 
-    this.inputRef.instance.onfocus = this.onInputFocus
-    this.inputRef.instance.onblur = this.onInputBlur
+    this.inputRef.instance.onfocus = this.onInputFocus;
+    this.inputRef.instance.onblur = this.onInputBlur;
   }
 
   private getInputProps() {
-    return { value: this.props.value, class: this.props.class }
+    return { value: this.props.value, class: this.props.class };
   }
 
   /**
@@ -44,19 +44,19 @@ export class Input extends DisplayComponent<InputProps> {
    * @param e The focus event.
    */
   private onInputFocus = (e: FocusEvent): void => {
-    e.preventDefault()
+    e.preventDefault();
 
-    Coherent.trigger("FOCUS_INPUT_FIELD", this.inputId, "", "", this.inputRef.instance.value, false)
-    Coherent.on("mousePressOutsideView", () => this.inputRef.instance.blur())
-  }
+    Coherent.trigger("FOCUS_INPUT_FIELD", this.inputId, "", "", this.inputRef.instance.value, false);
+    Coherent.on("mousePressOutsideView", () => this.inputRef.instance.blur());
+  };
 
   /**
    * Method to handle on input blur
    */
   private onInputBlur = (): void => {
-    Coherent.trigger("UNFOCUS_INPUT_FIELD", "")
-    Coherent.off("mousePressOutsideView")
-  }
+    Coherent.trigger("UNFOCUS_INPUT_FIELD", "");
+    Coherent.off("mousePressOutsideView");
+  };
 
   render() {
     if (this.props.textarea)
@@ -64,24 +64,24 @@ export class Input extends DisplayComponent<InputProps> {
         <textarea style="width:350px;height:100px;" ref={this.inputRef} {...this.getInputProps()}>
           {this.props.value}
         </textarea>
-      )
-    return <input ref={this.inputRef} {...this.getInputProps()} />
+      );
+    return <input ref={this.inputRef} {...this.getInputProps()} />;
   }
 }
 
 interface CheckboxProps extends ComponentProps {
-  value: Subscribable<string>
-  setValue: (value: string) => void
-  default?: Subscribable<string> | string
-  class?: string
+  value: Subscribable<string>;
+  setValue: (value: string) => void;
+  default?: Subscribable<string> | string;
+  class?: string;
 }
 
 export class Checkbox extends DisplayComponent<CheckboxProps> {
-  private readonly isActive = this.props.value.map(val => (val == "true" ? true : false))
+  private readonly isActive = this.props.value.map(val => (val == "true" ? true : false));
 
   private onClick = () => {
-    this.props.setValue(this.isActive.get() ? "false" : "true")
-  }
+    this.props.setValue(this.isActive.get() ? "false" : "true");
+  };
 
   render(): VNode {
     return (
@@ -96,6 +96,6 @@ export class Checkbox extends DisplayComponent<CheckboxProps> {
       >
         <span class="text-4xl">{this.isActive.map(val => (val ? "✔" : "X"))}</span>
       </InterfaceNavbarItemV2>
-    )
+    );
   }
 }

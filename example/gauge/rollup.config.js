@@ -1,19 +1,19 @@
-import resolve from "@rollup/plugin-node-resolve"
-import replace from "@rollup/plugin-replace"
-import dotenv from "dotenv"
-import copy from "rollup-plugin-copy"
-import esbuild from "rollup-plugin-esbuild"
+import resolve from "@rollup/plugin-node-resolve";
+import replace from "@rollup/plugin-replace";
+import dotenv from "dotenv";
+import copy from "rollup-plugin-copy";
+import esbuild from "rollup-plugin-esbuild";
 // import css from "rollup-plugin-import-css"
-import postcss from "rollup-plugin-postcss"
+import postcss from "rollup-plugin-postcss";
 
-dotenv.config()
+dotenv.config();
 
 // eslint-disable-next-line no-undef
-const DEBUG = process.env.DEBUG === "true"
+const DEBUG = process.env.DEBUG === "true";
 
-let outputDest = "../aircraft/PackageSources"
+let outputDest = "../aircraft/PackageSources";
 if (DEBUG) {
-  outputDest = "../aircraft/Packages/navigraph-aircraft-navigation-data-interface-sample"
+  outputDest = "../aircraft/Packages/navigraph-aircraft-navigation-data-interface-sample";
 }
 
 export default {
@@ -46,4 +46,4 @@ export default {
       ],
     }),
   ],
-}
+};

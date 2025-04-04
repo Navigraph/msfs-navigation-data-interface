@@ -8,4 +8,4 @@ module.exports = {
     ecmaFeatures: { jsx: true },
     jsxPragma: "FSComponent",
   },
-}
+};
