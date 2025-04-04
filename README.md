@@ -2,8 +2,8 @@
 
 The Navigraph Navigation Data Interface enables developers to download and integrate navigation data from Navigraph directly into add-on aircraft in MSFS.
 
-
 ## Key Features
+
 - Navigraph DFD Format: Leverage specialized support for Navigraph's DFD format, based on SQLite, which includes an SQL interface on the commbus for efficient data handling.
 - Javascript and WASM support: The navdata interface is accessible from both Javascript (Coherent) and WASM, providing flexibility for developers.
 - Supports updating of custom data formats.
@@ -29,6 +29,7 @@ Here's an overview on the structure of this repository, which is designed to be 
 1. You'll need to either build the WASM module yourself (not recommended, but documented further down) or download it from [the latest release](https://github.com/Navigraph/msfs-navigation-data-interface/releases) (alternatively you can download it off of a commit by looking at the uploaded artifacts).
 2. Add the WASM module into your `panel` folder in `PackageSources`
 3. Add the following entry into `panel.cfg` (make sure to replace `NN` with the proper `VCockpit` ID):
+
    ```
    [VCockpitNN]
    size_mm=0,0
@@ -36,15 +37,28 @@ Here's an overview on the structure of this repository, which is designed to be 
    texture=NO_TEXTURE
    htmlgauge00=WasmInstrument/WasmInstrument.html?wasm_module=msfs_navigation_data_interface.wasm&wasm_gauge=navigation_data_interface,0,0,1,1
    ```
+
    - Note that if you already have a `VCockpit` with `NO_TEXTURE` you can just add another `htmlgauge` to it, while making sure to increase the index
+4. **Optional**: Create a `Navigraph/config.json` file to assist with Sentry reports. This info will be reported to us should any error occur in the library. We will use this to directly reach out to you (the developer) for these errors.
+
+    - The file must look like
+
+    ```json
+    {
+      "addon": {
+        "developer": "Navigraph",
+        "product": "Sample Aircraft"
+      }
+    }
+    ```
 
 ## Dealing with Bundled Navigation Data
 
-If you bundle outdated navigation data in your aircraft and you want this module to handle updating it for users with subscriptions, place the navigation data into the `NavigationData` directory in `PackageSources`. You can see an example [here](examples/aircraft/PackageSources/NavigationData/)
+If you bundle outdated navigation data in your aircraft and you want this module to handle updating it for users with subscriptions, place the navigation data into the `Navigraph/BundledData` directory in `PackageSources`. You can see an example [here](examples/aircraft/PackageSources/Navigraph/BundledData/)
 
 ## Where is the Navigation Data Stored?
 
-The default location for navigation data is `work/NavigationData`. If you have bundled navigation data, its located in the `NavigationData` folder in the root of your project. (although it gets copied into the `work` directory at runtime)
+The default location for navigation data is `work/NavigationData`.
 
 ## Building the Sample Aircraft
 

@@ -7,9 +7,15 @@ use sentry::{integrations::anyhow::capture_anyhow, protocol::Context};
 use sentry_gauge::{wrap_gauge_with_sentry, SentryGauge};
 use serde::Serialize;
 
+/// Developer-configured values for interface
+mod config;
+/// SQLite mapping implementation
 mod database;
+/// Interface function definitions
 mod funcs;
+/// Futures implementations for use in interface functions
 mod futures;
+/// The sentry wrapper implementation around the MSFS gauge callbacks
 mod sentry_gauge;
 
 /// Amount of MS between dispatches of the heartbeat commbus event

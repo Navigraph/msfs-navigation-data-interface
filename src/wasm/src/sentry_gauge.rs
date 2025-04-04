@@ -1,5 +1,5 @@
 use std::{
-    fs::{File, OpenOptions},
+    fs::OpenOptions,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
@@ -15,8 +15,7 @@ use sentry::integrations::anyhow::capture_anyhow;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// The path to the manifest.json in the addon folder
-const MANIFEST_FILE_PATH: &str = ".\\manifest.json";
+use crate::config::Config;
 
 /// The path to the sentry persistent state file
 const SENTRY_FILE: &str = "\\work/ng_sentry.json";
@@ -247,18 +246,6 @@ where
         },
     ));
 
-    // In order to track what addon the reports are coming from, we need to parse the manifest.json file to extract relevant info
-    let manifest = {
-        #[derive(Deserialize)]
-        struct Manifest {
-            title: String,
-            creator: String,
-            package_version: String,
-        }
-        let manifest_file = File::open(MANIFEST_FILE_PATH)?;
-        serde_json::from_reader::<_, Manifest>(manifest_file)?
-    };
-
     // Get the user ID from persistent state
     let user_id = SENTRY_STATE
         .try_lock()
@@ -266,19 +253,21 @@ where
         .user_id
         .to_string();
 
-    // Configure the sentry scope to report the user ID and plugin info loaded from manifest.json
+    // Configure the sentry scope to report the user ID and addon info
     sentry::configure_scope(|scope| {
         scope.set_user(Some(sentry::User {
             id: Some(user_id),
             ..Default::default()
         }));
 
+        let config = Config::get_config();
         scope.set_tag(
-            "plugin",
-            format!(
-                "{}/{}@{}",
-                manifest.creator, manifest.title, manifest.package_version
-            ),
+            "developer",
+            config.as_ref().map_or("unknown", |c| &c.addon.developer),
+        );
+        scope.set_tag(
+            "product",
+            config.as_ref().map_or("unknown", |c| &c.addon.product),
         );
     });
 

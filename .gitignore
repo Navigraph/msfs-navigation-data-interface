@@ -4,6 +4,7 @@ _PackageInt
 .rollup.cache
 tsconfig.tsbuildinfo
 .vs
+examples/aircraft/NavigationDataInterfaceAircraftProject.xml.user
 examples/aircraft/PackageSources/html_ui/Pages/VCockpit/Instruments/Navigraph/NavigationDataInterfaceSample
 examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel/msfs_navigation_data_interface.wasm
 out

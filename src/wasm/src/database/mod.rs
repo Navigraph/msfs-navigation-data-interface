@@ -3,10 +3,11 @@ mod utils;
 
 use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
+use sentry::integrations::anyhow::capture_anyhow;
 use serde::Deserialize;
 use std::{
     cmp::Ordering,
-    fs::{self, File},
+    fs::{self, read_dir, File},
     path::{Path, PathBuf},
     sync::Mutex,
 };
@@ -45,79 +46,41 @@ pub const WORK_NAVIGATION_DATA_FOLDER: &str = "\\work/NavigationData";
 pub const WORK_CYCLE_JSON_PATH: &str = "\\work/NavigationData/cycle.json";
 /// The path to the "master" SQLite DB
 pub const WORK_DB_PATH: &str = "\\work/NavigationData/db.s3db";
-/// The path to the layout.json in the addon folder
-pub const LAYOUT_JSON: &str = ".\\layout.json";
 /// The folder name for bundled navigation data
-pub const BUNDLED_FOLDER_NAME: &str = "NavigationData";
+pub const BUNDLED_FOLDER_NAME: &str = ".\\Navigraph/BundledData";
 
 /// The global exported database state
 pub static DATABASE_STATE: Lazy<Mutex<DatabaseState>> =
-    Lazy::new(|| Mutex::new(DatabaseState::new().unwrap())); // SAFETY: the only way this function can return an error is if layout.json is corrupt (which is impossible since the package wouldn't even mount), or if copying to the work folder is failing (in which case we have more fundamental problems). So overall, unwrapping here is safe
-
-/// An entry in the layout.json file
-#[derive(Deserialize)]
-struct LayoutEntry {
-    path: String,
-}
-
-/// The representation of the layout.json file
-#[derive(Deserialize)]
-struct LayoutJson {
-    content: Vec<LayoutEntry>,
-}
+    Lazy::new(|| Mutex::new(DatabaseState::new()));
 
 /// Find the bundled navigation data distribution
 fn get_bundled_db() -> Result<Option<DatabaseDistributionInfo>> {
-    // Since we don't know the exact filenames of the bundled navigation data,
-    // we need to find them through the layout.json file. In a perfect world,
-    // we would just enumerate the bundled directory. However, fd_readdir is unreliable in the sim.
-    let mut layout = fs::read_to_string(LAYOUT_JSON)?;
-    let parsed = serde_json::from_str::<LayoutJson>(&mut layout)?;
+    let bundled_entries = match read_dir(BUNDLED_FOLDER_NAME) {
+        Ok(dir) => dir.filter_map(Result::ok).collect::<Vec<_>>(),
+        Err(_) => return Ok(None),
+    };
 
-    // Filter out the files in the layout that are not in the bundled folder
-    let bundled_files = parsed
-        .content
+    // Try finding cycle.json
+    let Some(cycle_file_name) = bundled_entries
         .iter()
-        .filter_map(|e| {
-            let path = Path::new(&e.path);
-
-            // Get parent
-            let (Some(parent), Some(filename)) = (path.parent(), path.file_name()) else {
-                return None;
-            };
-
-            // Ensure the file is within our known bundled data path
-            if parent != Path::new(BUNDLED_FOLDER_NAME) {
-                return None;
-            };
-
-            // Finally, return just the basename
-            filename.to_str()
-        })
-        .collect::<Vec<_>>();
-
-    // Try extracting the cycle info and DB files
-    let cycle_info = if let Some(file) = bundled_files
-        .iter()
-        .find(|f| f.to_lowercase().ends_with(".json"))
-    {
-        file
-    } else {
+        .filter_map(|e| e.file_name().to_str().map(|s| s.to_owned()))
+        .find(|e| *e == String::from("cycle.json"))
+    else {
         return Ok(None);
     };
 
-    let db_file = if let Some(file) = bundled_files
+    // Try finding the DB (we don't know the full filename, only extension)
+    let Some(db_file_name) = bundled_entries
         .iter()
-        .find(|f| f.to_lowercase().ends_with(".s3db"))
-    {
-        file
-    } else {
+        .filter_map(|e| e.file_name().to_str().map(|s| s.to_owned()))
+        .find(|e| e.ends_with(".s3db"))
+    else {
         return Ok(None);
     };
 
     Ok(Some(DatabaseDistributionInfo::new(
-        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{cycle_info}")), // We need to reconstruct the bundled path to include the proper syntax to reference non-work folder files
-        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{db_file}")),
+        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{cycle_file_name}")), // We need to reconstruct the bundled path to include the proper syntax to reference non-work folder files
+        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{db_file_name}")),
     )?))
 }
 
@@ -177,11 +140,26 @@ pub struct DatabaseState {
 
 impl DatabaseState {
     /// Create a database state, intended to only be instantiated once (held in the DATABASE_STATE static)
-    ///
-    /// This searches for the best DB to use by comparing the cycle and revision of both the downloaded (in work folder) and bundled navigation data.
-    fn new() -> Result<Self> {
+    fn new() -> Self {
         // Start out with a fresh instance
         let mut instance = Self::default();
+
+        // Try to load a DB
+        match instance.try_load_db() {
+            Ok(()) => {}
+            Err(e) => {
+                capture_anyhow(&e);
+                println!("[NAVIGRAPH]: Error trying to load DB: {e}");
+            }
+        }
+
+        instance
+    }
+
+    /// Try to load a database (either bundled or downloaded)
+    ///
+    /// This searches for the best DB to use by comparing the cycle and revision of both the downloaded (in work folder) and bundled navigation data.
+    fn try_load_db(&mut self) -> Result<()> {
         // Get distribution info of both bundled and downloaded DBs, if they exist
         let bundled_distribution = get_bundled_db()?;
         let downloaded_distribution =
@@ -221,7 +199,7 @@ impl DatabaseState {
 
         // If we somehow don't have a cycle in bundled or downloaded, return an empty instance
         let Some(latest) = latest else {
-            return Ok(instance);
+            return Ok(());
         };
 
         // Ensure parent folder exists (ignore the result as it will return an error if it already exists)
@@ -236,9 +214,9 @@ impl DatabaseState {
         }
 
         // The only way this can fail (since we know now that the path is valid) is if the file is corrupt, in which case we should report to sentry
-        instance.open_connection()?;
+        self.open_connection()?;
 
-        Ok(instance)
+        return Ok(());
     }
 
     fn get_database(&self) -> Result<&Connection> {
