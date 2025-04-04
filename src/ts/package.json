@@ -20,7 +20,8 @@
   ],
   "scripts": {
     "build": "tsup",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@microsoft/msfs-types": "^1.14.6",

@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "cross-env DEBUG=false npx rollup -c",
+    "typecheck": "tsc --noEmit",
     "dev": "cross-env DEBUG=false npx rollup -c && cross-env DEBUG=true npx rollup -cw",
     "lint": "eslint . --ext .ts,.tsx"
   },
