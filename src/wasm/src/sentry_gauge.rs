@@ -256,8 +256,14 @@ where
         }));
 
         let config = Config::get_config();
-        scope.set_tag("developer", if let Some(config) = &config { config.addon.developer.clone() } else { "unknown".into() });
-        scope.set_tag("product", if let Some(config) = &config { config.addon.product.clone() } else { "unknown".into() });
+        scope.set_tag(
+            "developer",
+            config.as_ref().map_or("unknown", |c| &c.addon.developer),
+        );
+        scope.set_tag(
+            "product",
+            config.as_ref().map_or("unknown", |c| &c.addon.product),
+        );
     });
 
     // Drain any pending reports. We need to structure it like this as opposed to just a top level `let Ok(state) = ...`` due to the fact we should not be holding a MutexGuard across an await point
@@ -327,8 +333,6 @@ where
 
     Ok(())
 }
-
-
 
 /// A convenience macro to handle the gauge entrypoint and sentry wrapping around a struct that implements `SentryGauge`
 ///
