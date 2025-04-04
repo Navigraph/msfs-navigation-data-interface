@@ -217,6 +217,12 @@ pub trait SentryGauge {
     fn update(&mut self) -> Result<()>;
 }
 
+fn set_sentry_tags(scope: &mut sentry::Scope) {
+    let config = Config::get_config();
+    scope.set_tag("developer", if let Some(config) = &config { config.addon.developer.clone() } else { "unknown".into() });
+    scope.set_tag("product", if let Some(config) = &config { config.addon.product.clone() } else { "unknown".into() });
+}
+
 /// Create a sentry "executor" around a gauge
 ///
 /// Note: This MUST be the first function called within a gauge callback. Nothing will run after this
@@ -255,10 +261,7 @@ where
             ..Default::default()
         }));
 
-        let config = Config::get_config();
-
-        scope.set_tag("developer", if let Some(config) = config { config.addon.developer } else { "unknown".into() });
-        scope.set_tag("product", if let Some(config) = config { config.addon.product} else { "unknown".into() });
+        set_sentry_tags(scope);
     });
 
     // Drain any pending reports. We need to structure it like this as opposed to just a top level `let Ok(state) = ...`` due to the fact we should not be holding a MutexGuard across an await point
@@ -328,6 +331,8 @@ where
 
     Ok(())
 }
+
+
 
 /// A convenience macro to handle the gauge entrypoint and sentry wrapping around a struct that implements `SentryGauge`
 ///
