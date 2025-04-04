@@ -6,26 +6,26 @@ import {
   ObjectSubject,
   Subject,
   VNode,
-} from "@microsoft/msfs-sdk"
-import { Coordinates, NavigraphNavigationDataInterface } from "@navigraph/msfs-navigation-data-interface"
-import { Checkbox, Input } from "../../Input"
-import { Button, InterfaceNavbarItemV2, InterfaceSwitch } from "../../Utils"
+} from "@microsoft/msfs-sdk";
+import { Coordinates, NavigraphNavigationDataInterface } from "@navigraph/msfs-navigation-data-interface";
+import { Checkbox, Input } from "../../Input";
+import { Button, InterfaceNavbarItemV2, InterfaceSwitch } from "../../Utils";
 
 interface TestPageProps extends ComponentProps {
-  interface: NavigraphNavigationDataInterface
+  interface: NavigraphNavigationDataInterface;
 }
 
 interface FunctionDescriptor {
-  index: number
-  arguments: string[]
-  name: string
-  functionCallback: (input?: string, inputAlt?: string) => Promise<unknown>
+  index: number;
+  arguments: string[];
+  name: string;
+  functionCallback: (input?: string, inputAlt?: string) => Promise<unknown>;
 }
 
 interface InputState {
-  active: boolean
-  type: InputStateType
-  hint: string
+  active: boolean;
+  type: InputStateType;
+  hint: string;
 }
 
 enum InputStateType {
@@ -215,107 +215,107 @@ export class TestPage extends DisplayComponent<TestPageProps> {
       name: "GetDatabaseInfo",
       functionCallback: () => this.props.interface.get_database_info(),
     },
-  ]
+  ];
 
-  private readonly input1 = Subject.create("")
-  private readonly input2 = Subject.create("")
-  private readonly output = Subject.create("")
-  private readonly selectedFunction = Subject.create(0)
-  private readonly selectedFunctionObj = this.selectedFunction.map(index => this.functionList[index])
+  private readonly input1 = Subject.create("");
+  private readonly input2 = Subject.create("");
+  private readonly output = Subject.create("");
+  private readonly selectedFunction = Subject.create(0);
+  private readonly selectedFunctionObj = this.selectedFunction.map(index => this.functionList[index]);
   private readonly input1State = ObjectSubject.create<InputState>({
     active: false,
     type: InputStateType.String,
     hint: this.functionList[this.selectedFunction.get()].arguments[0] ?? "",
-  })
+  });
   private readonly input2State = ObjectSubject.create<InputState>({
     active: false,
     type: InputStateType.String,
     hint: this.functionList[this.selectedFunction.get()].arguments[1] ?? "",
-  })
+  });
 
   private doubleInputCss = MappedSubject.create(
     ([input1, input2]) =>
       `flex flex-row h-16 bg-ng-background-500 items-center p-2 ${input1.active && input2.active ? "space-x-2" : ""}`,
     this.input1State,
     this.input2State,
-  )
+  );
 
   private strToBool(input?: string): boolean {
-    return input == "true" ? true : false
+    return input == "true" ? true : false;
   }
 
   private strToCoords(input?: string): Coordinates {
-    const splitInput = (input ?? "").replace(/[(){}\s]/g, "").split(",")
+    const splitInput = (input ?? "").replace(/[(){}\s]/g, "").split(",");
 
     const coords: Coordinates = {
       lat: Number(splitInput[0] ?? 0.0),
       long: Number(splitInput[1] ?? 0.0),
-    }
+    };
 
-    return coords
+    return coords;
   }
 
   private handleFunction = () => {
-    const functionObj = this.selectedFunctionObj.get()
-    const input1 = this.input1.get()
-    const input2 = this.input2.get()
+    const functionObj = this.selectedFunctionObj.get();
+    const input1 = this.input1.get();
+    const input2 = this.input2.get();
 
     functionObj
       .functionCallback(input1, input2)
       .then(obj => this.output.set(JSON.stringify(obj, null, 2)))
-      .catch(err => this.output.set(JSON.stringify(err, null, 2)))
-  }
+      .catch(err => this.output.set(JSON.stringify(err, null, 2)));
+  };
 
   onAfterRender(node: VNode): void {
-    super.onAfterRender(node)
+    super.onAfterRender(node);
 
     this.selectedFunctionObj.map(functionObj => {
-      const functionArgCount = functionObj.arguments.length
+      const functionArgCount = functionObj.arguments.length;
 
       switch (functionArgCount) {
         case 1: {
-          this.input1State.set("active", true)
-          this.input2State.set("active", false)
-          break
+          this.input1State.set("active", true);
+          this.input2State.set("active", false);
+          break;
         }
         case 2: {
-          this.input1State.set("active", true)
-          this.input2State.set("active", true)
-          break
+          this.input1State.set("active", true);
+          this.input2State.set("active", true);
+          break;
         }
         default: {
-          this.input1State.set("active", false)
-          this.input2State.set("active", false)
-          break
+          this.input1State.set("active", false);
+          this.input2State.set("active", false);
+          break;
         }
       }
 
-      this.input1.set("")
-      this.input2.set("")
+      this.input1.set("");
+      this.input2.set("");
 
       functionObj.arguments.forEach((value, index) => {
-        const argumentType = value.includes("bool") ? InputStateType.Bool : InputStateType.String
+        const argumentType = value.includes("bool") ? InputStateType.Bool : InputStateType.String;
 
         switch (index) {
           case 1: {
-            this.input2State.set("type", argumentType)
-            this.input2State.set("hint", functionObj.arguments[1])
+            this.input2State.set("type", argumentType);
+            this.input2State.set("hint", functionObj.arguments[1]);
             if (argumentType === InputStateType.Bool) {
-              this.input2.set("false")
+              this.input2.set("false");
             }
-            break
+            break;
           }
           default: {
-            this.input1State.set("type", argumentType)
-            this.input1State.set("hint", functionObj.arguments[0])
+            this.input1State.set("type", argumentType);
+            this.input1State.set("hint", functionObj.arguments[0]);
             if (argumentType === InputStateType.Bool) {
-              this.input1.set("false")
+              this.input1.set("false");
             }
-            break
+            break;
           }
         }
-      })
-    })
+      });
+    });
   }
 
   render(): VNode {
@@ -428,6 +428,6 @@ export class TestPage extends DisplayComponent<TestPageProps> {
           </div>
         </div>
       </div>
-    )
+    );
   }
 }

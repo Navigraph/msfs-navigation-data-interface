@@ -1,9 +1,9 @@
-import { ComponentProps, DisplayComponent, FSComponent, Subscribable, VNode } from "@microsoft/msfs-sdk"
-import { NavigationDataStatus, NavigraphNavigationDataInterface } from "@navigraph/msfs-navigation-data-interface"
+import { ComponentProps, DisplayComponent, FSComponent, Subscribable, VNode } from "@microsoft/msfs-sdk";
+import { NavigationDataStatus, NavigraphNavigationDataInterface } from "@navigraph/msfs-navigation-data-interface";
 
 interface DashboardProps extends ComponentProps {
-  databaseInfo: Subscribable<NavigationDataStatus | null>
-  interface: NavigraphNavigationDataInterface
+  databaseInfo: Subscribable<NavigationDataStatus | null>;
+  interface: NavigraphNavigationDataInterface;
 }
 
 export class Dashboard extends DisplayComponent<DashboardProps> {
@@ -15,12 +15,12 @@ export class Dashboard extends DisplayComponent<DashboardProps> {
           <ActiveDatabase databaseInfo={this.props.databaseInfo} />
         </div>
       </div>
-    )
+    );
   }
 }
 
 interface ActiveDatabaseProps extends ComponentProps {
-  databaseInfo: Subscribable<NavigationDataStatus | null>
+  databaseInfo: Subscribable<NavigationDataStatus | null>;
   // : MappedSubscribable<boolean>
 }
 
@@ -62,6 +62,6 @@ class ActiveDatabase extends DisplayComponent<ActiveDatabaseProps> {
           </div>
         </div>
       </div>
-    )
+    );
   }
 }
