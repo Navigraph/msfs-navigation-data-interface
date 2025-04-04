@@ -1,6 +1,5 @@
 use std::fs::File;
 
-use anyhow::Result;
 use serde::Deserialize;
 
 /// The path to an optional addon-specific config file containing data about the addon
