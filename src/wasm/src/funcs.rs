@@ -1,6 +1,6 @@
 use std::{
     fs::{self, OpenOptions},
-    io::Cursor,
+    io::{Cursor, Write},
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -21,7 +21,11 @@ use crate::{
     DownloadProgressEvent, DownloadProgressPhase, InterfaceEvent,
 };
 
+/// The URL to get the latest available cycle number
 const LATEST_CYCLE_ENDPOINT: &str = "https://navdata.api.navigraph.com/info";
+
+/// The max size in bytes of each request during the download function (set to 4MB curently)
+const DOWNLOAD_CHUNK_SIZE_BYTES: usize = 4 * 1024 * 1024;
 
 /// The trait definition for a function that can be called through the navigation data interface
 trait Function: DeserializeOwned {
@@ -70,13 +74,54 @@ impl Function for DownloadNavigationData {
             unzipped: None,
         })?;
 
-        // Download the data
-        let data = NetworkRequestBuilder::new(&self.url)
-            .context("can't create new NetworkRequestBuilder")?
-            .get()
-            .context(".get() returned None")?
-            .wait_for_data()
-            .await?;
+        // We need to download the data in chunks of DOWNLOAD_CHUNK_SIZE_BYTES to avoid a timeout, so we need to keep track of a "working" accumulation of all responses
+        let mut bytes = vec![];
+
+        let mut current_byte_index = 0;
+        loop {
+            // Dispatch the request
+            let range_end = current_byte_index + DOWNLOAD_CHUNK_SIZE_BYTES - 1;
+            let request = NetworkRequestBuilder::new(&self.url)
+                .context("can't create new NetworkRequestBuilder")?
+                .with_header(&format!("Range: bytes={current_byte_index}-{range_end}"))
+                .context(".with_header() returned None")?
+                .get()
+                .context(".get() returned None")?;
+
+            request.wait_for_data().await?;
+
+            // Get the size of actual data. The response will be as long as the requested range is, but content-length contains the amount we actually want to read
+            let content_length = request
+                .header_section("content-length")
+                .context("no content-length header")?
+                .trim()
+                .parse::<usize>()?;
+
+            // Check if we somehow have no more data (file size would be a perfect multiple of DOWNLOAD_CHUNK_SIZE_BYTES)
+            if content_length == 0 {
+                break;
+            }
+
+            let data = request.data().ok_or(anyhow!("no data"))?;
+
+            // Make sure we don't panic if server sent less data than claimed (should never happen, but avoid a panic)
+            if data.len() < content_length {
+                return Err(anyhow!(
+                    "Received less data ({}) than content-length ({})",
+                    data.len(),
+                    content_length
+                ));
+            }
+
+            bytes.write_all(&data[..content_length])?;
+
+            // Check if we have hit the last chunk
+            if content_length < DOWNLOAD_CHUNK_SIZE_BYTES {
+                break;
+            }
+
+            current_byte_index += content_length;
+        }
 
         // Only close connection if DATABASE_STATE has already been initialized - otherwise we end up unnecessarily copying the bundled data and instantly replacing it (due to initialization logic in database state)
         if Lazy::get(&DATABASE_STATE).is_some() {
@@ -103,7 +148,7 @@ impl Function for DownloadNavigationData {
         })?;
 
         // Load the zip archive
-        let mut zip = ZipArchive::new(Cursor::new(data))?;
+        let mut zip = ZipArchive::new(Cursor::new(bytes))?;
 
         // Ensure parent folder exists (ignore the result as it will return an error if it already exists)
         let _ = fs::create_dir_all(WORK_NAVIGATION_DATA_FOLDER);
