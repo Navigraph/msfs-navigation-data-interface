@@ -131,6 +131,8 @@ impl SentryPersistentState {
     ///
     /// Note: This MUST be called every frame, otherwise we *will* miss state updates on requests as DataReady is only available for a single frame
     pub fn update(&mut self) -> Result<()> {
+        let initial_reports_size = self.reports.len();
+
         self.reports.retain_mut(|r| {
             // Get the request in the report. If one does not exist, create a request
             let Some(request) = r.request else {
@@ -142,7 +144,10 @@ impl SentryPersistentState {
             request.state() != NetworkRequestState::DataReady
         });
 
-        self.flush()?;
+        // Only flush if reports size changed
+        if self.reports.len() != initial_reports_size {
+            self.flush()?;
+        }
 
         Ok(())
     }
