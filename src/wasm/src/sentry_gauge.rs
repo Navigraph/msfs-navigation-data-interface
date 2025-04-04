@@ -255,14 +255,10 @@ where
             ..Default::default()
         }));
 
-        scope.set_tag(
-            "addon",
-            if let Some(config) = Config::get_config() {
-                format!("{}/{}", config.addon.developer, config.addon.product)
-            } else {
-                "Unknown".into()
-            },
-        );
+        let config = Config::get_config();
+
+        scope.set_tag("developer", if let Some(config) = config { config.addon.developer } else { "unknown".into() });
+        scope.set_tag("product", if let Some(config) = config { config.addon.product} else { "unknown".into() });
     });
 
     // Drain any pending reports. We need to structure it like this as opposed to just a top level `let Ok(state) = ...`` due to the fact we should not be holding a MutexGuard across an await point
