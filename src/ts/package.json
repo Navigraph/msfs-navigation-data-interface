@@ -1,0 +1,29 @@
+{
+  "name": "@navigraph/msfs-navigation-data-interface",
+  "version": "1.1.1",
+  "description": "JS interface that facilitates interactions with the Navigraph WASM navigation data module.",
+  "homepage": "https://navigraph.com",
+  "main": "dist/msfs-navigation-data-interface.mjs",
+  "typings": "dist/msfs-navigation-data-interface.d.mts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Navigraph/msfs-navigation-data-interface.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Navigraph",
+  "license": "MIT",
+  "files": [
+    "package.json",
+    "dist/**"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "lint": "eslint . --ext .ts"
+  },
+  "devDependencies": {
+    "@microsoft/msfs-types": "^1.14.6",
+    "tsup": "^8.4.0"
+  }
+}
