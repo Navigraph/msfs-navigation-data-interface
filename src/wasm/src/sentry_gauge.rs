@@ -248,7 +248,7 @@ where
         .user_id
         .to_string();
 
-    // Configure the sentry scope to report the user ID and sentry config (if present)
+    // Configure the sentry scope to report the user ID and addon info
     sentry::configure_scope(|scope| {
         scope.set_user(Some(sentry::User {
             id: Some(user_id),
