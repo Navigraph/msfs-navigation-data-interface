@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -64,9 +65,7 @@ export class List extends DisplayComponent<ListProps> {
       case SubscribableArrayEventType.Removed:
         {
           if (Array.isArray(item)) {
-            for (let i = 0; i < item.length; i++) {
-              this.removeDomNode(index);
-            }
+            item.forEach(() => this.removeDomNode(index));
           } else {
             this.removeDomNode(index);
           }

@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 import prettierlint from "eslint-plugin-prettier/recommended";
 
 export default tseslint.config(
-  { ignores: ["**/dist/**", "rollup.config.mjs"] },
+  { ignores: ["**/dist/**"] },
   { languageOptions: { globals: globals.browser } },
   {
     rules: {

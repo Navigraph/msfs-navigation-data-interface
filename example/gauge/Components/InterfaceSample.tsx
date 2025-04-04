@@ -1,19 +1,10 @@
-import {
-  ArraySubject,
-  ComponentProps,
-  DisplayComponent,
-  EventBus,
-  FSComponent,
-  Subject,
-  VNode,
-} from "@microsoft/msfs-sdk";
-import { NavigraphNavigationDataInterface } from "@navigraph/msfs-navigation-data-interface";
-import "./InterfaceSample.css";
-import { NavigationDataStatus } from "@navigraph/msfs-navigation-data-interface";
+import { ComponentProps, DisplayComponent, EventBus, FSComponent, Subject, VNode } from "@microsoft/msfs-sdk";
+import { NavigationDataStatus, NavigraphNavigationDataInterface } from "@navigraph/msfs-navigation-data-interface";
 import { AuthPage } from "./Pages/Auth/Auth";
 import { Dashboard } from "./Pages/Dashboard/Dashboard";
 import { TestPage } from "./Pages/Test/Test";
 import { InterfaceNavbar, InterfaceSwitch } from "./Utils";
+import "./InterfaceSample.css";
 
 interface InterfaceSampleProps extends ComponentProps {
   bus: EventBus;

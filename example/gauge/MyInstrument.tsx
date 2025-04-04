@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/class-literal-property-style */
 /// <reference types="@microsoft/msfs-types/Pages/VCockpit/Core/VCockpit" />
 
 import { EventBus, FSComponent } from "@microsoft/msfs-sdk";

@@ -123,8 +123,8 @@ export interface ProcedureAuthorization {
 }
 
 export enum Authorized {
-  Authorized = "A",
-  NotAuthorized = "N",
+  "Authorized" = "A",
+  "NotAuthorized" = "N",
 }
 
 export interface ProcedureLegBase {

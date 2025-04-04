@@ -3,7 +3,8 @@ import replace from "@rollup/plugin-replace";
 import dotenv from "dotenv";
 import copy from "rollup-plugin-copy";
 import esbuild from "rollup-plugin-esbuild";
-// import css from "rollup-plugin-import-css"
+import autoprefixer from "autoprefixer";
+import tailwind from "tailwindcss";
 import postcss from "rollup-plugin-postcss";
 
 dotenv.config();
@@ -35,6 +36,8 @@ export default {
     postcss({
       extract: true,
       minimize: true,
+      plugins: [tailwind, autoprefixer], // @ts-ignore
+      use: { sass: { silenceDeprecations: ["legacy-js-api"] } },
       output: "MyInstrument.css",
     }),
     copy({

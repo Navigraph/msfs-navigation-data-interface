@@ -1,4 +1,4 @@
-import { ComponentProps, DisplayComponent, FSComponent, Subscribable, VNode } from "@microsoft/msfs-sdk";
+import { ComponentProps, DisplayComponent, FSComponent, VNode } from "@microsoft/msfs-sdk";
 import {
   DownloadProgressPhase,
   NavigationDataStatus,
