@@ -19,11 +19,12 @@ jobs:
         run: |
           echo SENTRY_URL=${{ secrets.SENTRY_URL }} >> .env
 
+      - name: Install Bun
+          uses: oven-sh/setup-bun@v2
+
       - name: Build WASM
-        uses: oven-sh/setup-bun@v2
         run: |
           bun install
-          bun run package
 
       - name: Release
         uses: softprops/action-gh-release@v1
