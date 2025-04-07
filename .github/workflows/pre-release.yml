@@ -18,12 +18,15 @@ jobs:
         run: |
           echo SENTRY_URL=${{ secrets.SENTRY_URL }} >> .env
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install node modules
+        run: bun i --frozen-lockfile
 
       - name: Build WASM
-        run: |
-          bun install
+        run: bun run package
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v1

@@ -80,13 +80,15 @@ jobs:
           echo NAVIGATION_DATA_SIGNED_URL=${{ secrets.NAVIGATION_DATA_SIGNED_URL }} >> .env
           echo SENTRY_URL=${{ secrets.SENTRY_URL }} >> .env
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install node modules
+        run: bun i --frozen-lockfile
 
       - name: Build WASM
-        run: |
-          bun install
-          bun run package
+        run: bun run package
 
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v4
