@@ -1,6 +1,6 @@
 import { $ } from "bun";
-import { existsSync, mkdirSync, readFileSync, rmdirSync } from "node:fs";
-import { resolve, normalize, join, dirname } from "node:path";
+import { existsSync, mkdirSync, rmdirSync, readFileSync } from "node:fs";
+import { dirname, join, normalize, resolve } from "node:path";
 
 /// The type returned from the `cargo-msfs info -f` command
 interface InstalledSdkVersions {
@@ -18,8 +18,10 @@ function findWorkspaceRoot() {
   do {
     // Try reading a package.json in this directory
     const packageJson = join(current, "package.json");
+
     if (existsSync(packageJson)) {
-      const manifest = JSON.parse(readFileSync(packageJson, "utf8"));
+      const manifest = JSON.parse(readFileSync(packageJson, "utf-8")) as { workspaces?: string[] };
+
       // Check if there is workspaces, meaning this is root
       if (manifest.workspaces) {
         return current;
@@ -101,7 +103,7 @@ async function main() {
     -w /workspace${relativeWorkdDir} \
     ${IMAGE_NAME} \
     bash -c "cargo-msfs build ${version} -i ./src/wasm -o ./${relativeSimDir}/msfs_navigation_data_interface.wasm"`.catch(
-      err => process.exit(err.exitCode ?? 1),
+      (err: { exitCode?: number }) => process.exit(err.exitCode ?? 1),
     );
   }
 }
