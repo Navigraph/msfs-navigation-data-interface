@@ -1,5 +1,5 @@
 use std::{
-    fs::{File, OpenOptions},
+    fs::OpenOptions,
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
@@ -15,20 +15,19 @@ use sentry::integrations::anyhow::capture_anyhow;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// The path to the manifest.json in the addon folder
-const MANIFEST_FILE_PATH: &str = ".\\manifest.json";
+use crate::config::Config;
 
 /// The path to the sentry persistent state file
 const SENTRY_FILE: &str = "\\work/ng_sentry.json";
 
-// The amount of seconds between forced Sentry flushes
+/// The amount of seconds between forced Sentry flushes
 const SENTRY_FLUSH_INTERVAL_SECONDS: u64 = 60;
 
-// The global Sentry state instance
+/// The global Sentry state instance
 static SENTRY_STATE: Lazy<Mutex<SentryPersistentState>> =
     Lazy::new(|| Mutex::new(SentryPersistentState::load()));
 
-// A pending sentry report
+/// A pending sentry report
 #[derive(Deserialize, Serialize)]
 struct PendingSentryReport {
     url: String,
@@ -131,6 +130,8 @@ impl SentryPersistentState {
     ///
     /// Note: This MUST be called every frame, otherwise we *will* miss state updates on requests as DataReady is only available for a single frame
     pub fn update(&mut self) -> Result<()> {
+        let initial_reports_size = self.reports.len();
+
         self.reports.retain_mut(|r| {
             // Get the request in the report. If one does not exist, create a request
             let Some(request) = r.request else {
@@ -142,7 +143,10 @@ impl SentryPersistentState {
             request.state() != NetworkRequestState::DataReady
         });
 
-        self.flush()?;
+        // Only flush if reports size changed
+        if self.reports.len() != initial_reports_size {
+            self.flush()?;
+        }
 
         Ok(())
     }
@@ -242,18 +246,6 @@ where
         },
     ));
 
-    // In order to track what addon the reports are coming from, we need to parse the manifest.json file to extract relevant info
-    let manifest = {
-        #[derive(Deserialize)]
-        struct Manifest {
-            title: String,
-            creator: String,
-            package_version: String,
-        }
-        let manifest_file = File::open(MANIFEST_FILE_PATH)?;
-        serde_json::from_reader::<_, Manifest>(manifest_file)?
-    };
-
     // Get the user ID from persistent state
     let user_id = SENTRY_STATE
         .try_lock()
@@ -261,19 +253,21 @@ where
         .user_id
         .to_string();
 
-    // Configure the sentry scope to report the user ID and plugin info loaded from manifest.json
+    // Configure the sentry scope to report the user ID and addon info
     sentry::configure_scope(|scope| {
         scope.set_user(Some(sentry::User {
             id: Some(user_id),
             ..Default::default()
         }));
 
+        let config = Config::get_config();
         scope.set_tag(
-            "plugin",
-            format!(
-                "{}/{}@{}",
-                manifest.creator, manifest.title, manifest.package_version
-            ),
+            "developer",
+            config.as_ref().map_or("unknown", |c| &c.addon.developer),
+        );
+        scope.set_tag(
+            "product",
+            config.as_ref().map_or("unknown", |c| &c.addon.product),
         );
     });
 
