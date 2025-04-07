@@ -21,28 +21,18 @@ mod sentry_gauge;
 /// Amount of MS between dispatches of the heartbeat commbus event
 const HEARTBEAT_INTERVAL_MS: u128 = 1000;
 
-/// The current phase of downloading
-#[derive(Serialize)]
-pub enum DownloadProgressPhase {
-    Downloading,
-    Cleaning,
-    Extracting,
-}
-
 /// The data associated with the `DownloadProgress` event
 #[derive(Serialize)]
 pub struct DownloadProgressEvent {
-    pub phase: DownloadProgressPhase,
-    pub deleted: Option<usize>,
-    pub total_to_unzip: Option<usize>,
-    pub unzipped: Option<usize>,
+    pub total_bytes: usize,
+    pub downloaded_bytes: usize,
 }
 
 /// The types of events that can be emitted from the interface
 #[derive(Serialize)]
 enum NavigraphEventType {
     Heartbeat,
-    DownloadProgress, // TODO: remove in a future version. here for backwards compatibility
+    DownloadProgress,
 }
 
 /// The structure of an event message

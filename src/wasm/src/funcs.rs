@@ -18,7 +18,7 @@ use crate::{
         WORK_NAVIGATION_DATA_FOLDER,
     },
     futures::AsyncNetworkRequest,
-    DownloadProgressEvent, DownloadProgressPhase, InterfaceEvent,
+    DownloadProgressEvent, InterfaceEvent,
 };
 
 /// The URL to get the latest available cycle number
@@ -66,12 +66,30 @@ impl Function for DownloadNavigationData {
     type ReturnType = ();
 
     async fn run(&mut self) -> Result<Self::ReturnType> {
-        // Send an initial progress event TODO: remove these in a breaking version, these are only here for backwards compatibility
+        // Figure out total size of download (this request is acting like a HEAD since we don't have those in this environment. Nothing actually gets downloaded since we are constraining the range)
+        let request = NetworkRequestBuilder::new(&self.url)
+            .context("can't create new NetworkRequestBuilder")?
+            .with_header(&format!("Range: bytes=0-0"))
+            .context(".with_header() returned None")?
+            .get()
+            .context(".get() returned None")?;
+
+        request.wait_for_data().await?;
+
+        // Try parsing the content-range header
+        let total_bytes = request
+            .header_section("content-range")
+            .context("no content-range header")?
+            .trim()
+            .split("/")
+            .last()
+            .ok_or(anyhow!("invalid content-range"))?
+            .parse::<usize>()?;
+
+        // Report the amount
         InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
-            phase: DownloadProgressPhase::Downloading,
-            deleted: None,
-            total_to_unzip: None,
-            unzipped: None,
+            total_bytes,
+            downloaded_bytes: 0,
         })?;
 
         // We need to download the data in chunks of DOWNLOAD_CHUNK_SIZE_BYTES to avoid a timeout, so we need to keep track of a "working" accumulation of all responses
@@ -121,6 +139,12 @@ impl Function for DownloadNavigationData {
             }
 
             current_byte_index += content_length;
+
+            // Send the current download amount
+            InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
+                total_bytes,
+                downloaded_bytes: current_byte_index,
+            })?;
         }
 
         // Only close connection if DATABASE_STATE has already been initialized - otherwise we end up unnecessarily copying the bundled data and instantly replacing it (due to initialization logic in database state)
@@ -131,21 +155,6 @@ impl Function for DownloadNavigationData {
                 .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
                 .close_connection()?;
         }
-
-        // Send the deleting and extraction events
-        InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
-            phase: DownloadProgressPhase::Cleaning,
-            deleted: Some(2),
-            total_to_unzip: None,
-            unzipped: None,
-        })?;
-
-        InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
-            phase: DownloadProgressPhase::Extracting,
-            deleted: None,
-            total_to_unzip: Some(2),
-            unzipped: None,
-        })?;
 
         // Load the zip archive
         let mut zip = ZipArchive::new(Cursor::new(bytes))?;

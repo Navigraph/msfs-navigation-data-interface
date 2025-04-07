@@ -11,17 +11,9 @@ export enum NavigraphEventType {
   DownloadProgress = "DownloadProgress",
 }
 
-export enum DownloadProgressPhase {
-  Downloading = "Downloading",
-  Cleaning = "Cleaning",
-  Extracting = "Extracting",
-}
-
 export interface DownloadProgressData {
-  phase: DownloadProgressPhase;
-  deleted: number | null;
-  total_to_unzip: number | null;
-  unzipped: number | null;
+  total_bytes: number;
+  downloaded_bytes: number;
 }
 
 export enum NavigraphFunction {
