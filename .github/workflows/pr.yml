@@ -81,12 +81,14 @@ jobs:
           echo SENTRY_URL=${{ secrets.SENTRY_URL }} >> .env
 
       - name: Build WASM
-        run: ./scripts/workflow.sh
+        uses: oven-sh/setup-bun@v2
+        run: |
+          bun install
+          bun run package
 
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: msfs_navigation_data_interface
+          name: wasm
           path: |
-            ./2020.zip
-            ./2024.zip
+            ./wasm.zip

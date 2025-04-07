@@ -23,5 +23,4 @@ target/
 *.local
 .DS_Store
 
-test_work/
 dist

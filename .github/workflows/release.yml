@@ -20,14 +20,16 @@ jobs:
           echo SENTRY_URL=${{ secrets.SENTRY_URL }} >> .env
 
       - name: Build WASM
-        run: ./scripts/workflow.sh
+        uses: oven-sh/setup-bun@v2
+        run: |
+          bun install
+          bun run package
 
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./2020.zip
-            ./2024.zip
+            ./wasm.zip
           generate_release_notes: true
 
   # Enable in future to automate publishing of NPM package

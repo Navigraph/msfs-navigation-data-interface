@@ -1,4 +1,4 @@
-FROM rust:1.84
+FROM rust:1.84.1
 
 # Install needed packages and clean up
 RUN apt update && \
@@ -18,6 +18,9 @@ RUN rustup target install wasm32-wasip1
 
 # Install cargo-msfs
 RUN cargo install --git https://github.com/navigraph/cargo-msfs
+
+# Cache bust arg to re-install both SDKs
+ARG CACHEBUST
 
 # Install MSFS2020 and MSFS2024 SDK
 RUN cargo-msfs install msfs2020 && \
