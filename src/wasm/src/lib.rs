@@ -24,8 +24,14 @@ const HEARTBEAT_INTERVAL_MS: u128 = 1000;
 /// The data associated with the `DownloadProgress` event
 #[derive(Serialize)]
 pub struct DownloadProgressEvent {
+    /// The total amount of bytes to download
     pub total_bytes: usize,
+    /// The amount of bytes downloaded
     pub downloaded_bytes: usize,
+    /// The chunk number (starting at 0) of the current download
+    pub current_chunk: usize,
+    /// The total number of chunks needed to download
+    pub total_chunks: usize,
 }
 
 /// The types of events that can be emitted from the interface

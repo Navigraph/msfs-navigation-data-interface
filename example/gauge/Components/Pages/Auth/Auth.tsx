@@ -28,7 +28,9 @@ export class AuthPage extends DisplayComponent<AuthPageProps> {
     super(props);
 
     this.props.navigationDataInterface.onEvent(NavigraphEventType.DownloadProgress, data => {
-      this.displayMessage(`Downloaded ${data.downloaded_bytes}/${data.total_bytes} bytes`);
+      this.displayMessage(
+        `Downloaded ${data.downloaded_bytes}/${data.total_bytes} bytes (chunk ${data.current_chunk}/${data.total_chunks})`,
+      );
     });
   }
 

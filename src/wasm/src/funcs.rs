@@ -86,65 +86,36 @@ impl Function for DownloadNavigationData {
             .ok_or(anyhow!("invalid content-range"))?
             .parse::<usize>()?;
 
-        // Report the amount
-        InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
-            total_bytes,
-            downloaded_bytes: 0,
-        })?;
+        // Total amount of chunks to download
+        let total_chunks = total_bytes.div_ceil(DOWNLOAD_CHUNK_SIZE_BYTES);
 
         // We need to download the data in chunks of DOWNLOAD_CHUNK_SIZE_BYTES to avoid a timeout, so we need to keep track of a "working" accumulation of all responses
         let mut bytes = vec![];
 
-        let mut current_byte_index = 0;
-        loop {
-            // Dispatch the request
-            let range_end = current_byte_index + DOWNLOAD_CHUNK_SIZE_BYTES - 1;
-            let request = NetworkRequestBuilder::new(&self.url)
-                .context("can't create new NetworkRequestBuilder")?
-                .with_header(&format!("Range: bytes={current_byte_index}-{range_end}"))
-                .context(".with_header() returned None")?
-                .get()
-                .context(".get() returned None")?;
+        for i in 0..total_chunks {
+            // Calculate the range for the current chunk
+            let range_start = i * DOWNLOAD_CHUNK_SIZE_BYTES;
+            let range_end = ((i + 1) * DOWNLOAD_CHUNK_SIZE_BYTES - 1).min(total_bytes - 1);
 
-            request.wait_for_data().await?;
-
-            // Get the size of actual data. The response will be as long as the requested range is, but content-length contains the amount we actually want to read
-            let content_length = request
-                .header_section("content-length")
-                .context("no content-length header")?
-                .trim()
-                .parse::<usize>()?;
-
-            // Check if we somehow have no more data (file size would be a perfect multiple of DOWNLOAD_CHUNK_SIZE_BYTES)
-            if content_length == 0 {
-                break;
-            }
-
-            let data = request.data().ok_or(anyhow!("no data"))?;
-
-            // Make sure we don't panic if server sent less data than claimed (should never happen, but avoid a panic)
-            if data.len() < content_length {
-                return Err(anyhow!(
-                    "Received less data ({}) than content-length ({})",
-                    data.len(),
-                    content_length
-                ));
-            }
-
-            bytes.write_all(&data[..content_length])?;
-
-            // Check if we have hit the last chunk
-            if content_length < DOWNLOAD_CHUNK_SIZE_BYTES {
-                break;
-            }
-
-            current_byte_index += content_length;
-
-            // Send the current download amount
+            // Report the current download progress
             InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
                 total_bytes,
-                downloaded_bytes: current_byte_index,
+                downloaded_bytes: range_start,
+                current_chunk: i,
+                total_chunks,
             })?;
+
+            // Dispatch the request
+            let data = NetworkRequestBuilder::new(&self.url)
+                .context("can't create new NetworkRequestBuilder")?
+                .with_header(&format!("Range: bytes={range_start}-{range_end}"))
+                .context(".with_header() returned None")?
+                .get()
+                .context(".get() returned None")?
+                .wait_for_data()
+                .await?;
+
+            bytes.write_all(&data)?;
         }
 
         // Only close connection if DATABASE_STATE has already been initialized - otherwise we end up unnecessarily copying the bundled data and instantly replacing it (due to initialization logic in database state)

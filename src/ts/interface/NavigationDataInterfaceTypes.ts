@@ -14,6 +14,8 @@ export enum NavigraphEventType {
 export interface DownloadProgressData {
   total_bytes: number;
   downloaded_bytes: number;
+  current_chunk: number;
+  total_chunks: number;
 }
 
 export enum NavigraphFunction {
