@@ -71,7 +71,7 @@ await $`docker ps`.quiet().catch(() => {
 await $`docker image inspect ${IMAGE_NAME}:latest`.quiet().catch(async () => {
   const dockerfilePath = resolve(workspaceRoot, "Dockerfile");
   console.info(`[*] Building '${IMAGE_NAME}' image from ${dockerfilePath}`);
-  await $`docker build -t ${IMAGE_NAME} -f ${dockerfilePath} .`;
+  await $`docker build --no-cache -t ${IMAGE_NAME} -f ${dockerfilePath} .`;
 });
 
 // Ensure SDKs are up to date, rebuilding if needed
