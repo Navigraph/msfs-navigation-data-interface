@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/class-literal-property-style */
-/// <reference types="@microsoft/msfs-types/Pages/VCockpit/Core/VCockpit" />
+/// <reference types="@microsoft/msfs-types/pages/vcockpit/instruments/shared/baseinstrument" />
+/// <reference types="@microsoft/msfs-types/pages/vcockpit/core/vcockpit" />
 
 import { EventBus, FSComponent } from "@microsoft/msfs-sdk";
 import { InterfaceSample } from "./Components/InterfaceSample";
