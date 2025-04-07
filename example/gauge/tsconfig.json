@@ -10,8 +10,7 @@
     "moduleResolution": "node" /* Enables compatibility with MSFS SDK bare global imports */,
     "jsxFactory": "FSComponent.buildComponent" /* Required for FSComponent framework JSX */,
     "jsxFragmentFactory": "FSComponent.Fragment" /* Required for FSComponent framework JSX */,
-    "jsx": "react" /* Required for FSComponent framework JSX */,
-    "types": ["@types/node", "../../src/ts/CommBus.d.ts"]
+    "jsx": "react" /* Required for FSComponent framework JSX */
   },
-  "include": ["**/*"]
+  "include": ["**/*", "../../src/ts/CommBus.d.ts"]
 }
