@@ -20,7 +20,7 @@ jobs:
           echo SENTRY_URL=${{ secrets.SENTRY_URL }} >> .env
 
       - name: Install Bun
-          uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@v2
 
       - name: Build WASM
         run: |
