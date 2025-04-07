@@ -76,7 +76,7 @@ await $`docker image inspect ${IMAGE_NAME}:latest`.quiet().catch(async () => {
 
 // Ensure SDKs are up to date, rebuilding if needed
 const installedSdks = JSON.parse(
-    await $`docker run --rm ${IMAGE_NAME} bash -c "cargo-msfs info -f"`.text(),
+  await $`docker run --rm ${IMAGE_NAME} bash -c "cargo-msfs info -f"`.text(),
 ) as InstalledSdkVersions;
 if (installedSdks.versions.some(v => !v.up_to_date)) {
   console.info("[*] Updating SDK in Docker image...");
