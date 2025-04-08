@@ -1,6 +1,6 @@
 use std::{
     fs::{self, OpenOptions},
-    io::Cursor,
+    io::{Cursor, Write},
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -18,10 +18,14 @@ use crate::{
         WORK_NAVIGATION_DATA_FOLDER,
     },
     futures::AsyncNetworkRequest,
-    DownloadProgressEvent, DownloadProgressPhase, InterfaceEvent,
+    DownloadProgressEvent, InterfaceEvent,
 };
 
+/// The URL to get the latest available cycle number
 const LATEST_CYCLE_ENDPOINT: &str = "https://navdata.api.navigraph.com/info";
+
+/// The max size in bytes of each request during the download function (set to 4MB curently)
+const DOWNLOAD_CHUNK_SIZE_BYTES: usize = 4 * 1024 * 1024;
 
 /// The trait definition for a function that can be called through the navigation data interface
 trait Function: DeserializeOwned {
@@ -62,21 +66,57 @@ impl Function for DownloadNavigationData {
     type ReturnType = ();
 
     async fn run(&mut self) -> Result<Self::ReturnType> {
-        // Send an initial progress event TODO: remove these in a breaking version, these are only here for backwards compatibility
-        InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
-            phase: DownloadProgressPhase::Downloading,
-            deleted: None,
-            total_to_unzip: None,
-            unzipped: None,
-        })?;
-
-        // Download the data
-        let data = NetworkRequestBuilder::new(&self.url)
+        // Figure out total size of download (this request is acting like a HEAD since we don't have those in this environment. Nothing actually gets downloaded since we are constraining the range)
+        let request = NetworkRequestBuilder::new(&self.url)
             .context("can't create new NetworkRequestBuilder")?
+            .with_header(&format!("Range: bytes=0-0"))
+            .context(".with_header() returned None")?
             .get()
-            .context(".get() returned None")?
-            .wait_for_data()
-            .await?;
+            .context(".get() returned None")?;
+
+        request.wait_for_data().await?;
+
+        // Try parsing the content-range header
+        let total_bytes = request
+            .header_section("content-range")
+            .context("no content-range header")?
+            .trim()
+            .split("/")
+            .last()
+            .ok_or(anyhow!("invalid content-range"))?
+            .parse::<usize>()?;
+
+        // Total amount of chunks to download
+        let total_chunks = total_bytes.div_ceil(DOWNLOAD_CHUNK_SIZE_BYTES);
+
+        // We need to download the data in chunks of DOWNLOAD_CHUNK_SIZE_BYTES to avoid a timeout, so we need to keep track of a "working" accumulation of all responses
+        let mut bytes = vec![];
+
+        for i in 0..total_chunks {
+            // Calculate the range for the current chunk
+            let range_start = i * DOWNLOAD_CHUNK_SIZE_BYTES;
+            let range_end = ((i + 1) * DOWNLOAD_CHUNK_SIZE_BYTES - 1).min(total_bytes - 1);
+
+            // Report the current download progress
+            InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
+                total_bytes,
+                downloaded_bytes: range_start,
+                current_chunk: i,
+                total_chunks,
+            })?;
+
+            // Dispatch the request
+            let data = NetworkRequestBuilder::new(&self.url)
+                .context("can't create new NetworkRequestBuilder")?
+                .with_header(&format!("Range: bytes={range_start}-{range_end}"))
+                .context(".with_header() returned None")?
+                .get()
+                .context(".get() returned None")?
+                .wait_for_data()
+                .await?;
+
+            bytes.write_all(&data)?;
+        }
 
         // Only close connection if DATABASE_STATE has already been initialized - otherwise we end up unnecessarily copying the bundled data and instantly replacing it (due to initialization logic in database state)
         if Lazy::get(&DATABASE_STATE).is_some() {
@@ -87,23 +127,8 @@ impl Function for DownloadNavigationData {
                 .close_connection()?;
         }
 
-        // Send the deleting and extraction events
-        InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
-            phase: DownloadProgressPhase::Cleaning,
-            deleted: Some(2),
-            total_to_unzip: None,
-            unzipped: None,
-        })?;
-
-        InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
-            phase: DownloadProgressPhase::Extracting,
-            deleted: None,
-            total_to_unzip: Some(2),
-            unzipped: None,
-        })?;
-
         // Load the zip archive
-        let mut zip = ZipArchive::new(Cursor::new(data))?;
+        let mut zip = ZipArchive::new(Cursor::new(bytes))?;
 
         // Ensure parent folder exists (ignore the result as it will return an error if it already exists)
         let _ = fs::create_dir_all(WORK_NAVIGATION_DATA_FOLDER);

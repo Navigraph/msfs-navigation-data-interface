@@ -1,6 +1,5 @@
 import { ComponentProps, DisplayComponent, FSComponent, VNode } from "@microsoft/msfs-sdk";
 import {
-  DownloadProgressPhase,
   NavigationDataStatus,
   NavigraphEventType,
   NavigraphNavigationDataInterface,
@@ -29,22 +28,9 @@ export class AuthPage extends DisplayComponent<AuthPageProps> {
     super(props);
 
     this.props.navigationDataInterface.onEvent(NavigraphEventType.DownloadProgress, data => {
-      switch (data.phase) {
-        case DownloadProgressPhase.Downloading:
-          this.displayMessage("Downloading navigation data...");
-          break;
-        case DownloadProgressPhase.Cleaning:
-          if (!data.deleted) return;
-          this.displayMessage(`Cleaning destination directory. ${data.deleted} files deleted so far`);
-          break;
-        case DownloadProgressPhase.Extracting: {
-          // Ensure non-null
-          if (!data.unzipped || !data.total_to_unzip) return;
-          const percent = Math.round((data.unzipped / data.total_to_unzip) * 100);
-          this.displayMessage(`Unzipping files... ${percent}% complete`);
-          break;
-        }
-      }
+      this.displayMessage(
+        `Downloaded ${data.downloaded_bytes}/${data.total_bytes} bytes (chunk ${data.current_chunk}/${data.total_chunks})`,
+      );
     });
   }
 
