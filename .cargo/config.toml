@@ -1,2 +1,3 @@
 [build]
 target = "wasm32-wasip1"
+target-dir = "targets/2020"

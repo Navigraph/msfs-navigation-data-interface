@@ -38,7 +38,7 @@ function findWorkspaceRoot() {
 }
 
 // Determine which version(s) to build based on command line argument --version
-const allowedVersions = ["msfs2020", "msfs2024"];
+const allowedVersions = ["2020", "2024"];
 
 const { values } = parseArgs({
   args: Bun.argv,
@@ -91,20 +91,28 @@ if (existsSync(outDir)) rmdirSync(outDir, { recursive: true });
 const relativeWorkdDir = process.cwd().replace(workspaceRoot, "").replaceAll("\\", "/");
 
 // Build the selected versions
-for (const version of versionsToBuild) {
-  console.info(`[*] Building for ${version}`);
+await Promise.all(
+  versionsToBuild.map(async simVersion => {
+    console.info(`[*] Building for ${simVersion}`);
 
-  // Create the subfolder
-  const simDir = join(outDir, version);
-  const relativeSimDir = simDir.replace(workspaceRoot, "").replaceAll("\\", "/");
-  mkdirSync(simDir, { recursive: true });
+    // Create the subfolder
+    const simDir = join(outDir, simVersion);
+    const relativeSimDir = simDir.replace(workspaceRoot, "").replaceAll("\\", "/");
+    mkdirSync(simDir, { recursive: true });
 
-  // Run cargo-msfs
-  await $`docker run \
-    -v ${workspaceRoot}:/workspace \
-    -w /workspace${relativeWorkdDir} \
-    ${IMAGE_NAME} \
-    bash -c "cargo-msfs build ${version} -i ./src/wasm -o ./${relativeSimDir}/msfs_navigation_data_interface.wasm"`.catch(
-    (err: { exitCode?: number }) => process.exit(err.exitCode ?? 1),
-  );
-}
+    // Run cargo-msfs
+    await $`docker run \
+      --rm -t \
+      --name msfs-${simVersion}-wasm-builder \
+      -v ${workspaceRoot}:/workspace \
+      -w /workspace${relativeWorkdDir} \
+      -e CARGO_TARGET_DIR=/workspace/targets/${simVersion} \
+      ${IMAGE_NAME} \
+      bash -c "cargo-msfs build msfs${simVersion} -i ./src/wasm -o ./${relativeSimDir}/msfs_navigation_data_interface.wasm 1> >(sed "s/^/[${simVersion}]/") 2> >(sed "s/^/[${simVersion}]/" >&2)"`.catch(
+      (err: { exitCode?: number; stderr?: Buffer }) => {
+        console.error(`[-] Error building for ${simVersion}: ${err.exitCode} ${err.stderr?.toString()}`);
+        process.exit(1);
+      },
+    );
+  }),
+);
