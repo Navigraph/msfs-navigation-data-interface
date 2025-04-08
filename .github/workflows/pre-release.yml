@@ -25,6 +25,25 @@ jobs:
       - name: Install node modules
         run: bun i --frozen-lockfile
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build cargo-msfs image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          tags: navigation-data-interface-wasm-build:latest
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha
+
+      - name: Cache target directories
+        uses: actions/cache@v4
+        with:
+          path: targets
+          key: rust-targets
+
       - name: Build WASM
         run: bun run build:wasm && bun run package
 
