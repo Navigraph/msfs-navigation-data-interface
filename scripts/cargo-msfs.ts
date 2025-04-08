@@ -111,13 +111,10 @@ await Promise.all(
       -e CARGO_TARGET_DIR=/workspace/targets/${simVersion} \
       ${IMAGE_NAME} \
         bash -c "cargo-msfs build msfs${simVersion} -i ./src/wasm -o ./${relativeSimDir}/msfs_navigation_data_interface.wasm \
-    1> >(sed \"s/^/[\\x1b[${color}${simVersion}\\x1b[0m]/\") \
-    2> >(sed \"s/^/[\\x1b[${color}${simVersion}\\x1b[0m]/\" >&2)"`.catch(
-      (err: { exitCode?: number; stderr?: Buffer }) => {
-        console.error(`[-] Error building for ${simVersion}: ${err.exitCode} ${err.stderr?.toString()}`);
-        process.exit(1);
-      },
-    );
+    1> >(sed \"s/^/[${color}${simVersion}\\x1b[0m]/\") \
+    2> >(sed \"s/^/[${color}${simVersion}\\x1b[0m]/\" >&2)"`.catch((err: { exitCode?: number; stderr?: Buffer }) => {
+      console.error(`[-] Error building for ${simVersion}: ${err.exitCode} ${err.stderr?.toString()}`);
+      process.exit(1);
+    });
   }),
 );
-
