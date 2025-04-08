@@ -1,0 +1,51 @@
+name: Store rust cache
+
+# This workflow is needed since any cache created 
+# on a feature-branch will NOT be available on any other ref.
+# See: https://github.com/actions/cache/issues/79
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cache:
+    name: Store cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          filter: blob:none
+
+      - name: Create env file
+        run: |
+          echo NAVIGATION_DATA_SIGNED_URL=${{ secrets.NAVIGATION_DATA_SIGNED_URL }} >> .env
+          echo SENTRY_URL=${{ secrets.SENTRY_URL }} >> .env
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install node modules
+        run: bun i --frozen-lockfile
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build cargo-msfs image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          tags: navigation-data-interface-wasm-build
+          cache-from: type=gha
+          cache-to: type=gha
+
+      - name: Cache target directories
+        uses: actions/cache@v4
+        with:
+          path: targets
+          key: rust-targets
+
+      - name: Build WASM
+        run: bun run build:wasm && bun run package
