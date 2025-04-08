@@ -1,6 +1,6 @@
 name: Store rust cache
 
-# This workflow is needed since any cache created 
+# This workflow is needed since any cache created
 # on a feature-branch will NOT be available on any other ref.
 # See: https://github.com/actions/cache/issues/79
 
@@ -48,4 +48,4 @@ jobs:
           key: rust-targets
 
       - name: Build WASM
-        run: bun run build:wasm && bun run package
+        run: bun run build:wasm
