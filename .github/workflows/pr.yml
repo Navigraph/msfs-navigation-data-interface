@@ -95,7 +95,8 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          tags: navigation-data-interface-wasm-build
+          tags: navigation-data-interface-wasm-build:latest
+          load: true
           cache-from: type=gha
           cache-to: type=gha
 
