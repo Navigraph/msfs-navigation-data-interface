@@ -10,7 +10,7 @@
     "build:wasm": "bun ./scripts/cargo-msfs.ts",
     "build:wasm:2020": "bun ./scripts/cargo-msfs.ts --version 2020",
     "build:wasm:2024": "bun ./scripts/cargo-msfs.ts --version 2024",
-    "package": "bun run build:wasm && bestzip wasm.zip dist/wasm/*"
+    "package": "bestzip wasm.zip dist/wasm/*"
   },
   "devDependencies": {
     "@eslint/js": "^9.23.0",

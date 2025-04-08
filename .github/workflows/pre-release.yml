@@ -26,7 +26,7 @@ jobs:
         run: bun i --frozen-lockfile
 
       - name: Build WASM
-        run: bun run package
+        run: bun run build:wasm && bun run package
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
