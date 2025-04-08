@@ -100,6 +100,8 @@ await Promise.all(
     const relativeSimDir = simDir.replace(workspaceRoot, "").replaceAll("\\", "/");
     mkdirSync(simDir, { recursive: true });
 
+    const color = simVersion === "2020" ? "\x1b[34m" : "\x1b[32m";
+
     // Run cargo-msfs
     await $`docker run \
       --rm -t \
@@ -108,7 +110,9 @@ await Promise.all(
       -w /workspace${relativeWorkdDir} \
       -e CARGO_TARGET_DIR=/workspace/targets/${simVersion} \
       ${IMAGE_NAME} \
-      bash -c "cargo-msfs build msfs${simVersion} -i ./src/wasm -o ./${relativeSimDir}/msfs_navigation_data_interface.wasm 1> >(sed "s/^/[${simVersion}]/") 2> >(sed "s/^/[${simVersion}]/" >&2)"`.catch(
+        bash -c "cargo-msfs build msfs${simVersion} -i ./src/wasm -o ./${relativeSimDir}/msfs_navigation_data_interface.wasm \
+    1> >(sed \"s/^/[\\x1b[${color}${simVersion}\\x1b[0m]/\") \
+    2> >(sed \"s/^/[\\x1b[${color}${simVersion}\\x1b[0m]/\" >&2)"`.catch(
       (err: { exitCode?: number; stderr?: Buffer }) => {
         console.error(`[-] Error building for ${simVersion}: ${err.exitCode} ${err.stderr?.toString()}`);
         process.exit(1);
@@ -116,3 +120,4 @@ await Promise.all(
     );
   }),
 );
+
