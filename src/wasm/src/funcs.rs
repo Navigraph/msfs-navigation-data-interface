@@ -1,6 +1,6 @@
 use std::{
-    fs::{self, OpenOptions},
-    io::{Cursor, Write},
+    fs::{self, File, OpenOptions},
+    io::{BufReader, Write},
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -23,6 +23,9 @@ use crate::{
 
 /// The URL to get the latest available cycle number
 const LATEST_CYCLE_ENDPOINT: &str = "https://navdata.api.navigraph.com/info";
+
+/// The path to the temporary download file
+const DOWNLOAD_TEMP_FILE_PATH: &str = "\\work/ng_download.temp";
 
 /// The max size in bytes of each request during the download function (set to 4MB curently)
 const DOWNLOAD_CHUNK_SIZE_BYTES: usize = 4 * 1024 * 1024;
@@ -66,6 +69,35 @@ impl Function for DownloadNavigationData {
     type ReturnType = ();
 
     async fn run(&mut self) -> Result<Self::ReturnType> {
+        self.download_to_temp().await?;
+
+        // Only close connection if DATABASE_STATE has already been initialized - otherwise we end up unnecessarily copying the bundled data and instantly replacing it (due to initialization logic in database state)
+        if Lazy::get(&DATABASE_STATE).is_some() {
+            // Drop the current database. We don't do this before the download as there is a chance it will fail, and then we end up with no database open.
+            DATABASE_STATE
+                .try_lock()
+                .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
+                .close_connection()?;
+        }
+
+        self.extract_navigation_data().await?;
+
+        // Open the connection
+        DATABASE_STATE
+            .try_lock()
+            .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
+            .open_connection()?;
+
+        // Remove the temp file
+        fs::remove_file(DOWNLOAD_TEMP_FILE_PATH)?;
+
+        Ok(())
+    }
+}
+
+impl DownloadNavigationData {
+    /// Download the navigation data zip file to the temp file location
+    async fn download_to_temp(&self) -> Result<()> {
         // Figure out total size of download (this request is acting like a HEAD since we don't have those in this environment. Nothing actually gets downloaded since we are constraining the range)
         let request = NetworkRequestBuilder::new(&self.url)
             .context("can't create new NetworkRequestBuilder")?
@@ -86,11 +118,15 @@ impl Function for DownloadNavigationData {
             .ok_or(anyhow!("invalid content-range"))?
             .parse::<usize>()?;
 
-        // Total amount of chunks to download
+        // Total amount of chunks to download.  We need to download the data in chunks of DOWNLOAD_CHUNK_SIZE_BYTES to avoid a timeout, so we need to keep track of a "working" accumulation of all responses
         let total_chunks = total_bytes.div_ceil(DOWNLOAD_CHUNK_SIZE_BYTES);
 
-        // We need to download the data in chunks of DOWNLOAD_CHUNK_SIZE_BYTES to avoid a timeout, so we need to keep track of a "working" accumulation of all responses
-        let mut bytes = vec![];
+        // Store the download to a file to avoid holding in-memory
+        let mut download_file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(DOWNLOAD_TEMP_FILE_PATH)?;
 
         for i in 0..total_chunks {
             // Calculate the range for the current chunk
@@ -115,20 +151,18 @@ impl Function for DownloadNavigationData {
                 .wait_for_data()
                 .await?;
 
-            bytes.write_all(&data)?;
+            // Write and force flush to limit how much data we hold in memory at a time (will be a max of DOWNLOAD_CHUNK_SIZE_BYTES)
+            download_file.write_all(&data)?;
+            download_file.flush()?;
         }
 
-        // Only close connection if DATABASE_STATE has already been initialized - otherwise we end up unnecessarily copying the bundled data and instantly replacing it (due to initialization logic in database state)
-        if Lazy::get(&DATABASE_STATE).is_some() {
-            // Drop the current database. We don't do this before the download as there is a chance it will fail, and then we end up with no database open.
-            DATABASE_STATE
-                .try_lock()
-                .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
-                .close_connection()?;
-        }
+        Ok(())
+    }
 
+    /// Extract the navigation data files from the zip file located in the temp location
+    async fn extract_navigation_data(&self) -> Result<()> {
         // Load the zip archive
-        let mut zip = ZipArchive::new(Cursor::new(bytes))?;
+        let mut zip = ZipArchive::new(BufReader::new(File::open(DOWNLOAD_TEMP_FILE_PATH)?))?;
 
         // Ensure parent folder exists (ignore the result as it will return an error if it already exists)
         let _ = fs::create_dir_all(WORK_NAVIGATION_DATA_FOLDER);
@@ -159,12 +193,6 @@ impl Function for DownloadNavigationData {
             .open(WORK_DB_PATH)?;
 
         std::io::copy(&mut zip.by_name(&db_name)?, &mut db_file)?;
-
-        // Open the connection
-        DATABASE_STATE
-            .try_lock()
-            .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
-            .open_connection()?;
 
         Ok(())
     }
