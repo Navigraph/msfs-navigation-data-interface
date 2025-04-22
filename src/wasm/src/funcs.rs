@@ -151,9 +151,8 @@ impl DownloadNavigationData {
                 .wait_for_data()
                 .await?;
 
-            // Write and force flush to limit how much data we hold in memory at a time (will be a max of DOWNLOAD_CHUNK_SIZE_BYTES)
+            // Write to limit how much data we hold in memory at a time (will be a max of DOWNLOAD_CHUNK_SIZE_BYTES)
             download_file.write_all(&data)?;
-            download_file.flush()?;
         }
 
         Ok(())
