@@ -1,6 +1,16 @@
-# Navigraph Navigation Data Interface for MSFS
+<div align="center" >
+  <a href="https://navigraph.com">
+    <img src="https://navigraph.com/assets/images/navigraph_logo_only.svg" alt="Logo" width="80" height="80">
+  </a>
 
-The Navigraph Navigation Data Interface enables developers to download and integrate navigation data from Navigraph directly into add-on aircraft in MSFS.
+  <div align="center">
+    <h1>Navigraph Navigation Data Interface for MSFS</h1>
+  </div>
+
+  <p>The Navigraph Navigation Data Interface enables developers to download and integrate navigation data from Navigraph directly into add-on aircraft in MSFS.</p>
+
+  <br/>
+</div>
 
 ## Key Features
 
@@ -14,15 +24,12 @@ The Navigraph Navigation Data Interface enables developers to download and integ
 
 Here's an overview on the structure of this repository, which is designed to be as simple as possible to use
 
-- `examples/`
-  - Contains sample implementations for using the navigation data interface
+- `example/`
   - `aircraft/` includes a base aircraft to test in the sim
   - `gauge/` includes a very simple TypeScript instrument to communicate with the WASM module
 - `src/`
-  - `database` Includes rust source code for interfacing with a DFD sqlite file (not WASM specific)
-  - `js` Includes source code for the JS interface for using the sdk
-  - `test` Includes code for testing the JS and Rust code using a Node runtime
-  - `wasm` includes the Rust source code for the WASM module which handles the downloading of the database file, and interfacing with the database implementation
+  - `ts` Includes source code for the JS interface for using the sdk
+  - `wasm` includes the Rust source code for the WASM module which handles the downloading of the database file, and interfacing with the database
 
 ## Including in Your Aircraft
 
@@ -30,7 +37,7 @@ Here's an overview on the structure of this repository, which is designed to be 
 2. Add the WASM module into your `panel` folder in `PackageSources`
 3. Add the following entry into `panel.cfg` (make sure to replace `NN` with the proper `VCockpit` ID):
 
-   ```
+   ```ini
    [VCockpitNN]
    size_mm=0,0
    pixel_size=0,0
@@ -60,34 +67,30 @@ If you bundle outdated navigation data in your aircraft and you want this module
 
 The default location for navigation data is `work/NavigationData`.
 
-## Building the Sample Aircraft
+## Building the Sample Aircraft (MSFS2020)
 
 Before building, make sure you have properly created and set an `.env` file in `examples/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials
 
-1. [Download](https://nodejs.org/en/download) and install Node.js
+1. Download and install [Bun](https://bun.sh/docs/installation)
 2. Open the `msfs-navigation-data-interface` folder in a terminal
-3. Run `npm i` the first time you build, in order to install dependencies
-4. Change directory to `src/js` using `cd src/js`
-5. Run `npm run build` to build the interface.
-6. Change directory to `examples/gauge` using `cd ../../examples/gauge/`
-7. Run `npm run build` to build into the `PackageSources` folder of the aircraft sample (or `npm run dev` to build into the `Packages` folder of the aircraft and listen to changes in the source).
-8. Make sure the WASM module is included in the [`panel`](examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel) folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) for info on that
-9. Open the `examples/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build there
+3. Run `bun i` the first time you build, in order to install dependencies
+4. Change directory to `examples/gauge` using `cd example/gauge`
+5. Run `bun run build` to build into the `PackageSources` folder of the aircraft sample (or `bun run dev` to build into the `Packages` folder of the aircraft and listen to changes in the source).
+6. Make sure the WASM module is included in the [`panel`](examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel) folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) for info on that
+7. Open the `examples/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build there
 
 ## Building the WASM Module Yourself
 
 1. [Install](https://github.com/navigraph/cargo-msfs) cargo-msfs
-2. Run `npm run build:wasm` (must be on Windows)
+2. Run `bun run build:wasm` at the root of the repository (requires Docker)
    - This will take a while to download and build the first time, but subsequent runs will be quicker
-3. The compiled WASM module will be copied to `out` **and** `examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel`
+3. The compiled WASM module will be copied to `dist/wasm`. There will be two folders - `2020` and `2024`, for each sim version
 
 ## Interfacing with the gauge manually
 
 The navigation data interface acts as its own WASM gauge in sim, so in order to communicate with it, you must use the [CommBus](https://docs.flightsimulator.com/html/Programming_Tools/WASM/Communication_API/Communication_API.htm).
 
-The gauge communicates using the following event names:
-
-(Any types referenced can be found in `wasm/src/json_structs.rs`)
+The gauge communicates using the following event names (all types referenced can be found [here](src/ts)):
 
 - `NAVIGRAPH_CallFunction`: This event is received by the interface and is used to trigger one of the interfaces functions. It takes in arguments of type `CallFunction`. The available functions and their expected parameters can be found in the `json_structs.rs` file
 - `NAVIGRAPH_FunctionResult`: This event is sent by the interface as a response to a previously triggered function. Its result will have the type `FunctionResult`, with the data field containing the expected return type of the function.
