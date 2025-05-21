@@ -26,3 +26,6 @@ serde_rusqlite = "0.36.0"
 serde_with = "3.12.0"
 uuid = { version = "1.16.0", features = ["rng-rand", "v4"] }
 zip = { version = "2.5.0", default-features = false, features = ["deflate"] }
+
+[build-dependencies]
+vergen-gitcl = { version = "1.0.8", features = ["build", "cargo"] }
