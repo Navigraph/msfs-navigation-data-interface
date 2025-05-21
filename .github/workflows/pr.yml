@@ -73,7 +73,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           filter: blob:none
+          persist-credentials: false
 
       - name: Create env file
         run: |
