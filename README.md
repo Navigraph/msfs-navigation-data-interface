@@ -16,7 +16,6 @@
 
 - Navigraph DFD Format: Leverage specialized support for Navigraph's DFD format, based on SQLite, which includes an SQL interface on the commbus for efficient data handling.
 - Javascript and WASM support: The navdata interface is accessible from both Javascript (Coherent) and WASM, providing flexibility for developers.
-- Supports updating of custom data formats.
 - Xbox compatibility: Works on PC and Xbox.
 - Persistence: All data is persisted in the `work` folder of the aircraft.
 
@@ -46,18 +45,19 @@ Here's an overview on the structure of this repository, which is designed to be 
    ```
 
    - Note that if you already have a `VCockpit` with `NO_TEXTURE` you can just add another `htmlgauge` to it, while making sure to increase the index
+
 4. **Optional**: Create a `Navigraph/config.json` file to assist with Sentry reports. This info will be reported to us should any error occur in the library. We will use this to directly reach out to you (the developer) for these errors.
 
-    - The file must look like
+   - The file must look like
 
-    ```json
-    {
-      "addon": {
-        "developer": "Navigraph",
-        "product": "Sample Aircraft"
-      }
-    }
-    ```
+   ```json
+   {
+     "addon": {
+       "developer": "Navigraph",
+       "product": "Sample Aircraft"
+     }
+   }
+   ```
 
 ## Dealing with Bundled Navigation Data
 
@@ -101,30 +101,30 @@ The gauge communicates using the following event names (all types referenced can
 Below is an example of communicating with the interface in JS. (We provide a JS wrapper, the code below is just a basic example to show how it works). Please read the CommBus documentation to determine how to interface with CommBus in your chosen language. `src/js` contains our JS wrapper, it is also a useful example for implementing a fully fleshed out wrapper.
 
 ```js
-const queue = []
+const queue = [];
 
 const listener = RegisterCommBusListener(() => {
   listener.on("NAVIGRAPH_FunctionResult", jsonArgs => {
-    const args = JSON.parse(jsonArgs)
+    const args = JSON.parse(jsonArgs);
 
     // When a FunctionResult is received, find the item in queue which matches the id, and resolve or reject it
-    const queueItem = queue.find(m => m.id === args.id)
+    const queueItem = queue.find(m => m.id === args.id);
 
     if (queueItem) {
-      queue.splice(queue.indexOf(queueItem), 1)
-      const data = args.data
+      queue.splice(queue.indexOf(queueItem), 1);
+      const data = args.data;
 
       if (args.status === FunctionResultStatus.Success) {
-        queueItem.resolve(data)
+        queueItem.resolve(data);
       } else {
-        queueItem.reject(new Error(typeof data === "string" ? data : "Unknown error"))
+        queueItem.reject(new Error(typeof data === "string" ? data : "Unknown error"));
       }
     }
-  })
-}) // RegisterCommBusListener is a function provided by sim
+  });
+}); // RegisterCommBusListener is a function provided by sim
 
 function getAirport(ident) {
-  const id = Utils.generateGUID() // Utils is a class provided by sim
+  const id = Utils.generateGUID(); // Utils is a class provided by sim
 
   const args = {
     function: "GetAirport", // The name of the function being called
@@ -133,21 +133,21 @@ function getAirport(ident) {
       // The parameters of the function
       ident,
     },
-  }
+  };
 
-  listener.callWasm("NAVIGRAPH_CallFunction", JSON.stringify(args))
+  listener.callWasm("NAVIGRAPH_CallFunction", JSON.stringify(args));
 
   return new Promise((resolve, reject) => {
     queue.push({
       id,
       resolve: response => resolve(response),
       reject: error => reject(error),
-    })
-  })
+    });
+  });
 }
 
 function executeSql(sql, params) {
-  const id = Utils.generateGUID() // Utils is a class provided by sim
+  const id = Utils.generateGUID(); // Utils is a class provided by sim
 
   const args = {
     function: "ExecuteSQLQuery", // The name of the function being called
@@ -157,16 +157,16 @@ function executeSql(sql, params) {
       sql,
       params,
     },
-  }
+  };
 
-  listener.callWasm("NAVIGRAPH_CallFunction", JSON.stringify(args))
+  listener.callWasm("NAVIGRAPH_CallFunction", JSON.stringify(args));
 
   return new Promise((resolve, reject) => {
     queue.push({
       id,
       resolve: response => resolve(response),
       reject: error => reject(error),
-    })
-  })
+    });
+  });
 }
 ```
