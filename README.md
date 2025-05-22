@@ -81,7 +81,7 @@ Before building, make sure you have properly created and set an `.env` file in `
 
 ## Building the WASM Module Yourself
 
-1. [Install](https://github.com/navigraph/cargo-msfs) cargo-msfs
+1. Create a `.env` file in the root of this repository, containing a `SENTRY_URL` variable. Provide your own DSN, or leave it empty.
 2. Run `bun run build:wasm` at the root of the repository (requires Docker)
    - This will take a while to download and build the first time, but subsequent runs will be quicker
 3. The compiled WASM module will be copied to `dist/wasm`. There will be two folders - `2020` and `2024`, for each sim version
