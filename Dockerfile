@@ -25,3 +25,5 @@ ARG CACHEBUST
 # Install MSFS2020 and MSFS2024 SDK
 RUN cargo-msfs install msfs2020 && \
     cargo-msfs install msfs2024
+
+RUN git config --global --add safe.directory /workspace
