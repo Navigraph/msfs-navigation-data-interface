@@ -26,4 +26,5 @@ ARG CACHEBUST
 RUN cargo-msfs install msfs2020 && \
     cargo-msfs install msfs2024
 
+# Needed when running in CI/CD to avoid dubious ownership errors
 RUN git config --global --add safe.directory /workspace
