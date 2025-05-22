@@ -69,14 +69,18 @@ The default location for navigation data is `work/NavigationData`.
 
 ## Building the Sample Aircraft (MSFS2020)
 
-Before building, make sure you have properly created and set an `.env` file in `example/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials
+> [!NOTE]  
+> This project is only meant to be tested in MSFS2020. We will add an example for MSFS2024 in the future.
+
+> [!IMPORTANT]  
+> Before building, make sure you have properly created and set an `.env` file in `example/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials.
 
 1. Download and install [Bun](https://bun.sh/docs/installation)
-2. Open the `msfs-navigation-data-interface` folder in a terminal
+2. Open this repository in a terminal
 3. Run `bun i` the first time you build, in order to install dependencies
-4. Change directory to `example/gauge` using `cd example/gauge`
+4. Change directory to [`example/gauge`](example/gauge/) using `cd example/gauge`
 5. Run `bun run build` to build into the `PackageSources` folder of the aircraft sample (or `bun run dev` to build into the `Packages` folder of the aircraft and listen to changes in the source).
-6. Make sure the WASM module is included in the [`panel`](example/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel) folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) for info on that
+6. Make sure the WASM module is included in the [`panel`](example/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel) folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) instructions
 7. Open the `example/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build there
 
 ## Building the WASM Module Yourself
