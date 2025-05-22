@@ -21,13 +21,11 @@
 
 ## Repository Structure
 
-Here's an overview on the structure of this repository, which is designed to be as simple as possible to use
-
 - `example/`
   - `aircraft/` includes a base aircraft to test in the sim
   - `gauge/` includes a very simple TypeScript instrument to communicate with the WASM module
 - `src/`
-  - `ts` Includes source code for the JS interface for using the sdk
+  - `ts` includes source code for the JS interface for interfacing with the WASM module
   - `wasm` includes the Rust source code for the WASM module which handles the downloading of the database file, and interfacing with the database
 
 ## Including in Your Aircraft
@@ -46,9 +44,9 @@ Here's an overview on the structure of this repository, which is designed to be 
 
    - Note that if you already have a `VCockpit` with `NO_TEXTURE` you can just add another `htmlgauge` to it, while making sure to increase the index
 
-4. **Optional**: Create a `Navigraph/config.json` file to assist with Sentry reports. This info will be reported to us should any error occur in the library. We will use this to directly reach out to you (the developer) for these errors.
+4. **Optional**: Create a `Navigraph/config.json` file to provide additional metadata at runtime. This info will be reported to us should any error occur in the library, enabling us to directly reach out to you (the developer) to help track down the issue.
 
-   - The file must look like
+   - The file must follow this format:
 
    ```json
    {
@@ -61,7 +59,9 @@ Here's an overview on the structure of this repository, which is designed to be 
 
 ## Dealing with Bundled Navigation Data
 
-If you bundle outdated navigation data in your aircraft and you want this module to handle updating it for users with subscriptions, place the navigation data into the `Navigraph/BundledData` directory in `PackageSources`. You can see an example [here](examples/aircraft/PackageSources/Navigraph/BundledData/)
+If you bundle outdated navigation data in your aircraft and you want this module to handle updating it for users with subscriptions, place the navigation data into the `Navigraph/BundledData` directory in `PackageSources`. You can see an example [here](example/aircraft/PackageSources/Navigraph/BundledData/)
+
+The navigation data interface will automatically use this database by default, making it immediately available on startup.
 
 ## Where is the Navigation Data Stored?
 
@@ -69,15 +69,15 @@ The default location for navigation data is `work/NavigationData`.
 
 ## Building the Sample Aircraft (MSFS2020)
 
-Before building, make sure you have properly created and set an `.env` file in `examples/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials
+Before building, make sure you have properly created and set an `.env` file in `example/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials
 
 1. Download and install [Bun](https://bun.sh/docs/installation)
 2. Open the `msfs-navigation-data-interface` folder in a terminal
 3. Run `bun i` the first time you build, in order to install dependencies
-4. Change directory to `examples/gauge` using `cd example/gauge`
+4. Change directory to `example/gauge` using `cd example/gauge`
 5. Run `bun run build` to build into the `PackageSources` folder of the aircraft sample (or `bun run dev` to build into the `Packages` folder of the aircraft and listen to changes in the source).
-6. Make sure the WASM module is included in the [`panel`](examples/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel) folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) for info on that
-7. Open the `examples/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build there
+6. Make sure the WASM module is included in the [`panel`](example/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel) folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) for info on that
+7. Open the `example/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build there
 
 ## Building the WASM Module Yourself
 
@@ -92,13 +92,16 @@ The navigation data interface acts as its own WASM gauge in sim, so in order to 
 
 The gauge communicates using the following event names (all types referenced can be found [here](src/ts)):
 
-- `NAVIGRAPH_CallFunction`: This event is received by the interface and is used to trigger one of the interfaces functions. It takes in arguments of type `CallFunction`. The available functions and their expected parameters can be found in the `json_structs.rs` file
+- `NAVIGRAPH_CallFunction`: This event is received by the interface and is used to trigger one of the interfaces functions. It takes in arguments of type `CallFunction`. The available functions and their expected parameters can be found in the [`src/ts`](src/ts) file
 - `NAVIGRAPH_FunctionResult`: This event is sent by the interface as a response to a previously triggered function. Its result will have the type `FunctionResult`, with the data field containing the expected return type of the function.
 - `NAVIGRAPH_Event`: This event is sent by the interface to give indications of progress or that the interface is running correctly.
 
 ### Example
 
-Below is an example of communicating with the interface in JS. (We provide a JS wrapper, the code below is just a basic example to show how it works). Please read the CommBus documentation to determine how to interface with CommBus in your chosen language. `src/js` contains our JS wrapper, it is also a useful example for implementing a fully fleshed out wrapper.
+Below is an example of communicating with the interface in JS. Please read the CommBus documentation to determine how to interface with CommBus in your chosen language. [`src/ts`](src/ts) contains our JS wrapper, it is also a useful example for implementing a fully fleshed out wrapper.
+
+> [!IMPORTANT]  
+> We provide a JS wrapper that handles this for you. The below is just a quick look at how it works.
 
 ```js
 const queue = [];
