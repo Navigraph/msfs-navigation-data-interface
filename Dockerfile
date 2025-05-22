@@ -2,7 +2,7 @@ FROM rust:1.84.1
 
 # Install needed packages and clean up
 RUN apt update && \
-    apt install -y --no-install-recommends lsb-release wget software-properties-common gnupg gcc-multilib && \
+    apt install -y --no-install-recommends lsb-release wget software-properties-common gnupg gcc-multilib git && \
     rm -rf /var/lib/apt/lists/*
 
 # Install clang and clean up
@@ -25,3 +25,6 @@ ARG CACHEBUST
 # Install MSFS2020 and MSFS2024 SDK
 RUN cargo-msfs install msfs2020 && \
     cargo-msfs install msfs2024
+
+# Needed when running in CI/CD to avoid dubious ownership errors
+RUN git config --global --add safe.directory /workspace

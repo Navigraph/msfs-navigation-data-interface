@@ -260,6 +260,12 @@ where
             ..Default::default()
         }));
 
+        // Build specific settings
+        scope.set_tag("git_sha", env!("VERGEN_GIT_SHA"));
+        scope.set_tag("git_dirty", env!("VERGEN_GIT_DIRTY"));
+        scope.set_tag("built_at", env!("VERGEN_BUILD_TIMESTAMP"));
+
+        // Addon specific settings
         let config = Config::get_config();
         scope.set_tag(
             "developer",
