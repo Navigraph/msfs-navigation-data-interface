@@ -109,9 +109,7 @@ jobs:
           key: rust-targets
 
       - name: Build WASM
-        run: |
-          git config --global --add safe.directory /workspace
-          bun run build:wasm && bun run package
+        run: bun run build:wasm && bun run package
 
       - name: Upload WASM module to GitHub
         uses: actions/upload-artifact@v4
