@@ -1,13 +1,13 @@
 import resolve from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
-import dotenv from "dotenv";
+import autoprefixer from "autoprefixer";
+import dotenvSafe from "dotenv-safe";
 import copy from "rollup-plugin-copy";
 import esbuild from "rollup-plugin-esbuild";
-import autoprefixer from "autoprefixer";
-import tailwind from "tailwindcss";
 import postcss from "rollup-plugin-postcss";
+import tailwind from "tailwindcss";
 
-dotenv.config();
+dotenvSafe.config();
 
 // eslint-disable-next-line no-undef
 const DEBUG = process.env.DEBUG === "true";

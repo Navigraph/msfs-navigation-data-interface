@@ -19,7 +19,7 @@
     "@rollup/plugin-replace": "^5.0.5",
     "autoprefixer": "^10.4.20",
     "cross-env": "^7.0.3",
-    "dotenv": "^16.3.1",
+    "dotenv-safe": "^9.1.0",
     "esbuild": "^0.19.5",
     "postcss": "^8.4.47",
     "rollup": "^2.79.1",

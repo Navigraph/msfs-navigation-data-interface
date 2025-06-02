@@ -32,7 +32,7 @@
         "@rollup/plugin-replace": "^5.0.5",
         "autoprefixer": "^10.4.20",
         "cross-env": "^7.0.3",
-        "dotenv": "^16.3.1",
+        "dotenv-safe": "^9.1.0",
         "esbuild": "^0.19.5",
         "postcss": "^8.4.47",
         "rollup": "^2.79.1",
@@ -45,7 +45,7 @@
     },
     "src/ts": {
       "name": "@navigraph/msfs-navigation-data-interface",
-      "version": "1.1.2",
+      "version": "1.2.0",
       "devDependencies": {
         "@microsoft/msfs-types": "^1.14.6",
         "tsup": "^8.4.0",
@@ -386,6 +386,8 @@
     "domutils": ["domutils@2.8.0", "", { "dependencies": { "dom-serializer": "^1.0.1", "domelementtype": "^2.2.0", "domhandler": "^4.2.0" } }, "sha512-w96Cjofp72M5IIhpjgobBimYEfoPjx1Vx0BSX9P30WBdZW2WIKU0T1Bd0kz2eNZ9ikjKgHbEyKx8BB6H1L3h3A=="],
 
     "dotenv": ["dotenv@16.4.7", "", {}, "sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ=="],
+
+    "dotenv-safe": ["dotenv-safe@9.1.0", "", { "peerDependencies": { "dotenv": ">= 8.2.0" } }, "sha512-2qwVAnUN+EDpu41pIK1XiJpHXKHV9Dnti3cE1EnUXT1/BV5+B7xuSZtgZ/4LExkCpp5F6BGikraezQL+8hKCOA=="],
 
     "eastasianwidth": ["eastasianwidth@0.2.0", "", {}, "sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA=="],
 
