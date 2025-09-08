@@ -13,5 +13,15 @@
 		<LOD minSize="1" ModelFile="GaugeAircraft_Interior_LOD04.gltf"/>
 	</LODS>
 
+	<Behaviors>
+		<Include ModelBehaviorFile="Asobo\Common.xml"/>
+
+		<Component ID="SCREEN" Node="Screens">
+			<UseTemplate Name="ASOBO_GT_Emissive_Gauge">
+				<PART_ID>SCREEN</PART_ID>
+				<EMISSIVE_CODE>1</EMISSIVE_CODE>
+			</UseTemplate>
+		</Component>
+	</Behaviors>
 
 </ModelInfo>
