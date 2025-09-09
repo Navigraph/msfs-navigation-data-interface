@@ -10,6 +10,7 @@
 		<VisibleInStore>true</VisibleInStore>
 		<CanBeReferenced>true</CanBeReferenced>
 	</Flags>
+	<PackageOrderHint>CUSTOM_SIMOBJECTS</PackageOrderHint>
 	<AssetGroups>
 		<AssetGroup Name="ContentInfo">
 			<Type Version="0">Copy</Type>
