@@ -1,11 +1,10 @@
 import { $ } from "bun";
-import { existsSync, mkdirSync, readFileSync, rmdirSync } from "node:fs";
+import { constants, copyFile, existsSync, mkdirSync, readFileSync, rmdirSync } from "node:fs";
 import { dirname, join, normalize, resolve } from "node:path";
-import { parseArgs } from "util";
 
 /// The type returned from the `cargo-msfs info -f` command
 interface InstalledSdkVersions {
-  versions: { sim: "Msfs2020" | "Msfs2024"; up_to_date: boolean; installed?: string; latest: string }[];
+  versions: { sim: "Msfs2020"; up_to_date: boolean; installed?: string; latest: string }[];
 }
 
 /// The docker image name
@@ -36,23 +35,6 @@ function findWorkspaceRoot() {
 
   return null;
 }
-
-// Determine which version(s) to build based on command line argument --version
-const allowedVersions = ["2020", "2024"];
-
-const { values } = parseArgs({
-  args: Bun.argv,
-  options: { version: { type: "string" } },
-  strict: true,
-  allowPositionals: true,
-});
-
-if (values.version && !allowedVersions.includes(values.version)) {
-  console.error(`Invalid version argument: ${values.version}. Allowed values are ${allowedVersions.join(", ")}`);
-  process.exit(1);
-}
-
-const versionsToBuild = values.version ? [values.version] : allowedVersions;
 
 // Get workspace root for docker commands
 const workspaceRoot = findWorkspaceRoot();
@@ -85,36 +67,51 @@ if (installedSdks.versions.some(v => !v.up_to_date)) {
 
 // Clear out dir
 const outDir = resolve(workspaceRoot, "dist/wasm");
+const panelDir = resolve(
+  workspaceRoot,
+  "example/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel",
+);
+
 if (existsSync(outDir)) rmdirSync(outDir, { recursive: true });
 
 // The work directory, relative to workspace root
 const relativeWorkdDir = process.cwd().replace(workspaceRoot, "").replaceAll("\\", "/");
 
-// Build the selected versions
-await Promise.all(
-  versionsToBuild.map(async simVersion => {
-    console.info(`[*] Building for ${simVersion}`);
+// Build the 2020 version
+const simVersion = "2020";
 
-    // Create the subfolder
-    const simDir = join(outDir, simVersion);
-    const relativeSimDir = simDir.replace(workspaceRoot, "").replaceAll("\\", "/");
-    mkdirSync(simDir, { recursive: true });
+console.info(`[*] Building for ${simVersion}`);
 
-    const color = simVersion === "2020" ? "\x1b[34m" : "\x1b[32m";
+// Create the subfolder
+const simDir = join(outDir, simVersion);
+const relativeSimDir = simDir.replace(workspaceRoot, "").replaceAll("\\", "/");
+mkdirSync(simDir, { recursive: true });
 
-    // Run cargo-msfs
-    await $`docker run \
-      --rm -t \
-      --name msfs-${simVersion}-wasm-builder \
-      -v ${workspaceRoot}:/workspace \
-      -w /workspace${relativeWorkdDir} \
-      -e CARGO_TARGET_DIR=/workspace/targets/${simVersion} \
-      ${IMAGE_NAME} \
-        bash -c "cargo-msfs build msfs${simVersion} -i ./src/wasm -o ./${relativeSimDir}/msfs_navigation_data_interface.wasm \
-    1> >(sed \"s/^/[${color}${simVersion}\\x1b[0m]/\") \
-    2> >(sed \"s/^/[${color}${simVersion}\\x1b[0m]/\" >&2)"`.catch((err: { exitCode?: number; stderr?: Buffer }) => {
-      console.error(`[-] Error building for ${simVersion}: ${err.exitCode} ${err.stderr?.toString()}`);
+// Run cargo-msfs
+await $`docker run \
+  --rm -t \
+  --name msfs-${simVersion}-wasm-builder \
+  -v ${workspaceRoot}:/workspace \
+  -w /workspace${relativeWorkdDir} \
+  -e CARGO_TARGET_DIR=/workspace/targets/${simVersion} \
+  ${IMAGE_NAME} \
+    bash -c "cargo-msfs build msfs${simVersion} -i ./src/wasm -o ./${relativeSimDir}/msfs_navigation_data_interface.wasm \
+1> >(sed \"s/^/[\x1b[34m${simVersion}\\x1b[0m]/\") \
+2> >(sed \"s/^/[\x1b[34m${simVersion}\\x1b[0m]/\" >&2)"`.catch((err: { exitCode?: number; stderr?: Buffer }) => {
+  console.error(`[-] Error building for ${simVersion}: ${err.exitCode} ${err.stderr?.toString()}`);
+  process.exit(1);
+});
+
+copyFile(
+  `${join(simDir, "msfs_navigation_data_interface.wasm")}`,
+  `${join(panelDir, "msfs_navigation_data_interface.wasm")}`,
+  constants.COPYFILE_FICLONE,
+  err => {
+    if (err) {
+      console.error("[-] Wasm module copy failed ");
       process.exit(1);
-    });
-  }),
+    }
+
+    console.info(`[*] Copying WASM module to aircraft panel folder`);
+  },
 );

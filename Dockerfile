@@ -22,9 +22,8 @@ RUN cargo install --git https://github.com/navigraph/cargo-msfs
 # Cache bust arg to re-install both SDKs
 ARG CACHEBUST
 
-# Install MSFS2020 and MSFS2024 SDK
-RUN cargo-msfs install msfs2020 && \
-    cargo-msfs install msfs2024
+# Install MSFS2020 SDK
+RUN cargo-msfs install msfs2020
 
 # Needed when running in CI/CD to avoid dubious ownership errors
 RUN git config --global --add safe.directory /workspace

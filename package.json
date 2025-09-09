@@ -8,8 +8,6 @@
     "lint": "bun run --filter \"*\" lint",
     "typecheck": "bun run --filter \"*\" typecheck",
     "build:wasm": "bun ./scripts/cargo-msfs.ts",
-    "build:wasm:2020": "bun ./scripts/cargo-msfs.ts --version 2020",
-    "build:wasm:2024": "bun ./scripts/cargo-msfs.ts --version 2024",
     "package": "bestzip wasm.zip dist/wasm/*"
   },
   "devDependencies": {
