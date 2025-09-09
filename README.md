@@ -87,8 +87,9 @@ The default location for navigation data is `work/NavigationData`.
 
 1. Create a `.env` file in the root of this repository, containing a `SENTRY_URL` variable. Provide your own DSN, or leave it empty.
 2. Run `bun run build:wasm` at the root of the repository (requires Docker)
-   - This will take a while to download and build the first time, but subsequent runs will be quicker
-3. The compiled WASM module will be copied to `dist/wasm`. There will be two folders - `2020` and `2024`, for each sim version
+   - This will take a while to download and build the first time, but subsequent runs will be quicker.
+   - The WASM module will be compatible for MSFS 2020 & 2024.
+3. The WASM module that is compiled in `dist/wasm/2020` folder will be copied automatically to the aircraft `panel` folder.
 
 ## Interfacing with the gauge manually
 
