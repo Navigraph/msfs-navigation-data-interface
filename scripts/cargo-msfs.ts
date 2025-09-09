@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { constants, copyFile, existsSync, mkdirSync, readFileSync, rmdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmdirSync } from "node:fs";
 import { dirname, join, normalize, resolve } from "node:path";
 
 /// The type returned from the `cargo-msfs info -f` command
@@ -67,10 +67,6 @@ if (installedSdks.versions.some(v => !v.up_to_date)) {
 
 // Clear out dir
 const outDir = resolve(workspaceRoot, "dist/wasm");
-const panelDir = resolve(
-  workspaceRoot,
-  "example/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel",
-);
 
 if (existsSync(outDir)) rmdirSync(outDir, { recursive: true });
 
@@ -101,17 +97,3 @@ await $`docker run \
   console.error(`[-] Error building for ${simVersion}: ${err.exitCode} ${err.stderr?.toString()}`);
   process.exit(1);
 });
-
-copyFile(
-  `${join(simDir, "msfs_navigation_data_interface.wasm")}`,
-  `${join(panelDir, "msfs_navigation_data_interface.wasm")}`,
-  constants.COPYFILE_FICLONE,
-  err => {
-    if (err) {
-      console.error("[-] Wasm module copy failed ");
-      process.exit(1);
-    }
-
-    console.info(`[*] Copying WASM module to aircraft panel folder`);
-  },
-);
