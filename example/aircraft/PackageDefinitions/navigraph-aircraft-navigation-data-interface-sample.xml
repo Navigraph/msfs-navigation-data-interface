@@ -10,9 +10,10 @@
 		<VisibleInStore>true</VisibleInStore>
 		<CanBeReferenced>true</CanBeReferenced>
 	</Flags>
+	<PackageOrderHint>CUSTOM_SIMOBJECTS</PackageOrderHint>
 	<AssetGroups>
 		<AssetGroup Name="ContentInfo">
-			<Type>Copy</Type>
+			<Type Version="0">Copy</Type>
 			<Flags>
 				<FSXCompatibility>false</FSXCompatibility>
 			</Flags>
@@ -20,7 +21,7 @@
 			<OutputDir>ContentInfo\navigraph-aircraft-navigation-data-interface-sample\</OutputDir>
 		</AssetGroup>
 		<AssetGroup Name="Data">
-			<Type>Copy</Type>
+			<Type Version="0">Copy</Type>
 			<Flags>
 				<FSXCompatibility>false</FSXCompatibility>
 			</Flags>
@@ -28,7 +29,7 @@
 			<OutputDir>Data\</OutputDir>
 		</AssetGroup>
 		<AssetGroup Name="Navigraph">
-			<Type>Copy</Type>
+			<Type Version="0">Copy</Type>
 			<Flags>
 				<FSXCompatibility>false</FSXCompatibility>
 			</Flags>
@@ -36,7 +37,7 @@
 			<OutputDir>Navigraph\</OutputDir>
 		</AssetGroup>
 		<AssetGroup Name="SimObject">
-			<Type>SimObject</Type>
+			<Type Version="1">SimObject</Type>
 			<Flags>
 				<FSXCompatibility>false</FSXCompatibility>
 			</Flags>
@@ -44,7 +45,7 @@
 			<OutputDir>SimObjects\Airplanes\Navigraph_Navigation_Data_Interface_Aircraft\</OutputDir>
 		</AssetGroup>
 		<AssetGroup Name="html_ui">
-			<Type>Copy</Type>
+			<Type Version="0">Copy</Type>
 			<Flags>
 				<FSXCompatibility>false</FSXCompatibility>
 			</Flags>
@@ -53,3 +54,4 @@
 		</AssetGroup>
 	</AssetGroups>
 </AssetPackage>
+

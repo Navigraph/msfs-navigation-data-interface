@@ -67,28 +67,40 @@ The navigation data interface will automatically use this database by default, m
 
 The default location for navigation data is `work/NavigationData`.
 
-## Building the Sample Aircraft (MSFS2020)
+## Building the Sample Aircraft
 
 > [!NOTE]  
-> This project is only meant to be tested in MSFS2020. We will add an example for MSFS2024 in the future.
+> This project is meant to work in MSFS2020 and MSFS2024.
 
 > [!IMPORTANT]  
 > Before building, make sure you have properly created and set an `.env` file in `example/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials.
 
-1. Download and install [Bun](https://bun.sh/docs/installation)
-2. Open this repository in a terminal
-3. Run `bun i` the first time you build, in order to install dependencies
-4. Change directory to [`example/gauge`](example/gauge/) using `cd example/gauge`
-5. Run `bun run build` to build into the `PackageSources` folder of the aircraft sample (or `bun run dev` to build into the `Packages` folder of the aircraft and listen to changes in the source).
-6. Make sure the WASM module is included in the [`panel`](example/aircraft/PackageSources/SimObjects/Airplanes/Navigraph_Navigation_Data_Interface_Aircraft/panel) folder! Look at either [Including in Your Aircraft](#including-in-your-aircraft) or [Building the WASM Module Yourself](#building-the-wasm-module-yourself) instructions
-7. Open the `example/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build there
+> [!IMPORTANT]  
+> Create a `.env` file in the root of this repository, containing a `SENTRY_URL` variable. Provide your own DSN, or leave it empty.
+
+1. Download and install [Bun](https://bun.sh/docs/installation).
+2. Open this repository in a terminal.
+3. Run `bun i` the first time you build, in order to install dependencies.
+5. Run `bun run build:example`. This command will [build](#building-the-wasm-module-yourself) the wasm module, [build](#building-the-gauge-yourself) the gauge and [copy](#building-the-wasm-module-yourself) the module to the aircraft `panel` folder.
+7. Open the `example/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build the package.
 
 ## Building the WASM Module Yourself
 
-1. Create a `.env` file in the root of this repository, containing a `SENTRY_URL` variable. Provide your own DSN, or leave it empty.
-2. Run `bun run build:wasm` at the root of the repository (requires Docker)
-   - This will take a while to download and build the first time, but subsequent runs will be quicker
-3. The compiled WASM module will be copied to `dist/wasm`. There will be two folders - `2020` and `2024`, for each sim version
+> [!IMPORTANT]  
+> Create a `.env` file in the root of this repository, containing a `SENTRY_URL` variable. Provide your own DSN, or leave it empty.
+
+1. Run `bun run build:wasm` at the root of the repository (requires Docker)
+   - This will take a while to download and build the first time, but subsequent runs will be quicker.
+   - The WASM module will be compatible for MSFS 2020 & 2024.
+2. Run `bun run copy:wasm` command to copy the wasm module or do it manually by copying the wasm module in the aircraft `panel` folder.
+
+## Building the Gauge Yourself
+
+> [!IMPORTANT]  
+> Before building, make sure you have properly created and set an `.env` file in `example/gauge`! An example can be found in the `.env.example` file in that directory. Replace with your credentials.
+
+1. Change directory to [`example/gauge`](example/gauge/) using `cd example/gauge`
+2. Run `bun run build` to build into the `PackageSources` folder of the aircraft sample (or `bun run dev` to build into the `Packages` folder of the aircraft and listen to changes in the source).
 
 ## Interfacing with the gauge manually
 
