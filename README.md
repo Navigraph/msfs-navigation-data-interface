@@ -67,7 +67,7 @@ The navigation data interface will automatically use this database by default, m
 
 The default location for navigation data is `work/NavigationData`.
 
-## Building the Sample Aircraft (MSFS2020)
+## Building the Sample Aircraft
 
 > [!NOTE]  
 > This project is meant to work in MSFS2020 and MSFS2024.
