@@ -73,27 +73,24 @@ if (existsSync(outDir)) rmdirSync(outDir, { recursive: true });
 // The work directory, relative to workspace root
 const relativeWorkdDir = process.cwd().replace(workspaceRoot, "").replaceAll("\\", "/");
 
-// Build the 2020 version
-const simVersion = "2020";
-
-console.info(`[*] Building for ${simVersion}`);
+console.info(`[*] Building for 2020`);
 
 // Create the subfolder
-const simDir = join(outDir, simVersion);
+const simDir = join(outDir, "2020");
 const relativeSimDir = simDir.replace(workspaceRoot, "").replaceAll("\\", "/");
 mkdirSync(simDir, { recursive: true });
 
 // Run cargo-msfs
 await $`docker run \
   --rm -t \
-  --name msfs-${simVersion}-wasm-builder \
+  --name msfs-2020-wasm-builder \
   -v ${workspaceRoot}:/workspace \
   -w /workspace${relativeWorkdDir} \
-  -e CARGO_TARGET_DIR=/workspace/targets/${simVersion} \
+  -e CARGO_TARGET_DIR=/workspace/targets/2020 \
   ${IMAGE_NAME} \
-    bash -c "cargo-msfs build msfs${simVersion} -i ./src/wasm -o ./${relativeSimDir}/msfs_navigation_data_interface.wasm \
-1> >(sed \"s/^/[\x1b[34m${simVersion}\\x1b[0m]/\") \
-2> >(sed \"s/^/[\x1b[34m${simVersion}\\x1b[0m]/\" >&2)"`.catch((err: { exitCode?: number; stderr?: Buffer }) => {
-  console.error(`[-] Error building for ${simVersion}: ${err.exitCode} ${err.stderr?.toString()}`);
+    bash -c "cargo-msfs build msfs2020 -i ./src/wasm -o ./${relativeSimDir}/msfs_navigation_data_interface.wasm \
+1> >(sed \"s/^/[\x1b[34m2020\\x1b[0m]/\") \
+2> >(sed \"s/^/[\x1b[34m2020\\x1b[0m]/\" >&2)"`.catch((err: { exitCode?: number; stderr?: Buffer }) => {
+  console.error(`[-] Error building for 2020: ${err.exitCode} ${err.stderr?.toString()}`);
   process.exit(1);
 });
