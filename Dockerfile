@@ -1,4 +1,4 @@
-FROM rust:1.84.1
+FROM rust:1.90
 
 # Install needed packages and clean up
 RUN apt update && \
