@@ -1,8 +1,8 @@
-FROM rust:1.84.1
+FROM rust:1.90
 
 # Install needed packages and clean up
 RUN apt update && \
-    apt install -y --no-install-recommends lsb-release wget software-properties-common gnupg gcc-multilib git && \
+    apt install -y --no-install-recommends lsb-release wget gnupg gcc-multilib git && \
     rm -rf /var/lib/apt/lists/*
 
 # Install clang and clean up
