@@ -17,7 +17,7 @@ RUN wget https://apt.llvm.org/llvm.sh && \
 RUN rustup target install wasm32-wasip1
 
 # Install cargo-msfs
-RUN cargo install --git https://github.com/navigraph/cargo-msfs
+RUN cargo install --git https://github.com/navigraph/cargo-msfs --tag v1.1.0 --locked
 
 # Cache bust arg to re-install both SDKs
 ARG CACHEBUST
