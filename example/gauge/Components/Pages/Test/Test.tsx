@@ -19,7 +19,7 @@ interface FunctionDescriptor {
   index: number;
   arguments: string[];
   name: string;
-  functionCallback: (input: string, inputAlt: string) => Promise<unknown>;
+  functionCallback: (input?: string, inputAlt?: string) => Promise<unknown>;
 }
 
 interface InputState {
@@ -39,7 +39,7 @@ export class TestPage extends DisplayComponent<TestPageProps> {
       index: 0,
       arguments: ["url: string"],
       name: "DownloadNavigationData",
-      functionCallback: input => this.props.interface.download_navigation_data(input),
+      functionCallback: input => this.props.interface.download_navigation_data(input || ""),
     },
     {
       index: 1,
@@ -51,153 +51,153 @@ export class TestPage extends DisplayComponent<TestPageProps> {
       index: 2,
       arguments: ["ident: string"],
       name: "GetAirport",
-      functionCallback: input => this.props.interface.get_airport(input),
+      functionCallback: input => this.props.interface.get_airport(input || ""),
     },
     {
       index: 3,
       arguments: ["ident: string"],
       name: "GetWaypoints",
-      functionCallback: input => this.props.interface.get_waypoints(input),
+      functionCallback: input => this.props.interface.get_waypoints(input || ""),
     },
     {
       index: 4,
       arguments: ["ident: string"],
       name: "GetVhfNavaids",
-      functionCallback: input => this.props.interface.get_vhf_navaids(input),
+      functionCallback: input => this.props.interface.get_vhf_navaids(input || ""),
     },
     {
       index: 5,
       arguments: ["ident: string"],
       name: "GetNdbNavaids",
-      functionCallback: input => this.props.interface.get_ndb_navaids(input),
+      functionCallback: input => this.props.interface.get_ndb_navaids(input || ""),
     },
     {
       index: 6,
       arguments: ["ident: string"],
       name: "GetAirways",
-      functionCallback: input => this.props.interface.get_airways(input),
+      functionCallback: input => this.props.interface.get_airways(input || ""),
     },
     {
       index: 7,
       arguments: ["fixIdent: string", "fixIcao: string"],
       name: "GetAirwaysAtFix",
-      functionCallback: (input, inputAlt) => this.props.interface.get_airways_at_fix(input, inputAlt),
+      functionCallback: (input, inputAlt) => this.props.interface.get_airways_at_fix(input || "", input || ""),
     },
     {
       index: 8,
       arguments: ["center: (lat, long)", "range: nm"],
       name: "GetAirportsInRange",
       functionCallback: (input, inputAlt) =>
-        this.props.interface.get_airports_in_range(this.strToCoords(input), Number(inputAlt || 0)),
+        this.props.interface.get_airports_in_range(this.strToCoords(input || ""), Number(inputAlt || 0)),
     },
     {
       index: 9,
       arguments: ["center: (lat, long)", "range: nm"],
       name: "GetWaypointsInRange",
       functionCallback: (input, inputAlt) =>
-        this.props.interface.get_waypoints_in_range(this.strToCoords(input), Number(inputAlt || 0)),
+        this.props.interface.get_waypoints_in_range(this.strToCoords(input || ""), Number(inputAlt || 0)),
     },
     {
       index: 10,
       arguments: ["center: (lat, long)", "range: nm"],
       name: "GetVhfNavaidsInRange",
       functionCallback: (input, inputAlt) =>
-        this.props.interface.get_vhf_navaids_in_range(this.strToCoords(input), Number(inputAlt || 0)),
+        this.props.interface.get_vhf_navaids_in_range(this.strToCoords(input || ""), Number(inputAlt || 0)),
     },
     {
       index: 11,
       arguments: ["center: (lat, long)", "range: nm"],
       name: "GetNdbNavaidsInRange",
       functionCallback: (input, inputAlt) =>
-        this.props.interface.get_ndb_navaids_in_range(this.strToCoords(input), Number(inputAlt || 0)),
+        this.props.interface.get_ndb_navaids_in_range(this.strToCoords(input || ""), Number(inputAlt || 0)),
     },
     {
       index: 12,
       arguments: ["center: (lat, long)", "range: nm"],
       name: "GetAirwaysInRange",
       functionCallback: (input, inputAlt) =>
-        this.props.interface.get_airways_in_range(this.strToCoords(input), Number(inputAlt || 0)),
+        this.props.interface.get_airways_in_range(this.strToCoords(input || ""), Number(inputAlt || 0)),
     },
     {
       index: 13,
       arguments: ["center: (lat, long)", "range: nm"],
       name: "GetControlledAirspacesInRange",
       functionCallback: (input, inputAlt) =>
-        this.props.interface.get_controlled_airspaces_in_range(this.strToCoords(input), Number(inputAlt || 0)),
+        this.props.interface.get_controlled_airspaces_in_range(this.strToCoords(input || ""), Number(inputAlt || 0)),
     },
     {
       index: 14,
       arguments: ["center: (lat, long)", "range: nm"],
       name: "GetRestrictiveAirspacesInRange",
       functionCallback: (input, inputAlt) =>
-        this.props.interface.get_restrictive_airspaces_in_range(this.strToCoords(input), Number(inputAlt || 0)),
+        this.props.interface.get_restrictive_airspaces_in_range(this.strToCoords(input || ""), Number(inputAlt || 0)),
     },
     {
       index: 15,
       arguments: ["center: (lat, long)", "range: nm"],
       name: "GetCommunicationsInRange",
       functionCallback: (input, inputAlt) =>
-        this.props.interface.get_communications_in_range(this.strToCoords(input), Number(inputAlt || 0)),
+        this.props.interface.get_communications_in_range(this.strToCoords(input || ""), Number(inputAlt || 0)),
     },
     {
       index: 16,
       arguments: ["airportIdent: string"],
       name: "GetRunwaysAtAirport",
-      functionCallback: input => this.props.interface.get_runways_at_airport(input),
+      functionCallback: input => this.props.interface.get_runways_at_airport(input || ""),
     },
     {
       index: 17,
       arguments: ["airportIdent: string"],
       name: "GetDeparturesAtAirport",
-      functionCallback: input => this.props.interface.get_departures_at_airport(input),
+      functionCallback: input => this.props.interface.get_departures_at_airport(input || ""),
     },
     {
       index: 18,
       arguments: ["airportIdent: string"],
       name: "GetArrivalsAtAirport",
-      functionCallback: input => this.props.interface.get_arrivals_at_airport(input),
+      functionCallback: input => this.props.interface.get_arrivals_at_airport(input || ""),
     },
     {
       index: 19,
       arguments: ["airportIdent: string"],
       name: "GetApproachesAtAirport",
-      functionCallback: input => this.props.interface.get_approaches_at_airport(input),
+      functionCallback: input => this.props.interface.get_approaches_at_airport(input || ""),
     },
     {
       index: 20,
       arguments: ["airportIdent: string"],
       name: "GetWaypointsAtAirport",
-      functionCallback: input => this.props.interface.get_waypoints_at_airport(input),
+      functionCallback: input => this.props.interface.get_waypoints_at_airport(input || ""),
     },
     {
       index: 21,
       arguments: ["airportIdent: string"],
       name: "GetNdbNavaidsAtAirport",
-      functionCallback: input => this.props.interface.get_ndb_navaids_at_airport(input),
+      functionCallback: input => this.props.interface.get_ndb_navaids_at_airport(input || ""),
     },
     {
       index: 22,
       arguments: ["airportIdent: string"],
       name: "GetGatesAtAirport",
-      functionCallback: input => this.props.interface.get_gates_at_airport(input),
+      functionCallback: input => this.props.interface.get_gates_at_airport(input || ""),
     },
     {
       index: 23,
       arguments: ["airportIdent: string"],
       name: "GetCommunicationsAtAirport",
-      functionCallback: input => this.props.interface.get_communications_at_airport(input),
+      functionCallback: input => this.props.interface.get_communications_at_airport(input || ""),
     },
     {
       index: 24,
       arguments: ["airportIdent: string"],
       name: "GetGlsNavaidsAtAirport",
-      functionCallback: input => this.props.interface.get_gls_navaids_at_airport(input),
+      functionCallback: input => this.props.interface.get_gls_navaids_at_airport(input || ""),
     },
     {
       index: 25,
       arguments: ["airportIdent: string"],
       name: "GetPathPointsAtAirport",
-      functionCallback: input => this.props.interface.get_path_points_at_airport(input),
+      functionCallback: input => this.props.interface.get_path_points_at_airport(input || ""),
     },
     {
       index: 26,
@@ -215,7 +215,7 @@ export class TestPage extends DisplayComponent<TestPageProps> {
           }
         }
 
-        return this.props.interface.execute_sql(input, argsList);
+        return this.props.interface.execute_sql(input || "", argsList);
       },
     },
     {
@@ -262,8 +262,8 @@ export class TestPage extends DisplayComponent<TestPageProps> {
 
   private handleFunction = () => {
     const functionObj = this.selectedFunctionObj.get();
-    const input1 = this.input1.get();
-    const input2 = this.input2.get();
+    const input1 = this.input1.get() || undefined;
+    const input2 = this.input2.get() || undefined;
 
     functionObj
       .functionCallback(input1, input2)
