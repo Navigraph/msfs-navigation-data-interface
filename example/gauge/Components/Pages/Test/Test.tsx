@@ -203,11 +203,17 @@ export class TestPage extends DisplayComponent<TestPageProps> {
       index: 26,
       arguments: ["sql: string", "params: string[]"],
       name: "ExecuteSQLQuery",
-      functionCallback: (input, inputAlt) =>
-        this.props.interface.execute_sql(
-          input,
-          (JSON.parse(inputAlt || "[]") as unknown[]).map(v => String(v)), // Try to parse the argument as a JSON formatted array, falling back to an empty array if needed. We also force all values to strings since that is what the backend expects
-        ),
+      functionCallback: (input, inputAlt) => {
+        // Try to parse the argument as a JSON formatted array, falling back to an empty array if needed. We also force all values to strings since that is what the backend expects
+        let argsList: string[] = [];
+        try {
+          argsList = (JSON.parse(inputAlt) as unknown[]).map(v => String(v));
+        } catch {
+          //noop
+        }
+
+        return this.props.interface.execute_sql(input, argsList);
+      },
     },
     {
       index: 27,
