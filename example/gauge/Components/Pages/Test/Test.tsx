@@ -206,11 +206,13 @@ export class TestPage extends DisplayComponent<TestPageProps> {
       functionCallback: (input, inputAlt) => {
         // Try to parse the argument as a JSON formatted array, falling back to an empty array if needed. We also force all values to strings since that is what the backend expects
         let argsList: string[] = [];
-        try {
-          const parsed = JSON.parse(inputAlt);
-          argsList = Array.isArray(parsed) ? parsed.map(v => String(v)) : [];
-        } catch (e) {
-          console.error(`Error parsing argument input: ${e}. Falling back to empty list`);
+        if (inputAlt) {
+          try {
+            const parsed = JSON.parse(inputAlt);
+            argsList = Array.isArray(parsed) ? parsed.map(v => String(v)) : [];
+          } catch (e) {
+            console.error(`Error parsing argument input: ${e}. Falling back to empty list`);
+          }
         }
 
         return this.props.interface.execute_sql(input, argsList);
