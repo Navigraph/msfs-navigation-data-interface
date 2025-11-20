@@ -210,7 +210,6 @@ export class TestPage extends DisplayComponent<TestPageProps> {
           argsList = (JSON.parse(inputAlt) as unknown[]).map(v => String(v));
         } catch (e) {
           console.error(`Error parsing argument input: ${e}. Falling back to empty list`);
-          //noop
         }
 
         return this.props.interface.execute_sql(input, argsList);
