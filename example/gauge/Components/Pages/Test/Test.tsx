@@ -208,7 +208,8 @@ export class TestPage extends DisplayComponent<TestPageProps> {
         let argsList: string[] = [];
         try {
           argsList = (JSON.parse(inputAlt) as unknown[]).map(v => String(v));
-        } catch {
+        } catch (e) {
+          console.error(`Error parsing argument input: ${e}. Falling back to empty list`);
           //noop
         }
 
