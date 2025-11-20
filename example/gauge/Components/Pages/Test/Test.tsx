@@ -207,7 +207,8 @@ export class TestPage extends DisplayComponent<TestPageProps> {
         // Try to parse the argument as a JSON formatted array, falling back to an empty array if needed. We also force all values to strings since that is what the backend expects
         let argsList: string[] = [];
         try {
-          argsList = (JSON.parse(inputAlt) as unknown[]).map(v => String(v));
+          const parsed = JSON.parse(inputAlt);
+          argsList = Array.isArray(parsed) ? parsed.map(v => String(v)) : [];
         } catch (e) {
           console.error(`Error parsing argument input: ${e}. Falling back to empty list`);
         }
