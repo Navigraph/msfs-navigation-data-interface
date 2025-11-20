@@ -19,7 +19,7 @@ interface FunctionDescriptor {
   index: number;
   arguments: string[];
   name: string;
-  functionCallback: (input?: string, inputAlt?: string) => Promise<unknown>;
+  functionCallback: (input: string, inputAlt: string) => Promise<unknown>;
 }
 
 interface InputState {
@@ -206,7 +206,7 @@ export class TestPage extends DisplayComponent<TestPageProps> {
       functionCallback: (input, inputAlt) =>
         this.props.interface.execute_sql(
           input ?? "",
-          inputAlt?.replace("[", "").replace("]", "").replace('"', "").split(",") ?? [],
+          JSON.parse(inputAlt.length > 0 ? inputAlt : "[]"),
         ),
     },
     {
