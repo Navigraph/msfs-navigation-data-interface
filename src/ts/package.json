@@ -1,6 +1,6 @@
 {
   "name": "@navigraph/msfs-navigation-data-interface",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "JS interface that facilitates interactions with the Navigraph WASM navigation data module.",
   "homepage": "https://navigraph.com",
   "main": "dist/msfs-navigation-data-interface.mjs",

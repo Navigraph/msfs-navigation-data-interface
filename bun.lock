@@ -45,7 +45,7 @@
     },
     "src/ts": {
       "name": "@navigraph/msfs-navigation-data-interface",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "devDependencies": {
         "@microsoft/msfs-types": "^1.14.6",
         "tsup": "^8.4.0",
