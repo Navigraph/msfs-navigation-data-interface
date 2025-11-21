@@ -285,7 +285,7 @@ pub enum CommunicationType {
     GroundCommOutlet,
     #[serde(rename = "GND")]
     GroundControl,
-    #[serde(rename = "GET")]
+    #[serde(rename = "GTE")]
     GateControl,
     #[serde(rename = "HEL")]
     HelicopterFrequency,
