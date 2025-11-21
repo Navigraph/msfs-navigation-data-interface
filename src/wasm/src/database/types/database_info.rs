@@ -43,7 +43,7 @@ impl From<sql::Header> for DatabaseInfo {
         Self {
             airac_cycle: header.cycle,
             effective_from_to: parse_from_to(header.effective_fromto).unwrap(),
-            previous_from_to: ("depricated".to_string(), "depricated".to_string()),
+            previous_from_to: ("deprecated".to_string(), "deprecated".to_string()),
         }
     }
 }
