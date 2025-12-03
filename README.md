@@ -51,8 +51,8 @@
    ```json
    {
      "addon": {
-       "developer": "Navigraph",
-       "product": "Sample Aircraft"
+       "developer": "YOUR NAME/COMPANY HERE",
+       "product": "YOUR PRODUCT NAME HERE"
      }
    }
    ```
@@ -81,8 +81,8 @@ The default location for navigation data is `work/NavigationData`.
 1. Download and install [Bun](https://bun.sh/docs/installation).
 2. Open this repository in a terminal.
 3. Run `bun i` the first time you build, in order to install dependencies.
-5. Run `bun run build:example`. This command will [build](#building-the-wasm-module-yourself) the wasm module, [build](#building-the-gauge-yourself) the gauge and [copy](#building-the-wasm-module-yourself) the module to the aircraft `panel` folder.
-7. Open the `example/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build the package.
+4. Run `bun run build:example`. This command will [build](#building-the-wasm-module-yourself) the wasm module, [build](#building-the-gauge-yourself) the gauge and [copy](#building-the-wasm-module-yourself) the module to the aircraft `panel` folder.
+5. Open the `example/aircraft/NavigationDataInterfaceAircraftProject.xml` file in the simulator and build the package.
 
 ## Building the WASM Module Yourself
 
