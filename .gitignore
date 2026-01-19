@@ -27,3 +27,4 @@ target
 .DS_Store
 
 dist
+wasm.zip

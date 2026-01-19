@@ -11,7 +11,7 @@
     "build:gauge": "bun --cwd=\"./example/gauge\" run build",
     "copy:wasm": "bun run ./scripts/copy-wasm-module.ts",
     "build:example": "bun run build:wasm && bun run build:gauge && bun run copy:wasm",
-    "package": "bestzip wasm.zip dist/wasm/*"
+    "package": "cd dist/wasm/2020 && bestzip ../../../wasm.zip msfs_navigation_data_interface.wasm"
   },
   "devDependencies": {
     "@eslint/js": "^9.23.0",
