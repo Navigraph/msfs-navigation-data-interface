@@ -53,7 +53,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./wasm.zip
+            ./dist/wasm.zip
           prerelease: true
           generate_release_notes: true
 

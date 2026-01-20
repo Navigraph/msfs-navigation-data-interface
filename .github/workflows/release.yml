@@ -54,7 +54,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./wasm.zip
+            ./dist/wasm.zip
           generate_release_notes: true
 
   # Enable in future to automate publishing of NPM package

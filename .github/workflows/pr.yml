@@ -114,4 +114,4 @@ jobs:
         with:
           name: wasm
           path: |
-            ./wasm.zip
+            ./dist/wasm.zip
