@@ -76,7 +76,12 @@ jobs:
       - name: Build JS Interface
         run: cd src/ts && bun run build
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - name: Publish to NPM
         env:
           NPM_CONFIG_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: cd src/ts && bun publish
+        run: cd src/ts && npm publish
