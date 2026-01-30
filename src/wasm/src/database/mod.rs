@@ -242,6 +242,10 @@ impl DatabaseState {
 
         // The WORK_DB_PATH is the "master" SQLite path. We have logic copying over bundled navigation data if needed in the DatabaseState::new function.
         let conn = Connection::open_with_flags(WORK_DB_PATH, flags)?;
+
+        // Use memory for temp storage (avoids directory issues with the work folder)
+        conn.execute_batch("PRAGMA temp_store = MEMORY")?;
+
         self.database = Some(conn);
 
         Ok(())
