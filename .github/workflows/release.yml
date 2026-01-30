@@ -1,4 +1,5 @@
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*"
@@ -13,54 +14,53 @@ permissions:
   id-token: write # Required for OIDC
 
 jobs:
-  release-wasm:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          filter: blob:none
+  # release-wasm:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         filter: blob:none
 
-      - name: Create env file
-        run: |
-          echo SENTRY_URL=${{ secrets.SENTRY_URL }} >> .env
+  #     - name: Create env file
+  #       run: |
+  #         echo SENTRY_URL=${{ secrets.SENTRY_URL }} >> .env
 
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
+  #     - uses: oven-sh/setup-bun@v2
+  #       with:
+  #         bun-version: latest
 
-      - name: Install node modules
-        run: bun i --frozen-lockfile
+  #     - name: Install node modules
+  #       run: bun i --frozen-lockfile
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
 
-      - name: Build cargo-msfs image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          tags: navigation-data-interface-wasm-build:latest
-          load: true
-          cache-from: type=gha
-          cache-to: type=gha
+  #     - name: Build cargo-msfs image
+  #       uses: docker/build-push-action@v5
+  #       with:
+  #         context: .
+  #         file: Dockerfile
+  #         tags: navigation-data-interface-wasm-build:latest
+  #         load: true
+  #         cache-from: type=gha
+  #         cache-to: type=gha
 
-      - name: Cache target directories
-        uses: actions/cache@v4
-        with:
-          path: targets
-          key: rust-targets
+  #     - name: Cache target directories
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: targets
+  #         key: rust-targets
 
-      - name: Build WASM
-        run: bun run build:wasm && bun run package
+  #     - name: Build WASM
+  #       run: bun run build:wasm && bun run package
 
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            ./dist/wasm.zip
-          generate_release_notes: true
+  #     - name: Release
+  #       uses: softprops/action-gh-release@v1
+  #       with:
+  #         files: |
+  #           ./dist/wasm.zip
+  #         generate_release_notes: true
 
-  # Enable in future to automate publishing of NPM package
   release-js:
     runs-on: ubuntu-latest
     steps:
