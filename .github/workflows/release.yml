@@ -9,6 +9,9 @@ on:
 name: Create release
 run-name: Create release for `${{ github.ref_name }}`
 
+permissions:
+  id-token: write # Required for OIDC
+
 jobs:
   release-wasm:
     runs-on: ubuntu-latest
