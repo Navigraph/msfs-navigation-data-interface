@@ -21,8 +21,8 @@ jobs:
       js-interface: ${{ steps.changes.outputs.js-interface }}
       example: ${{ steps.changes.outputs.example }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
         id: changes
         with:
           filters: |
@@ -35,7 +35,7 @@ jobs:
     needs: [filter]
     if: ${{ needs.filter.outputs.js-interface == 'true' && !github.event.pull_request.draft && !contains(github.event.pull_request.labels.*.name , 'release') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -53,7 +53,7 @@ jobs:
     needs: [filter]
     if: ${{ needs.filter.outputs.js-interface == 'true' && !github.event.pull_request.draft && !contains(github.event.pull_request.labels.*.name , 'release') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -71,7 +71,7 @@ jobs:
     if: ${{ !github.event.pull_request.draft && !contains(github.event.pull_request.labels.*.name , 'release') }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           filter: blob:none
 
@@ -88,10 +88,10 @@ jobs:
         run: bun i --frozen-lockfile
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build cargo-msfs image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
@@ -101,7 +101,7 @@ jobs:
           cache-to: type=gha
 
       - name: Cache target directories
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: targets
           key: rust-targets
@@ -110,7 +110,7 @@ jobs:
         run: bun run build:wasm && bun run package
 
       - name: Upload WASM module to GitHub
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wasm
           path: |

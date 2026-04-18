@@ -16,7 +16,7 @@ jobs:
   release-wasm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           filter: blob:none
 
@@ -32,10 +32,10 @@ jobs:
         run: bun i --frozen-lockfile
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build cargo-msfs image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
@@ -45,7 +45,7 @@ jobs:
           cache-to: type=gha
 
       - name: Cache target directories
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: targets
           key: rust-targets
@@ -54,7 +54,7 @@ jobs:
         run: bun run build:wasm && bun run package
 
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             ./dist/wasm.zip
@@ -63,7 +63,7 @@ jobs:
   release-js:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -76,7 +76,7 @@ jobs:
         run: cd src/ts && bun run build
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
 
