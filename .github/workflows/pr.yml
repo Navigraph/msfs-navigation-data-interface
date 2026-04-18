@@ -10,7 +10,7 @@ name: PR Checks
 
 jobs:
   autolabel:
-    uses: ./.github/workflows/autolabel.yml
+    uses: Navigraph/workflows/.github/workflows/autolabel.yml@main
     secrets: inherit
 
   filter:
