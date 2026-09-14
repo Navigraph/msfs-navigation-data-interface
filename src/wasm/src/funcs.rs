@@ -3,7 +3,7 @@ use std::{
     io::{BufReader, Write},
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use msfs::network::NetworkRequestBuilder;
 use once_cell::sync::Lazy;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -46,7 +46,7 @@ trait Function: DeserializeOwned {
         let mut instance =
             serde_json::from_value::<Self>(data).context("can't deserialize self")?;
 
-        instance.init()?;
+        instance.init().context("can't init instance")?;
 
         Ok(instance)
     }
@@ -69,27 +69,36 @@ impl Function for DownloadNavigationData {
     type ReturnType = ();
 
     async fn run(&mut self) -> Result<Self::ReturnType> {
-        self.download_to_temp().await?;
+        self.download_to_temp()
+            .await
+            .context("can't download navigation data to temp file")?;
 
         // Only close connection if DATABASE_STATE has already been initialized - otherwise we end up unnecessarily copying the bundled data and instantly replacing it (due to initialization logic in database state)
         if Lazy::get(&DATABASE_STATE).is_some() {
             // Drop the current database. We don't do this before the download as there is a chance it will fail, and then we end up with no database open.
             DATABASE_STATE
                 .try_lock()
-                .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
-                .close_connection()?;
+                .ok()
+                .context("can't lock DATABASE_STATE")?
+                .close_connection()
+                .context("can't close database connection")?;
         }
 
-        self.extract_navigation_data().await?;
+        self.extract_navigation_data()
+            .await
+            .context("can't extract navigation data from temp file")?;
 
         // Open the connection
         DATABASE_STATE
             .try_lock()
-            .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
-            .open_connection()?;
+            .ok()
+            .context("can't lock DATABASE_STATE")?
+            .open_connection()
+            .context("can't open database connection")?;
 
         // Remove the temp file
-        fs::remove_file(DOWNLOAD_TEMP_FILE_PATH)?;
+        fs::remove_file(DOWNLOAD_TEMP_FILE_PATH)
+            .context("can't remove temp download file")?;
 
         Ok(())
     }
@@ -106,7 +115,10 @@ impl DownloadNavigationData {
             .get()
             .context(".get() returned None")?;
 
-        request.wait_for_data().await?;
+        request
+            .wait_for_data()
+            .await
+            .context("can't wait for head request data")?;
 
         // Try parsing the content-range header
         let total_bytes = request
@@ -115,8 +127,9 @@ impl DownloadNavigationData {
             .trim()
             .split("/")
             .last()
-            .ok_or(anyhow!("invalid content-range"))?
-            .parse::<usize>()?;
+            .context("invalid content-range")?
+            .parse::<usize>()
+            .context("can't parse content-range total bytes")?;
 
         // Total amount of chunks to download.  We need to download the data in chunks of DOWNLOAD_CHUNK_SIZE_BYTES to avoid a timeout, so we need to keep track of a "working" accumulation of all responses
         let total_chunks = total_bytes.div_ceil(DOWNLOAD_CHUNK_SIZE_BYTES);
@@ -126,7 +139,8 @@ impl DownloadNavigationData {
             .write(true)
             .create(true)
             .truncate(true)
-            .open(DOWNLOAD_TEMP_FILE_PATH)?;
+            .open(DOWNLOAD_TEMP_FILE_PATH)
+            .context("can't open temp download file")?;
 
         for i in 0..total_chunks {
             // Calculate the range for the current chunk
@@ -139,7 +153,8 @@ impl DownloadNavigationData {
                 downloaded_bytes: range_start,
                 current_chunk: i,
                 total_chunks,
-            })?;
+            })
+            .context("can't send download progress event")?;
 
             // Dispatch the request
             let data = NetworkRequestBuilder::new(&self.url)
@@ -149,10 +164,13 @@ impl DownloadNavigationData {
                 .get()
                 .context(".get() returned None")?
                 .wait_for_data()
-                .await?;
+                .await
+                .context("can't wait for chunk request data")?;
 
             // Write to limit how much data we hold in memory at a time (will be a max of DOWNLOAD_CHUNK_SIZE_BYTES)
-            download_file.write_all(&data)?;
+            download_file
+                .write_all(&data)
+                .context("can't write chunk to temp download file")?;
         }
 
         Ok(())
@@ -161,7 +179,10 @@ impl DownloadNavigationData {
     /// Extract the navigation data files from the zip file located in the temp location
     async fn extract_navigation_data(&self) -> Result<()> {
         // Load the zip archive
-        let mut zip = ZipArchive::new(BufReader::new(File::open(DOWNLOAD_TEMP_FILE_PATH)?))?;
+        let zip_file =
+            File::open(DOWNLOAD_TEMP_FILE_PATH).context("can't open temp download file")?;
+        let mut zip = ZipArchive::new(BufReader::new(zip_file))
+            .context("can't read zip archive from temp download file")?;
 
         // Ensure parent folder exists (ignore the result as it will return an error if it already exists)
         let _ = fs::create_dir_all(WORK_NAVIGATION_DATA_FOLDER);
@@ -171,27 +192,35 @@ impl DownloadNavigationData {
             .write(true)
             .create(true)
             .truncate(true)
-            .open(WORK_CYCLE_JSON_PATH)?;
+            .open(WORK_CYCLE_JSON_PATH)
+            .context("can't open cycle.json work path")?;
 
-        std::io::copy(&mut zip.by_name("cycle.json")?, &mut cycle_file)?;
+        let mut zip_cycle = zip
+            .by_name("cycle.json")
+            .context("can't find cycle.json in zip")?;
+        std::io::copy(&mut zip_cycle, &mut cycle_file)
+            .context("can't copy cycle.json from zip to work path")?;
+        drop(zip_cycle);
 
         // Write the db file
         let db_name = zip
             .file_names()
             .find(|f| f.to_lowercase().ends_with(".s3db"))
-            .ok_or(anyhow!(
-                "unable to find sqlite db in zip from url {}",
-                self.url
-            ))?
+            .with_context(|| {
+                format!("unable to find sqlite db in zip from url {}", self.url)
+            })?
             .to_owned();
 
         let mut db_file = OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
-            .open(WORK_DB_PATH)?;
+            .open(WORK_DB_PATH)
+            .context("can't open db work path")?;
 
-        std::io::copy(&mut zip.by_name(&db_name)?, &mut db_file)?;
+        let mut zip_db = zip.by_name(&db_name).context("can't find db in zip")?;
+        std::io::copy(&mut zip_db, &mut db_file)
+            .context("can't copy db from zip to work path")?;
 
         Ok(())
     }
@@ -235,7 +264,8 @@ impl Function for GetNavigationDataInstallStatus {
             .wait_for_data()
             .await
         {
-            let response_info = serde_json::from_slice::<CycleResponseInfo>(&res)?;
+            let response_info = serde_json::from_slice::<CycleResponseInfo>(&res)
+                .context("can't deserialize cycle response info")?;
 
             Some(response_info.cycle)
         } else {
@@ -244,7 +274,8 @@ impl Function for GetNavigationDataInstallStatus {
 
         match DATABASE_STATE
             .try_lock()
-            .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?
+            .ok()
+            .context("can't lock DATABASE_STATE")?
             .get_cycle_info()
         {
             Ok(cycle_info) => {
@@ -297,7 +328,7 @@ impl Function for GetNavigationDataInstallStatus {
 ///     type ReturnType = FunctionReturnType;
 ///
 ///     async fn run(&mut self) -> Result<Self::ReturnType> {
-///         let data = STATE.try_lock().map_err(|_| anyhow!("can't lock STATE"))?.function_on_database(self.required_param)?;
+///         let data = STATE.try_lock().ok().context("can't lock STATE")?.function_on_database(self.required_param).context("can't call function_on_database")?;
 ///         Ok(data)
 ///     }
 /// }
@@ -319,8 +350,11 @@ macro_rules! make_function {
 
             async fn run(&mut self) -> Result<Self::ReturnType> {
                 let data = DATABASE_STATE
-                .try_lock()
-                .map_err(|_| anyhow!("can't lock DATABASE_STATE"))?.$method($( &self.$arg ),*)?;
+                    .try_lock()
+                    .ok()
+                    .context("can't lock DATABASE_STATE")?
+                    .$method($( &self.$arg ),*)
+                    .with_context(|| format!("can't call {} on database", stringify!($method)))?;
                 Ok(data)
             }
         }
@@ -589,11 +623,14 @@ macro_rules! define_interface_functions {
 
                 impl [<$fn_name Wrapper>] {
                     fn new(id: String, args: serde_json::Value) -> anyhow::Result<Self> {
-                        let mut instance = $fn_name::new(args.clone())?;
+                        let mut instance = $fn_name::new(args.clone())
+                            .with_context(|| format!("can't create new {} function", stringify!($fn_name)))?;
                         // Create the future. Note that this does not start executing until we poll it
                         let future = Box::pin(async move {
-                            let result = instance.run().await?;
-                            Ok(serde_json::to_value(result)?)
+                            let result = instance.run().await
+                                .with_context(|| format!("can't run {} function", stringify!($fn_name)))?;
+                            Ok(serde_json::to_value(result)
+                                .with_context(|| format!("can't serialize {} function result", stringify!($fn_name)))?)
                          });
 
                         Ok(Self { id, args, future })
@@ -611,8 +648,10 @@ macro_rules! define_interface_functions {
                                         let serialized = serde_json::to_string(&FunctionResult {
                                             id: self.id.clone(),
                                             status: FunctionStatus::Success,
-                                            data: Some(serde_json::to_value(&data)?),
-                                        })?;
+                                            data: Some(serde_json::to_value(&data)
+                                                .context("can't serialize function success data")?),
+                                        })
+                                        .context("can't serialize success FunctionResult")?;
                                         msfs::commbus::CommBus::call(
                                             "NAVIGRAPH_FunctionResult",
                                             &serialized,
@@ -625,8 +664,10 @@ macro_rules! define_interface_functions {
                                         let serialized = serde_json::to_string(&FunctionResult {
                                             id: self.id.clone(),
                                             status: FunctionStatus::Error,
-                                            data: Some(serde_json::to_value(&err.to_string())?),
-                                        })?;
+                                            data: Some(serde_json::to_value(&err.to_string())
+                                                .context("can't serialize function error string")?),
+                                        })
+                                        .context("can't serialize error FunctionResult")?;
                                         msfs::commbus::CommBus::call(
                                             "NAVIGRAPH_FunctionResult",
                                             &serialized,
@@ -659,12 +700,15 @@ macro_rules! define_interface_functions {
                         data: serde_json::Value,
                     }
 
-                    let Helper { id, function, data } = Helper::deserialize(deserializer)?;
+                    let Helper { id, function, data } = Helper::deserialize(deserializer)
+                        .map_err(|e| serde::de::Error::custom(format!("can't deserialize InterfaceFunction call payload: {}", e)))?;
 
                     match function.as_str() {
                         $(
                             stringify!($fn_name) => {
-                                let wrapper = [<$fn_name Wrapper>]::new(id, data).map_err(serde::de::Error::custom)?;
+                                let wrapper = [<$fn_name Wrapper>]::new(id, data)
+                                    .with_context(|| format!("can't create new {} wrapper", stringify!($fn_name)))
+                                    .map_err(serde::de::Error::custom)?;
 
                                 Ok(InterfaceFunction::$fn_name(wrapper))
                             },
