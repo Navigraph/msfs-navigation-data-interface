@@ -1,0 +1,22 @@
+{
+  "name": "standalone-demo",
+  "version": "1.0.0",
+  "description": "Minimal example running the standalone WASM module outside the sim, as a script and as an HTTP API",
+  "private": true,
+  "scripts": {
+    "start": "bun run index.ts",
+    "serve": "bun run server.ts",
+    "test": "bun test",
+    "lint": "eslint -c ../../eslint.config.mjs .",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "dependencies": {
+    "@nestjs/common": "^12.1.0",
+    "@nestjs/core": "^12.1.0",
+    "@nestjs/platform-express": "^12.1.0",
+    "@nestjs/swagger": "^12.0.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  }
+}

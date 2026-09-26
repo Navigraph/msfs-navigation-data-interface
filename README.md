@@ -24,6 +24,7 @@
 - `example/`
   - `aircraft/` includes a base aircraft to test in the sim
   - `gauge/` includes a very simple TypeScript instrument to communicate with the WASM module
+  - `standalone-demo/` runs the [standalone module](#running-outside-the-sim-standalone-mode) outside the sim, as a script and as a NestJS HTTP API with Swagger UI
 - `scripts/` includes the build scripts, including the [standalone build](#running-outside-the-sim-standalone-mode) and its mock data generator
 - `src/`
   - `ts` includes source code for the JS interface for interfacing with the WASM module
@@ -197,6 +198,8 @@ navigationDataInterface.onReady(async () => {
   const airport = await navigationDataInterface.get_airport("MMUN");
 });
 ```
+
+For runnable examples, see [`example/standalone-demo`](example/standalone-demo): a script (`bun run demo:standalone`), and a NestJS HTTP API with Swagger UI serving the mock data (`bun run demo:standalone:serve`).
 
 The available modes are:
 
