@@ -5,15 +5,12 @@ use anyhow::{anyhow, Result};
 use once_cell::sync::Lazy;
 use sentry::integrations::anyhow::capture_anyhow;
 use serde::Deserialize;
-use std::{
-    cmp::Ordering,
-    fs::{self, read_dir, File},
-    path::{Path, PathBuf},
-    sync::Mutex,
-};
+use std::{fs::File, path::Path, sync::Mutex};
 
-use rusqlite::{params, params_from_iter, types::ValueRef, Connection, OpenFlags};
+use rusqlite::{params, params_from_iter, types::ValueRef, Connection};
 use serde_json::{Number, Value};
+
+use crate::platform::{ActivePlatform, Platform};
 pub use utils::{Coordinates, NauticalMiles};
 
 pub use types::{
@@ -40,49 +37,9 @@ pub use types::{
     waypoint::Waypoint,
 };
 
-/// The path to the navigation data files folder in the work directory
-pub const WORK_NAVIGATION_DATA_FOLDER: &str = "\\work/NavigationData";
-/// The path to the "master" cycle info JSON
-pub const WORK_CYCLE_JSON_PATH: &str = "\\work/NavigationData/cycle.json";
-/// The path to the "master" SQLite DB
-pub const WORK_DB_PATH: &str = "\\work/NavigationData/db.s3db";
-/// The folder name for bundled navigation data
-pub const BUNDLED_FOLDER_NAME: &str = ".\\Navigraph/BundledData";
-
 /// The global exported database state
 pub static DATABASE_STATE: Lazy<Mutex<DatabaseState>> =
     Lazy::new(|| Mutex::new(DatabaseState::new()));
-
-/// Find the bundled navigation data distribution
-fn get_bundled_db() -> Result<Option<DatabaseDistributionInfo>> {
-    let bundled_entries = match read_dir(BUNDLED_FOLDER_NAME) {
-        Ok(dir) => dir.filter_map(Result::ok).collect::<Vec<_>>(),
-        Err(_) => return Ok(None),
-    };
-
-    // Try finding cycle.json
-    let Some(cycle_file_name) = bundled_entries
-        .iter()
-        .filter_map(|e| e.file_name().to_str().map(|s| s.to_owned()))
-        .find(|e| *e == String::from("cycle.json"))
-    else {
-        return Ok(None);
-    };
-
-    // Try finding the DB (we don't know the full filename, only extension)
-    let Some(db_file_name) = bundled_entries
-        .iter()
-        .filter_map(|e| e.file_name().to_str().map(|s| s.to_owned()))
-        .find(|e| e.ends_with(".s3db"))
-    else {
-        return Ok(None);
-    };
-
-    Ok(Some(DatabaseDistributionInfo::new(
-        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{cycle_file_name}")), // We need to reconstruct the bundled path to include the proper syntax to reference non-work folder files
-        Path::new(&format!(".\\{BUNDLED_FOLDER_NAME}\\{db_file_name}")),
-    )?))
-}
 
 /// The struct representation of the cycle info JSON
 #[derive(Deserialize)]
@@ -98,37 +55,19 @@ impl CycleInfo {
     /// Attempt to parse from a path
     ///
     /// * `path` - The path to load from
+    #[cfg_attr(not(feature = "msfs"), allow(dead_code))]
     pub fn from_path(path: &Path) -> Result<Self> {
         let mut file = File::open(path)?;
 
         serde_json::from_reader(&mut file)
             .map_err(|e| anyhow!("error occurred reading cycle.json: {e}"))
     }
-}
 
-/// A pair of a cycle info JSON and the corresponding SQLite database.
-struct DatabaseDistributionInfo {
-    cycle_info: CycleInfo,
-    db_path: PathBuf,
-    cycle_info_path: PathBuf,
-}
-
-impl DatabaseDistributionInfo {
-    /// Create a new distribution info set
+    /// Attempt to parse from the contents of a cycle.json
     ///
-    /// * `cycle_info_path` - The path to the cycle info JSON
-    /// * `db_path` - The path to the SQLite DB
-    pub fn new(cycle_info_path: &Path, db_path: &Path) -> Result<Self> {
-        // Ensure paths exist (fs::exists is unreliable, so try getting a handle)
-        if File::open(cycle_info_path).is_err() || File::open(db_path).is_err() {
-            return Err(anyhow!("invalid distribution path"));
-        }
-
-        Ok(Self {
-            cycle_info: CycleInfo::from_path(cycle_info_path)?,
-            db_path: db_path.to_owned(),
-            cycle_info_path: cycle_info_path.to_owned(),
-        })
+    /// * `json` - The JSON to parse
+    pub fn from_json(json: &str) -> Result<Self> {
+        serde_json::from_str(json).map_err(|e| anyhow!("error occurred reading cycle.json: {e}"))
     }
 }
 
@@ -145,8 +84,8 @@ impl DatabaseState {
         let mut instance = Self::default();
 
         // Try to load a DB
-        match instance.try_load_db() {
-            Ok(()) => {}
+        match ActivePlatform::init_database() {
+            Ok(database) => instance.database = database,
             Err(e) => {
                 capture_anyhow(&e);
                 println!("[NAVIGRAPH]: Error trying to load DB: {e}");
@@ -154,69 +93,6 @@ impl DatabaseState {
         }
 
         instance
-    }
-
-    /// Try to load a database (either bundled or downloaded)
-    ///
-    /// This searches for the best DB to use by comparing the cycle and revision of both the downloaded (in work folder) and bundled navigation data.
-    fn try_load_db(&mut self) -> Result<()> {
-        // Get distribution info of both bundled and downloaded DBs, if they exist
-        let bundled_distribution = get_bundled_db()?;
-        let downloaded_distribution =
-            DatabaseDistributionInfo::new(Path::new(WORK_CYCLE_JSON_PATH), Path::new(WORK_DB_PATH))
-                .ok();
-
-        // Find the most recent distribution
-        let latest = [downloaded_distribution, bundled_distribution]
-            .into_iter()
-            .filter_map(|d| d)
-            .reduce(|a, b| {
-                // First, compare by cycle number
-                match a
-                    .cycle_info
-                    .cycle
-                    .parse::<u32>()
-                    .unwrap_or(0)
-                    .cmp(&b.cycle_info.cycle.parse::<u32>().unwrap_or(0))
-                {
-                    Ordering::Greater => a,
-                    Ordering::Less => b,
-                    Ordering::Equal => {
-                        // If they are somehow equal, compare revisions
-                        match a
-                            .cycle_info
-                            .revision
-                            .parse::<u32>()
-                            .unwrap_or(0)
-                            .cmp(&b.cycle_info.revision.parse::<u32>().unwrap_or(0))
-                        {
-                            Ordering::Greater | Ordering::Equal => a,
-                            Ordering::Less => b,
-                        }
-                    }
-                }
-            });
-
-        // If we somehow don't have a cycle in bundled or downloaded, return an empty instance
-        let Some(latest) = latest else {
-            return Ok(());
-        };
-
-        // Ensure parent folder exists (ignore the result as it will return an error if it already exists)
-        let _ = fs::create_dir_all(WORK_NAVIGATION_DATA_FOLDER);
-
-        // Ensure files get copied over
-        if latest.cycle_info_path != PathBuf::from(WORK_CYCLE_JSON_PATH) {
-            fs::copy(&latest.cycle_info_path, WORK_CYCLE_JSON_PATH)?;
-        }
-        if latest.db_path != PathBuf::from(WORK_DB_PATH) {
-            fs::copy(&latest.db_path, WORK_DB_PATH)?;
-        }
-
-        // The only way this can fail (since we know now that the path is valid) is if the file is corrupt, in which case we should report to sentry
-        self.open_connection()?;
-
-        return Ok(());
     }
 
     fn get_database(&self) -> Result<&Connection> {
@@ -234,26 +110,13 @@ impl DatabaseState {
     }
 
     pub fn open_connection(&mut self) -> Result<()> {
-        // We have to open with flags because the SQLITE_OPEN_CREATE flag with the default open causes the file to
-        // be overwritten
-        let flags = OpenFlags::SQLITE_OPEN_READ_ONLY
-            | OpenFlags::SQLITE_OPEN_URI
-            | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-
-        // The WORK_DB_PATH is the "master" SQLite path. We have logic copying over bundled navigation data if needed in the DatabaseState::new function.
-        let conn = Connection::open_with_flags(WORK_DB_PATH, flags)?;
-
-        // Use memory for temp storage (avoids directory issues with the work folder, with the tradeoff of higher memory usage for queries)
-        conn.execute_batch("PRAGMA temp_store = MEMORY")?;
-
-        self.database = Some(conn);
+        self.database = Some(ActivePlatform::open_database()?);
 
         Ok(())
     }
 
     pub fn get_cycle_info(&self) -> Result<CycleInfo> {
-        // The WORK_CYCLE_JSON_PATH is the "master" cycle JSON path.
-        return CycleInfo::from_path(Path::new(WORK_CYCLE_JSON_PATH));
+        ActivePlatform::get_cycle_info()
     }
 
     pub fn execute_sql_query(&self, sql: &str, params: &Vec<String>) -> Result<Value> {

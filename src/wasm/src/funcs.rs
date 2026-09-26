@@ -1,34 +1,16 @@
-use std::{
-    fs::{self, File, OpenOptions},
-    io::{BufReader, Write},
-};
-
 use anyhow::{Context, Result};
-use msfs::network::NetworkRequestBuilder;
 use once_cell::sync::Lazy;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
-use zip::ZipArchive;
 
 use crate::{
     database::{
         Airport, Airway, Approach, Arrival, Communication, ControlledAirspace, Coordinates,
         DatabaseInfo, Departure, Gate, GlsNavaid, NdbNavaid, PathPoint, RestrictiveAirspace,
-        RunwayThreshold, VhfNavaid, Waypoint, DATABASE_STATE, WORK_CYCLE_JSON_PATH, WORK_DB_PATH,
-        WORK_NAVIGATION_DATA_FOLDER,
+        RunwayThreshold, VhfNavaid, Waypoint, DATABASE_STATE,
     },
-    futures::AsyncNetworkRequest,
-    DownloadProgressEvent, InterfaceEvent,
+    platform::{ActivePlatform, Platform},
 };
-
-/// The URL to get the latest available cycle number
-const LATEST_CYCLE_ENDPOINT: &str = "https://navdata.api.navigraph.com/info";
-
-/// The path to the temporary download file
-const DOWNLOAD_TEMP_FILE_PATH: &str = "\\work/ng_download.temp";
-
-/// The max size in bytes of each request during the download function (set to 4MB curently)
-const DOWNLOAD_CHUNK_SIZE_BYTES: usize = 4 * 1024 * 1024;
 
 /// The trait definition for a function that can be called through the navigation data interface
 trait Function: DeserializeOwned {
@@ -69,9 +51,9 @@ impl Function for DownloadNavigationData {
     type ReturnType = ();
 
     async fn run(&mut self) -> Result<Self::ReturnType> {
-        self.download_to_temp()
+        ActivePlatform::download_navigation_data(&self.url)
             .await
-            .context("can't download navigation data to temp file")?;
+            .context("can't download navigation data")?;
 
         // Only close connection if DATABASE_STATE has already been initialized - otherwise we end up unnecessarily copying the bundled data and instantly replacing it (due to initialization logic in database state)
         if Lazy::get(&DATABASE_STATE).is_some() {
@@ -84,9 +66,9 @@ impl Function for DownloadNavigationData {
                 .context("can't close database connection")?;
         }
 
-        self.extract_navigation_data()
+        ActivePlatform::install_downloaded_navigation_data()
             .await
-            .context("can't extract navigation data from temp file")?;
+            .context("can't install downloaded navigation data")?;
 
         // Open the connection
         DATABASE_STATE
@@ -96,140 +78,8 @@ impl Function for DownloadNavigationData {
             .open_connection()
             .context("can't open database connection")?;
 
-        // Remove the temp file
-        fs::remove_file(DOWNLOAD_TEMP_FILE_PATH)
-            .context("can't remove temp download file")?;
-
         Ok(())
     }
-}
-
-impl DownloadNavigationData {
-    /// Download the navigation data zip file to the temp file location
-    async fn download_to_temp(&self) -> Result<()> {
-        // Figure out total size of download (this request is acting like a HEAD since we don't have those in this environment. Nothing actually gets downloaded since we are constraining the range)
-        let request = NetworkRequestBuilder::new(&self.url)
-            .context("can't create new NetworkRequestBuilder")?
-            .with_header(&format!("Range: bytes=0-0"))
-            .context(".with_header() returned None")?
-            .get()
-            .context(".get() returned None")?;
-
-        request
-            .wait_for_data()
-            .await
-            .context("can't wait for head request data")?;
-
-        // Try parsing the content-range header
-        let total_bytes = request
-            .header_section("content-range")
-            .context("no content-range header")?
-            .trim()
-            .split("/")
-            .last()
-            .context("invalid content-range")?
-            .parse::<usize>()
-            .context("can't parse content-range total bytes")?;
-
-        // Total amount of chunks to download.  We need to download the data in chunks of DOWNLOAD_CHUNK_SIZE_BYTES to avoid a timeout, so we need to keep track of a "working" accumulation of all responses
-        let total_chunks = total_bytes.div_ceil(DOWNLOAD_CHUNK_SIZE_BYTES);
-
-        // Store the download to a file to avoid holding in-memory
-        let mut download_file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(DOWNLOAD_TEMP_FILE_PATH)
-            .context("can't open temp download file")?;
-
-        for i in 0..total_chunks {
-            // Calculate the range for the current chunk
-            let range_start = i * DOWNLOAD_CHUNK_SIZE_BYTES;
-            let range_end = ((i + 1) * DOWNLOAD_CHUNK_SIZE_BYTES - 1).min(total_bytes - 1);
-
-            // Report the current download progress
-            InterfaceEvent::send_download_progress_event(DownloadProgressEvent {
-                total_bytes,
-                downloaded_bytes: range_start,
-                current_chunk: i,
-                total_chunks,
-            })
-            .context("can't send download progress event")?;
-
-            // Dispatch the request
-            let data = NetworkRequestBuilder::new(&self.url)
-                .context("can't create new NetworkRequestBuilder")?
-                .with_header(&format!("Range: bytes={range_start}-{range_end}"))
-                .context(".with_header() returned None")?
-                .get()
-                .context(".get() returned None")?
-                .wait_for_data()
-                .await
-                .context("can't wait for chunk request data")?;
-
-            // Write to limit how much data we hold in memory at a time (will be a max of DOWNLOAD_CHUNK_SIZE_BYTES)
-            download_file
-                .write_all(&data)
-                .context("can't write chunk to temp download file")?;
-        }
-
-        Ok(())
-    }
-
-    /// Extract the navigation data files from the zip file located in the temp location
-    async fn extract_navigation_data(&self) -> Result<()> {
-        // Load the zip archive
-        let zip_file =
-            File::open(DOWNLOAD_TEMP_FILE_PATH).context("can't open temp download file")?;
-        let mut zip = ZipArchive::new(BufReader::new(zip_file))
-            .context("can't read zip archive from temp download file")?;
-
-        // Ensure parent folder exists (ignore the result as it will return an error if it already exists)
-        let _ = fs::create_dir_all(WORK_NAVIGATION_DATA_FOLDER);
-
-        // Write the cycle.json file
-        let mut cycle_file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(WORK_CYCLE_JSON_PATH)
-            .context("can't open cycle.json work path")?;
-
-        let mut zip_cycle = zip
-            .by_name("cycle.json")
-            .context("can't find cycle.json in zip")?;
-        std::io::copy(&mut zip_cycle, &mut cycle_file)
-            .context("can't copy cycle.json from zip to work path")?;
-        drop(zip_cycle);
-
-        // Write the db file
-        let db_name = zip
-            .file_names()
-            .find(|f| f.to_lowercase().ends_with(".s3db"))
-            .with_context(|| {
-                format!("unable to find sqlite db in zip from url {}", self.url)
-            })?
-            .to_owned();
-
-        let mut db_file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .open(WORK_DB_PATH)
-            .context("can't open db work path")?;
-
-        let mut zip_db = zip.by_name(&db_name).context("can't find db in zip")?;
-        std::io::copy(&mut zip_db, &mut db_file)
-            .context("can't copy db from zip to work path")?;
-
-        Ok(())
-    }
-}
-
-/// The return type from the latest cycle endpoint
-#[derive(Deserialize)]
-struct CycleResponseInfo {
-    cycle: String,
 }
 
 /// The return type for the `GetNavigationDataInstallStatus` function
@@ -256,21 +106,9 @@ pub struct GetNavigationDataInstallStatus {}
 impl Function for GetNavigationDataInstallStatus {
     type ReturnType = NavigationDataInstallStatus;
     async fn run(&mut self) -> Result<Self::ReturnType> {
-        // Try to get the latest available cycle from our API. Support cases in which the user may be offline by returning a None instead
-        let latest_cycle = if let Ok(res) = NetworkRequestBuilder::new(LATEST_CYCLE_ENDPOINT)
-            .context("can't create new NetworkRequestBuilder")?
-            .get()
-            .context(".get() returned None")?
-            .wait_for_data()
+        let latest_cycle = ActivePlatform::get_latest_cycle()
             .await
-        {
-            let response_info = serde_json::from_slice::<CycleResponseInfo>(&res)
-                .context("can't deserialize cycle response info")?;
-
-            Some(response_info.cycle)
-        } else {
-            None
-        };
+            .context("can't get latest cycle")?;
 
         match DATABASE_STATE
             .try_lock()
@@ -284,7 +122,7 @@ impl Function for GetNavigationDataInstallStatus {
                     installed_format: Some(cycle_info.format),
                     installed_revision: Some(cycle_info.revision),
                     installed_cycle: Some(cycle_info.cycle),
-                    installed_path: Some(WORK_DB_PATH.to_owned()),
+                    installed_path: ActivePlatform::installed_path(),
                     validity_period: Some(cycle_info.validity_period),
                     latest_cycle,
                 })
@@ -581,7 +419,7 @@ make_function!(
 /// and we may have some functions that aren't able to resolve in a single frame.
 ///
 /// Once the future resolves, the result is automatically serialized into a `FunctionResult` structure and
-/// sent across the commbus using the `NAVIGRAPH_FunctionResult` event.
+/// sent to the JS side (via the active platform) using the `NAVIGRAPH_FunctionResult` event.
 ///
 /// # Note
 ///
@@ -652,11 +490,7 @@ macro_rules! define_interface_functions {
                                                 .context("can't serialize function success data")?),
                                         })
                                         .context("can't serialize success FunctionResult")?;
-                                        msfs::commbus::CommBus::call(
-                                            "NAVIGRAPH_FunctionResult",
-                                            &serialized,
-                                            msfs::commbus::CommBusBroadcastFlags::All,
-                                        );
+                                        ActivePlatform::send_message("NAVIGRAPH_FunctionResult", &serialized);
                                         Ok(RunStatus::Finished)
                                     }
                                     Err(err) => {
@@ -668,11 +502,7 @@ macro_rules! define_interface_functions {
                                                 .context("can't serialize function error string")?),
                                         })
                                         .context("can't serialize error FunctionResult")?;
-                                        msfs::commbus::CommBus::call(
-                                            "NAVIGRAPH_FunctionResult",
-                                            &serialized,
-                                            msfs::commbus::CommBusBroadcastFlags::All,
-                                        );
+                                        ActivePlatform::send_message("NAVIGRAPH_FunctionResult", &serialized);
                                         Err(err)
                                     }
                                 }

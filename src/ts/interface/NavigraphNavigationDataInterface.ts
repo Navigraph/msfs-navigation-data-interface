@@ -19,23 +19,21 @@ import {
   Waypoint,
 } from "../types";
 import { NavigationDataStatus } from "../types/meta";
+import { createTransport, CreateTransportOptions } from "../transport/createTransport";
+import { NavigationDataTransport } from "../transport/NavigationDataTransport";
 import {
   Callback,
-  CommBusMessage,
   DownloadProgressData,
-  FunctionResultArgs,
-  FunctionResultStatus,
   NavigraphEventType,
   NavigraphFunction,
   RawNavigraphEvent,
 } from "./NavigationDataInterfaceTypes";
 
 /**
- * A TS wrapper class used for interfacing with the Navigraph Navigation Data interface WASM gauge using the CommBus
+ * A TS wrapper class used for interfacing with the Navigraph Navigation Data interface WASM gauge
  */
 export class NavigraphNavigationDataInterface {
-  private readonly listener: CommBusListener;
-  private queue: CommBusMessage[] = [];
+  private readonly transport: NavigationDataTransport;
   private eventListeners: Callback[] = [];
   private onReadyCallback: (() => void) | null = null;
 
@@ -45,12 +43,15 @@ export class NavigraphNavigationDataInterface {
    * Creates a new NavigraphNavigationDataInterface
    *
    * @remarks
-   * `RegisterCommBusListener` is called during construction. This means that the class must be instantiated once the function is available.
+   * The transport can be given either as an instance, or as options for {@link createTransport}. By default, the CommBus is used
+   * when `RegisterCommBusListener` is available. Outside the sim, pass `standalone` options to run the standalone WASM module, which serves mock data.
+   * When running in the sim, the class must be instantiated once `RegisterCommBusListener` is available.
+   *
+   * @param transport - Transport, or options to create one, used to communicate with the WASM module
    */
-  constructor() {
-    this.listener = RegisterCommBusListener(() => {
-      this.onRegister();
-    });
+  constructor(transport: NavigationDataTransport | CreateTransportOptions = {}) {
+    this.transport = "call" in transport ? transport : createTransport(transport);
+    this.transport.onEvent(event => this.handleEvent(event));
   }
 
   /**
@@ -345,59 +346,28 @@ export class NavigraphNavigationDataInterface {
       throw new Error("Interface is not initialized");
     }
 
-    const id = Utils.generateGUID();
-
-    const args = { function: name, id, data };
-
-    this.listener.callWasm("NAVIGRAPH_CallFunction", JSON.stringify(args));
-
-    return new Promise((resolve, reject) => {
-      this.queue.push({
-        id,
-        resolve: (response: unknown) => resolve(response as T),
-        reject: (error: Error) => reject(error),
-      });
-    });
+    return await this.transport.call<T>(name, data);
   }
 
   /**
-   * Registers the event listeners for the interface
+   * Handles an event received from the transport
+   *
+   * @param event - The received event
    */
-  private onRegister(): void {
-    this.listener.on("NAVIGRAPH_FunctionResult", (jsonArgs: string) => {
-      const args = JSON.parse(jsonArgs) as FunctionResultArgs;
-      const id = args.id;
-
-      // Find the function call in the queue and resolve/reject it
-      const message = this.queue.find(m => m.id === id);
-      if (message) {
-        this.queue.splice(this.queue.indexOf(message), 1);
-        const data = args.data;
-        if (args.status === FunctionResultStatus.Success) {
-          message.resolve(data);
-        } else {
-          message.reject(new Error(typeof data === "string" ? data : "Unknown error"));
-        }
+  private handleEvent(event: RawNavigraphEvent): void {
+    // If this is the heartbeat event, set the interface as initialized
+    if (event.event === NavigraphEventType.Heartbeat && !this.isInitialized) {
+      this.isInitialized = true;
+      if (this.onReadyCallback) {
+        this.onReadyCallback();
       }
-    });
+    }
 
-    this.listener.on("NAVIGRAPH_Event", (jsonArgs: string) => {
-      const args = JSON.parse(jsonArgs) as RawNavigraphEvent;
-
-      // If this is the heartbeat event, set the interface as initialized
-      if (args.event === NavigraphEventType.Heartbeat && !this.isInitialized) {
-        this.isInitialized = true;
-        if (this.onReadyCallback) {
-          this.onReadyCallback();
-        }
-      }
-
-      // Call all callbacks for the event
-      if (args.event in NavigraphEventType) {
-        const callbacks = this.eventListeners.filter(cb => cb.event === args.event);
-        callbacks.forEach(cb => cb.callback(args.data));
-      }
-    });
+    // Call all callbacks for the event
+    if (event.event in NavigraphEventType) {
+      const callbacks = this.eventListeners.filter(cb => cb.event === event.event);
+      callbacks.forEach(cb => cb.callback(event.data));
+    }
   }
 
   public onEvent(event: NavigraphEventType.Heartbeat, callback: () => void): void;
